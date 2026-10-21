@@ -28,6 +28,7 @@ Issues = "https://github.com/deepak-foundryai/rlgate/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.6", "pyright>=1.1"]
+daytona = ["daytona>=0.100"]   # cloud sandbox backend (default for container tasks)
 
 [project.scripts]
 rlgate = "rlgate.cli:main"

@@ -24,6 +24,13 @@ def test_explicit_docker(tmp_path):
                       DockerSandbox)
 
 
+def test_explicit_daytona(tmp_path):
+    # construct-only; does not require keys or the SDK (build() would)
+    from rlgate.sandbox.daytona import DaytonaSandbox
+    assert isinstance(build_sandbox(_task(tmp_path, "img:latest"), prefer="daytona"),
+                      DaytonaSandbox)
+
+
 def test_auto_without_image_is_local(tmp_path):
     # no container capability → local, regardless of docker availability
     assert isinstance(build_sandbox(_task(tmp_path, None), prefer="auto"), LocalSandbox)

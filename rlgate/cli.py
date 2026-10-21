@@ -6,11 +6,13 @@ import argparse
 import sys
 
 from rlgate import __version__
+from rlgate.config import load_dotenv
 from rlgate.core.registry import discover
 from rlgate.core.report import to_json, to_markdown
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_dotenv()  # pick up DAYTONA_* (and anything else) from a local .env
     parser = argparse.ArgumentParser(prog="rlgate", description=__doc__)
     parser.add_argument("--version", action="version", version=f"rlgate {__version__}")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -21,8 +23,9 @@ def main(argv: list[str] | None = None) -> int:
     p_audit = sub.add_parser("audit", help="audit an environment (path to descriptor or dir)")
     p_audit.add_argument("target")
     p_audit.add_argument("-k", type=int, default=5, help="baseline repetitions (default 5)")
-    p_audit.add_argument("--backend", choices=["auto", "local", "docker"], default="auto",
-                         help="sandbox backend (default auto: docker if the task has an image)")
+    p_audit.add_argument("--backend", choices=["auto", "local", "docker", "daytona"],
+                         default="auto",
+                         help="sandbox backend (default auto: daytona for container tasks)")
     p_audit.add_argument("--probe", action="append", help="restrict to these probe ids")
     p_audit.add_argument("--format", choices=["md", "json"], default="md")
     p_audit.add_argument("--gate", action="store_true",
