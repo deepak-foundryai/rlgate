@@ -21,6 +21,8 @@ def main(argv: list[str] | None = None) -> int:
     p_audit = sub.add_parser("audit", help="audit an environment (path to descriptor or dir)")
     p_audit.add_argument("target")
     p_audit.add_argument("-k", type=int, default=5, help="baseline repetitions (default 5)")
+    p_audit.add_argument("--backend", choices=["auto", "local", "docker"], default="auto",
+                         help="sandbox backend (default auto: docker if the task has an image)")
     p_audit.add_argument("--probe", action="append", help="restrict to these probe ids")
     p_audit.add_argument("--format", choices=["md", "json"], default="md")
     p_audit.add_argument("--gate", action="store_true",
@@ -52,7 +54,8 @@ def _audit(args) -> int:
     from rlgate.pipeline import audit
 
     task = spec.load(args.target)
-    result = audit(task, k=args.k, only=set(args.probe) if args.probe else None)
+    result = audit(task, k=args.k, only=set(args.probe) if args.probe else None,
+                   backend=args.backend)
 
     if args.format == "json":
         print(to_json(result.task_id, result.findings, result.baseline_sane))

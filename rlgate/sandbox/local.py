@@ -1,6 +1,6 @@
 """Local sandbox: copy the workspace to a temp dir, apply a patch with zero fuzz, run the
-grader via subprocess. No isolation guarantees — for dev and CI fixtures only. A Docker/
-Daytona backend implements the same ABC for real isolation (and the race/perms probes)."""
+grader via subprocess. No isolation guarantees — for dev and CI fixtures only. The Docker
+backend implements the same ABC for real isolation (and the race/perms probes)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from rlgate.sandbox._patch import PatchConflict, apply_zero_fuzz
 from rlgate.sandbox.base import ExecResult, Overlay, Perms, Sandbox
+
+__all__ = ["LocalOverlay", "LocalSandbox", "PatchConflict"]
 
 
 class LocalOverlay(Overlay):
@@ -52,28 +55,8 @@ class LocalSandbox(Sandbox):
         shutil.rmtree(root)
         shutil.copytree(self._snapshot, root, symlinks=True)
         if patch_text:
-            self._apply_zero_fuzz(root, patch_text)
+            apply_zero_fuzz(root, patch_text)
         return LocalOverlay(root)
-
-    @staticmethod
-    def _apply_zero_fuzz(root: Path, patch_text: str) -> None:
-        """Apply with no fuzz: all-or-nothing and deterministic. Raises on conflict."""
-        proc = subprocess.run(
-            ["git", "apply", "--unsafe-paths", "-C0", "-p1", "-"],
-            cwd=root, input=patch_text, text=True, capture_output=True, check=False,
-        )
-        if proc.returncode != 0:
-            # fall back to plain `patch` for non-git workspaces; still zero fuzz
-            proc = subprocess.run(
-                ["patch", "-p1", "--no-backup-if-mismatch", "-F0", "-s"],
-                cwd=root, input=patch_text, text=True, capture_output=True, check=False,
-            )
-            if proc.returncode != 0:
-                raise PatchConflict(proc.stderr or proc.stdout)
 
     def pkill_user(self, user: str) -> None:
         subprocess.run(["pkill", "-u", user], capture_output=True, check=False)
-
-
-class PatchConflict(RuntimeError):
-    """A variant patch did not apply cleanly — bucketed as could-not-generate."""

@@ -11,7 +11,7 @@ from rlgate.core.finding import Finding
 from rlgate.core.registry import discover
 from rlgate.core.task import Task
 from rlgate.sandbox.base import Sandbox
-from rlgate.sandbox.local import LocalSandbox
+from rlgate.sandbox.select import build_sandbox
 from rlgate.variants.engine import VariantEngine
 
 
@@ -23,8 +23,8 @@ class AuditResult:
 
 
 def audit(task: Task, sandbox: Sandbox | None = None, k: int = 5,
-          only: set[str] | None = None) -> AuditResult:
-    sandbox = sandbox or LocalSandbox(task.repo_dir)
+          only: set[str] | None = None, backend: str = "auto") -> AuditResult:
+    sandbox = sandbox or build_sandbox(task, prefer=backend)
     sandbox.build()
 
     baseline = establish(task, sandbox, k=k)
