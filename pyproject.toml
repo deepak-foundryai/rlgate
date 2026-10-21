@@ -1,0 +1,52 @@
+[project]
+name = "rlgate"
+version = "0.0.1"
+description = "A deterministic, third-party auditor that finds reward-hacking vulnerabilities in RL/eval environments."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+license-files = ["LICENSE"]
+authors = [{ name = "rlgate contributors" }]
+keywords = ["reward-hacking", "rl", "evals", "auditing", "reward", "grader", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "unidiff>=0.7.5",   # deterministic unified-diff hunk parsing (revert probe)
+    "pyyaml>=6.0",      # declarative task descriptor
+]
+
+[project.urls]
+Homepage = "https://github.com/deepak-foundryai/rlgate"
+Repository = "https://github.com/deepak-foundryai/rlgate"
+Issues = "https://github.com/deepak-foundryai/rlgate/issues"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6", "pyright>=1.1"]
+
+[project.scripts]
+rlgate = "rlgate.cli:main"
+
+# Third-party probes/loaders register here without touching this repo.
+[project.entry-points."rlgate.probes"]
+# example = "my_pkg.my_probe:MyProbe"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["rlgate"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [".venv", "data", "tests/fixtures"]

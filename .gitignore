@@ -1,0 +1,12 @@
+.venv/
+dist/
+build/
+__pycache__/
+
+# Evaluation data (MiMo envs etc.) — large, kept out of git
+data/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+.DS_Store
