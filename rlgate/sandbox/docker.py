@@ -23,11 +23,18 @@ class DockerUnavailable(RuntimeError):
     pass
 
 
-def available() -> bool:
+def unavailable_reason() -> str | None:
+    """None if the Docker backend can be used, else a human-readable reason + fix."""
     try:
-        return subprocess.run(["docker", "info"], capture_output=True, check=False).returncode == 0
+        ok = subprocess.run(["docker", "info"], capture_output=True, check=False).returncode == 0
     except FileNotFoundError:
-        return False
+        return "docker is not installed — install Docker, or use --backend daytona/local"
+    return None if ok else ("the Docker daemon is not running — start Docker, or use "
+                            "--backend daytona/local")
+
+
+def available() -> bool:
+    return unavailable_reason() is None
 
 
 def _docker(*args: str, **kw) -> subprocess.CompletedProcess:

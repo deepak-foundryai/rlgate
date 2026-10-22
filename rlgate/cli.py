@@ -79,10 +79,15 @@ def _audit(args) -> int:
     from rlgate.core.report import eqs, triage
     from rlgate.ingest import spec
     from rlgate.pipeline import audit
+    from rlgate.sandbox.select import BackendUnavailable
 
     task = spec.load(args.target)
-    result = audit(task, k=args.k, only=set(args.probe) if args.probe else None,
-                   backend=args.backend)
+    try:
+        result = audit(task, k=args.k, only=set(args.probe) if args.probe else None,
+                       backend=args.backend)
+    except BackendUnavailable as e:
+        print(f"{e}", file=sys.stderr)
+        return 2
 
     if args.format == "json":
         print(to_json(result.task_id, result.findings, result.baseline_sane))
@@ -119,8 +124,17 @@ def _audit_bank(args) -> int:
         return 1
     args._detected = detected
     if args.live:
-        print(f"live mode: building a sandbox and running the grader for {len(tasks)} task(s) "
-              f"via --backend {args.backend} — this can be slow.\n", file=sys.stderr)
+        from rlgate.core.task import Capability
+        from rlgate.sandbox.select import resolve_backend
+        rep = next((t for t in tasks if Capability.CONTAINER in t.capabilities), tasks[0])
+        choice = resolve_backend(rep, args.backend)
+        print(f"live mode: backend '{choice.name}' ({choice.reason})", file=sys.stderr)
+        if not choice.usable:
+            print(f"  cannot run live: {choice.unavailable}", file=sys.stderr)
+            print("  (or run offline without --live for the on-disk probes)", file=sys.stderr)
+            return 2
+        print(f"  running the grader for {len(tasks)} task(s); this can be slow.\n",
+              file=sys.stderr)
 
     only = set(args.probe) if args.probe else None
     results: list[tuple[str, object, Exception | None]] = []

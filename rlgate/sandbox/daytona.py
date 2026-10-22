@@ -30,16 +30,22 @@ class DaytonaUnavailable(RuntimeError):
     pass
 
 
-def available() -> bool:
-    """Keys present and the SDK importable."""
+def unavailable_reason() -> str | None:
+    """None if Daytona can be used, else a human-readable reason + fix."""
     load_dotenv()
     if not os.environ.get("DAYTONA_API_KEY"):
-        return False
+        return ("DAYTONA_API_KEY is not set — add it (and DAYTONA_API_URL) to a .env in the "
+                "working directory, or use --backend docker/local")
     try:
         import daytona  # noqa: F401
     except ImportError:
-        return False
-    return True
+        return "the daytona SDK is not installed — run: pip install 'rlgate[daytona]'"
+    return None
+
+
+def available() -> bool:
+    """Keys present and the SDK importable."""
+    return unavailable_reason() is None
 
 
 class DaytonaOverlay(Overlay):
