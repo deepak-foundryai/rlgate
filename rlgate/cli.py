@@ -43,8 +43,11 @@ def main(argv: list[str] | None = None) -> int:
                         help="report: explained findings (default); summary: one-line table; json")
     p_bank.add_argument("--flagged-only", action="store_true",
                         help="hide tasks with no findings")
+    p_bank.add_argument("--live", action="store_true",
+                        help="also run EXECUTION probes: builds a sandbox + runs the grader per "
+                             "task (slow; --backend auto may use the cloud). Default is offline.")
     p_bank.add_argument("--static", action="store_true",
-                        help="static probes only — no sandbox/baseline (offline over real data)")
+                        help="(default) on-disk probes only — no sandbox/baseline")
     p_bank.add_argument("-k", type=int, default=5)
     p_bank.add_argument("--backend", choices=["auto", "local", "docker", "daytona"],
                         default="auto")
@@ -106,6 +109,8 @@ def _audit_bank(args) -> int:
         detected = detect_layout(args.target)
         args.preset = detected
 
+    args.static = not args.live   # offline is the default for a whole-bank sweep
+
     tasks = load_bank(args.target, preset=args.preset, mapping=args.mapping,
                       adapter=args.adapter, limit=args.limit)
     if not tasks:
@@ -113,6 +118,9 @@ def _audit_bank(args) -> int:
               "dir of task.rlgate.yaml; or pass --preset/--mapping.", file=sys.stderr)
         return 1
     args._detected = detected
+    if args.live:
+        print(f"live mode: building a sandbox and running the grader for {len(tasks)} task(s) "
+              f"via --backend {args.backend} — this can be slow.\n", file=sys.stderr)
 
     only = set(args.probe) if args.probe else None
     results: list[tuple[str, object, Exception | None]] = []
