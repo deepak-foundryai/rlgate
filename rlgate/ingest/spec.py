@@ -10,9 +10,9 @@ Example:
       image: ./Dockerfile                   # optional → CONTAINER
       report: {format: junit, path: /out/results.xml}   # optional → PER_TEST
       select: "pytest {tests} --junitxml=/out/results.xml"  # optional → subset runs
-    scoring_spec:                           # optional → reward_shape probes
-      schema: harbor_scorepy
-      path: ./score.py
+    scoring_spec:                           # optional → reward_shape probes (A1–A7)
+      schema: declarative                   # a registered rlgate.scoring schema plugin
+      path: ./scoring.rlgate.yaml
     languages: [python]
 """
 

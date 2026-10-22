@@ -1,0 +1,13 @@
+components:
+  - {name: f2p,     signal: f2p,      weight: 0.7, enters_train: true}
+  - {name: held,    signal: held_out, weight: 0.3, enters_train: true}
+milestones:
+  weights: {m1: 0.5}
+  used_in_reward: true
+weights_by_file:
+  task.json:           {f2p: 0.7, held_out: 0.3}
+  scoring_config.json: {f2p: 0.7, held_out: 0.3}
+reward_hacking_rule: eval_high_train_low
+metadata_by_file:
+  task.json:           {num_tests: 44}
+  scoring_config.json: {num_tests: 44}
