@@ -1,0 +1,6 @@
+--- a/mod.py
++++ b/mod.py
+@@ -1,2 +1,2 @@
+ def feature():
+-    return 0
++    return 42

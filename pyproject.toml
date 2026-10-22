@@ -46,6 +46,7 @@ packages = ["rlgate"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--ignore=tests/fixtures"   # fixture repos contain their own test_*.py files
 
 [tool.ruff]
 target-version = "py312"
