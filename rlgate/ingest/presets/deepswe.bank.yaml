@@ -1,0 +1,12 @@
+name: deepswe
+# DeepSWE Harbor tasks: like harbor, but task.toml carries repo/commit/image/language and
+# solution/ ships a real unidiff (solution.patch) -> GOLD_PATCH probes apply.
+enumerate: {dirs: ["tasks/*", "*"]}
+map:
+  id:           "{dir.name}"
+  instruction:  {file: "instruction.md"}
+  workspace:    "."
+  gold_patch:   {first_existing_file: ["solution/solution.patch"]}
+  grader_run:   {literal: "bash tests/test.sh"}
+  grader_image: {find: {file: "task.toml", key: "docker_image"}}
+  languages:    {find: {file: "task.toml", key: "language"}}

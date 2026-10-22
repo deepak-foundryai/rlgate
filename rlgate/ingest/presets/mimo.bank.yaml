@@ -1,0 +1,10 @@
+name: mimo
+# MiMo code-env dump: one dir per task under envs/, repo fs at image_fs/testbed.
+enumerate: {dirs: ["envs/*", "*"]}
+map:
+  id:           "{dir.name}"
+  instruction:  {file: "problem_statement.md"}
+  workspace:    {first_existing: ["image_fs/testbed", "."]}
+  grader_run:   {find: {file: "env.json", key: "test_command"}}
+  grader_image: {find: {file: "env.json", key: "docker_image"}}
+  languages:    {find: {file: "env.json", key: "language"}}

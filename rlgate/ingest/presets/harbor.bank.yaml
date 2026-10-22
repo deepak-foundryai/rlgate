@@ -1,0 +1,10 @@
+name: harbor
+# Harbor / Terminal-Bench task dirs: instruction.md, environment/Dockerfile, tests/test.sh,
+# solution/ (a script — no unidiff gold). Point target at the repo root or its tasks/ dir.
+enumerate: {dirs: ["tasks/*", "*"]}
+map:
+  id:           "{dir.name}"
+  instruction:  {file: "instruction.md"}
+  workspace:    "."
+  grader_run:   {literal: "bash tests/test.sh"}
+  grader_image: {first_existing: ["environment/Dockerfile"]}

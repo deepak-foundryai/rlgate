@@ -23,7 +23,11 @@ class AuditResult:
 
 
 def audit(task: Task, sandbox: Sandbox | None = None, k: int = 5,
-          only: set[str] | None = None, backend: str = "auto") -> AuditResult:
+          only: set[str] | None = None, backend: str = "auto",
+          static_only: bool = False) -> AuditResult:
+    if static_only:
+        return _audit_static(task, only)
+
     sandbox = sandbox or build_sandbox(task, prefer=backend)
     sandbox.build()
 
@@ -49,6 +53,23 @@ def audit(task: Task, sandbox: Sandbox | None = None, k: int = 5,
     if not baseline.sane:
         findings.insert(0, _baseline_finding(baseline))
     return AuditResult(task.id, baseline.sane, findings)
+
+
+def _audit_static(task: Task, only: set[str] | None) -> AuditResult:
+    """No sandbox, no baseline: run only probes that read the task on disk (needs_live=False).
+    For auditing a bank of real environments offline, where the container isn't available."""
+    from rlgate.core.context import Baseline
+
+    ctx = ProbeContext(sandbox=None, baseline=Baseline(0.0, 0.0, 0), variants=None)  # type: ignore[arg-type]
+    findings: list[Finding] = []
+    for pid, cls in discover().items():
+        if only and pid not in only:
+            continue
+        probe = cls()
+        if probe.meta.needs_live or not probe.applicable(task):
+            continue
+        findings.extend(probe.run(task, ctx))
+    return AuditResult(task.id, baseline_sane=False, findings=findings)
 
 
 def _baseline_finding(baseline) -> Finding:

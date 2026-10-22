@@ -32,6 +32,26 @@ rlgate audit path/to/env --gate # exits non-zero on FIX/DROP (CI mode)
 
 Once published to PyPI: `uvx rlgate audit ./env` or `uv tool install rlgate`.
 
+## Task banks
+
+Audit many tasks at once. Either a tree of `task.rlgate.yaml` descriptors, a bundled
+benchmark preset, or a declarative mapping for any other layout — the core and all probes are
+untouched in every case:
+
+```bash
+rlgate audit-bank ./examples/taskbank                 # discover task.rlgate.yaml (live)
+rlgate audit-bank ./swebench_verified.jsonl --preset swebench
+rlgate audit-bank /path/to/terminal-bench --preset harbor
+rlgate audit-bank /path/to/deep-swe --preset deepswe
+rlgate audit-bank ./data/mimo_code_envs --preset mimo --static   # offline, no container
+rlgate audit-bank ./my_bench --mapping ./bank.rlgate.yaml        # custom layout, no code
+```
+
+Presets (`mimo`, `swebench`, `harbor`, `deepswe`) are declarative mapping files under
+`rlgate/ingest/presets/`; a new benchmark is a copy-and-edit, not a Python module. `--static`
+runs only the probes that read the task on disk (leakage / forgery / hygiene / reward-shape),
+so a whole bank can be swept offline before any container is built.
+
 Describe any environment once — no code:
 
 ```yaml

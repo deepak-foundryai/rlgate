@@ -19,6 +19,7 @@ class GitUnreachableObjects(Probe):
         family="leakage",
         kind=ProbeKind.GENERIC,
         severity=Severity.HIGH,
+        needs_live=True,   # reads the object store inside a live overlay
         requires=frozenset({Capability.GIT_REPO}),
         doc="Unreachable git objects (deleted-but-unpruned branches) may hold the fix.",
     )

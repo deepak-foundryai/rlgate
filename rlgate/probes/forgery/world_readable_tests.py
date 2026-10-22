@@ -16,6 +16,7 @@ class WorldReadableTests(Probe):
         family="forgery",
         kind=ProbeKind.GENERIC,
         severity=Severity.HIGH,
+        needs_live=True,   # inspects runtime perms via a live overlay
         doc="/tests (held-out sources, scorer) is readable by the candidate UID.",
     )
 
