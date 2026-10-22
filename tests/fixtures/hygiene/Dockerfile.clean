@@ -1,0 +1,4 @@
+FROM python:3.12.4-slim
+COPY ./src /app/src
+RUN pip install requests==2.32.3
+RUN make -j4

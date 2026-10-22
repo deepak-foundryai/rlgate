@@ -1,0 +1,5 @@
+FROM python:latest
+# broad copy pulls everything
+COPY . /app
+RUN pip install requests>=2.0
+RUN make -j$(nproc)
