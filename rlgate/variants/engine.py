@@ -26,6 +26,7 @@ from rlgate.core.task import Task
 from rlgate.sandbox.base import ExecResult, Overlay, Sandbox
 from rlgate.sandbox.local import PatchConflict
 from rlgate.sandbox.parsers import TestStatus, collect
+from rlgate.variants.equivalence import equivalence_variants
 from rlgate.variants.mutate import mutate_variants
 from rlgate.variants.revert import Variant, revert_variants
 
@@ -60,6 +61,13 @@ class VariantEngine:
         increment, stub-return). Survivors are REVIEW-tier — see ``variants/mutate.py``."""
         assert self.task.gold_patch is not None
         return [self._score(v) for v in mutate_variants(self.task.gold_patch)]
+
+    def run_equivalence(self) -> list[VariantResult]:
+        """Free-variation transforms of the gold fix (incidental message strings). The grade
+        MUST stay pass; a built variant that drops below pass_reward is a proven over-fit."""
+        assert self.task.gold_patch is not None
+        variants = equivalence_variants(self.task.gold_patch, self.task.instruction)
+        return [self._score(v) for v in variants]
 
     # -- internals -------------------------------------------------------------------
 

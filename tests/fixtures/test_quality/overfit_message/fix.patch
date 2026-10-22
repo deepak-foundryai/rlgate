@@ -1,0 +1,9 @@
+--- a/mod.py
++++ b/mod.py
+@@ -1,2 +1,5 @@
+ def classify(n):
+-    return "todo"
++    print("classify called")
++    if n > 10:
++        return "big"
++    return "small"
