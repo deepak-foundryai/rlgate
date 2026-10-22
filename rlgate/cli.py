@@ -97,14 +97,22 @@ def _audit(args) -> int:
 
 def _audit_bank(args) -> int:
     from rlgate.core.report import eqs, triage
-    from rlgate.ingest.bank import load_bank
+    from rlgate.ingest.bank import detect_layout, load_bank
     from rlgate.pipeline import audit
+
+    # No explicit source → auto-detect a known task-dir layout (so a bank "just works").
+    detected = None
+    if not (args.preset or args.mapping or args.adapter):
+        detected = detect_layout(args.target)
+        args.preset = detected
 
     tasks = load_bank(args.target, preset=args.preset, mapping=args.mapping,
                       adapter=args.adapter, limit=args.limit)
     if not tasks:
-        print("no tasks found", file=sys.stderr)
+        print("no tasks found — point at a bank root (dir of task dirs), a benchmark file, or a "
+              "dir of task.rlgate.yaml; or pass --preset/--mapping.", file=sys.stderr)
         return 1
+    args._detected = detected
 
     only = set(args.probe) if args.probe else None
     results: list[tuple[str, object, Exception | None]] = []
@@ -133,8 +141,13 @@ def _tier_label(v) -> str:
 
 def _bank_report(results, args, eqs, triage) -> None:
     mode = "static (on-disk probes only, no container)" if args.static else f"live ({args.backend})"
-    src = f"preset: {args.preset}" if args.preset else (
-        f"mapping: {args.mapping}" if args.mapping else "discover task.rlgate.yaml")
+    if args.preset:
+        src = f"preset: {args.preset}" + (" (auto-detected)" if getattr(args, "_detected", None)
+                                          else "")
+    elif args.mapping:
+        src = f"mapping: {args.mapping}"
+    else:
+        src = "discover task.rlgate.yaml"
     print("rlgate task-bank audit")
     print(f"  bank:   {args.target}")
     print(f"  {src}   mode: {mode}")

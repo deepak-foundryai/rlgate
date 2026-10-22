@@ -18,6 +18,7 @@ class RevertProbe(Probe):
         family="grader_strength",
         kind=ProbeKind.GENERIC,
         severity=Severity.HIGH,
+        needs_live=True,   # runs variants in the sandbox
         requires=frozenset({Capability.GOLD_PATCH}),
         doc="A gold fix hunk can be removed and the grader still passes (unguarded line).",
     )

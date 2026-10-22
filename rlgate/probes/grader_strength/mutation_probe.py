@@ -24,6 +24,7 @@ class MutationProbe(Probe):
         family="grader_strength",
         kind=ProbeKind.GENERIC,
         severity=Severity.MEDIUM,
+        needs_live=True,   # runs variants in the sandbox
         requires=frozenset({Capability.GOLD_PATCH}),
         doc="A single-token mutation of the gold fix survives the suite (possible coverage gap).",
     )

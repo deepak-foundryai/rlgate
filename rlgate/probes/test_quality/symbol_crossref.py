@@ -19,6 +19,13 @@ from rlgate.core.registry import register
 from rlgate.core.task import Capability, Task
 
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]{4,}")  # length >= 5 cuts noise
+# Only symbols the gold patch *defines* (functions / classes / types it introduces) count as
+# implementation internals — not every token it touches (status_code, headers, … are ordinary
+# vocabulary, not internals). A test calling a gold-defined helper is the real over-fit.
+_DEF = re.compile(
+    r"\b(?:def|class|func|function|interface|struct|type)\s+([A-Za-z_]\w{3,})"
+    r"|\b(?:const|let|var)\s+([A-Za-z_]\w{3,})\s*=",
+)
 _TEST_GLOBS = ("test_*.py", "*_test.py", "*_test.go", "*.test.ts", "*.test.js",
                "*.spec.ts", "*.spec.js")
 _PRUNE = {".git", ".hg", "node_modules", ".venv", "venv", "__pycache__", ".tox"}
@@ -65,7 +72,10 @@ class SymbolCrossref(Probe):
         for pf in task.gold_patch.patchset:
             for hunk in pf:
                 added += [ln.value for ln in hunk if ln.is_added]
-        return {t.lower() for t in _IDENT.findall("\n".join(added))}
+        names = set()
+        for m in _DEF.finditer("\n".join(added)):
+            names.add((m.group(1) or m.group(2)).lower())
+        return names
 
     def _test_files(self, root: Path):
         seen: set[Path] = set()

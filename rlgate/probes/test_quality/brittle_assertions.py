@@ -74,6 +74,8 @@ class BrittleAssertions(Probe):
         hits = {m.group(2) for m in _STRING.finditer(text)} & gold_strings
         out = []
         for s in sorted(hits):
+            if " " not in s.strip():
+                continue  # an identifier/dict-key (account_id) is normal; wording is a phrase
             if s.lower() in instr:
                 continue  # the instruction names it → a real requirement, not a fingerprint
             out.append(self._f(

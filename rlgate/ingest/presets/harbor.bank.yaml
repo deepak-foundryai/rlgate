@@ -1,10 +1,13 @@
 name: harbor
-# Harbor / Terminal-Bench task dirs: instruction.md, environment/Dockerfile, tests/test.sh,
-# solution/ (a script — no unidiff gold). Point target at the repo root or its tasks/ dir.
+# Harbor task dirs (Terminal-Bench, DeepSWE, FoundryAI): instruction.md, environment/Dockerfile,
+# tests/test.sh, solution/ (a reference patch and/or a solve script). Task dirs may sit at the
+# bank root or under tasks/ — both are matched.
 enumerate: {dirs: ["tasks/*", "*"]}
 map:
   id:           "{dir.name}"
   instruction:  {file: "instruction.md"}
   workspace:    "."
+  gold_patch:   {first_existing_file: ["solution/patch.diff", "solution/solution.patch"]}
   grader_run:   {literal: "bash tests/test.sh"}
   grader_image: {first_existing: ["environment/Dockerfile"]}
+  languages:    {find: {file: "task.toml", key: "language"}}

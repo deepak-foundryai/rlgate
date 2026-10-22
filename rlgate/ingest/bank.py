@@ -26,6 +26,31 @@ def discover_tasks(root: str | Path) -> Iterator[Task]:
         yield spec.load(descriptor)
 
 
+def detect_layout(target: str | Path) -> str | None:
+    """Guess a bundled preset from the directory shape, so a bank of task dirs 'just works'
+    without --preset. Returns a preset name or None (→ discover task.rlgate.yaml)."""
+    p = Path(target)
+    if p.is_file():
+        return "swebench" if p.suffix in (".jsonl", ".json") else None
+    if not p.is_dir():
+        return None
+    if (p / "envs").is_dir():
+        return "mimo"
+    subdirs = [d for d in p.iterdir() if d.is_dir() and not d.name.startswith((".", "_"))]
+    if not subdirs:
+        return None
+    harbor = sum((d / "instruction.md").exists()
+                 and ((d / "task.toml").exists() or (d / "task.json").exists())
+                 for d in subdirs)
+    mimo = sum((d / "env.json").exists() for d in subdirs)
+    half = max(1, len(subdirs) // 2)
+    if harbor >= half:
+        return "harbor"
+    if mimo >= half:
+        return "mimo"
+    return None
+
+
 def load_bank(target: str | Path, preset: str | None = None,
               mapping: str | Path | None = None, adapter: str | None = None,
               limit: int | None = None) -> list[Task]:
