@@ -19,8 +19,16 @@ from rlgate.core.registry import register
 from rlgate.core.task import Task
 
 _PRUNE = {".git", ".hg", "node_modules", ".venv", "venv", ".tox"}
-_ANSWER_RE = re.compile(r"^(solution|answer|expected|gold|golden|reference)", re.IGNORECASE)
+# Full-stem match only — bare "reference"/"expected"/"gold" over-match real code (a Reference
+# class, a references table), so require a decisive answer-key word.
+_ANSWER_RE = re.compile(
+    r"^(solutions?|answers?|answer[_-]?key|ground[_-]?truth|expected[_-]?output|golden)$",
+    re.IGNORECASE,
+)
 _ANSWER_EXT = {".gold", ".golden", ".expected"}
+# Compiled / binary artifacts are build output, never a readable answer key.
+_SKIP_EXT = {".class", ".pyc", ".pyo", ".o", ".so", ".a", ".jar", ".db", ".bin", ".png",
+             ".jpg", ".jpeg", ".gif", ".pdf", ".zip", ".tar", ".gz", ".wasm"}
 _MAX = 25  # cap each category so a pathological tree can't flood the report
 
 
@@ -82,6 +90,8 @@ class CacheScan(Probe):
         out: list[Finding] = []
         for f in root.rglob("*"):
             if _pruned(f, root) or f.is_symlink() or not f.is_file():
+                continue
+            if f.suffix.lower() in _SKIP_EXT:
                 continue
             if _ANSWER_RE.match(f.stem) or f.suffix.lower() in _ANSWER_EXT:
                 out.append(self._finding(

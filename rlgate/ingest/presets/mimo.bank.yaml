@@ -4,7 +4,7 @@ enumerate: {dirs: ["envs/*", "*"]}
 map:
   id:           "{dir.name}"
   instruction:  {file: "problem_statement.md"}
-  workspace:    {first_existing: ["image_fs/testbed", "."]}
+  workspace:    {first_existing: ["image_fs/testbed", "image_fs/workspace"]}
   grader_run:   {find: {file: "env.json", key: "test_command"}}
   grader_image: {find: {file: "env.json", key: "docker_image"}}
   languages:    {find: {file: "env.json", key: "language"}}

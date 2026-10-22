@@ -168,11 +168,14 @@ class BankMapping:
             except (ValueError, OSError):
                 return None
         if "first_existing" in src:
-            for rel in src["first_existing"]:
+            rels = src["first_existing"]
+            for rel in rels:
                 p = ctx.base / _tpl(rel, ctx.vars)
                 if p.exists():
                     return str(p.resolve())
-            return None
+            # none exist → the first candidate's (nonexistent) path, so probes scan THAT
+            # location and find nothing, rather than falling back to the task dir itself.
+            return str((ctx.base / _tpl(rels[0], ctx.vars)).resolve()) if rels else None
         if "first_existing_file" in src:
             for rel in src["first_existing_file"]:
                 p = ctx.base / _tpl(rel, ctx.vars)
