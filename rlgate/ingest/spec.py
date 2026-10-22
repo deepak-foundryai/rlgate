@@ -9,6 +9,7 @@ Example:
       run: "bash run_tests.sh"
       image: ./Dockerfile                   # optional → CONTAINER
       report: {format: junit, path: /out/results.xml}   # optional → PER_TEST
+      select: "pytest {tests} --junitxml=/out/results.xml"  # optional → subset runs
     scoring_spec:                           # optional → reward_shape probes
       schema: harbor_scorepy
       path: ./score.py
@@ -45,6 +46,7 @@ def load(descriptor_path: str | Path) -> Task:
         image=str(rel(g["image"])) if g.get("image") else None,
         report=report,
         pass_reward=float(g.get("pass_reward", 1.0)),
+        select=g.get("select"),
     )
 
     instruction = None

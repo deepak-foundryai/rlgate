@@ -58,6 +58,8 @@ class GraderSpec:
     image: str | None = None        # Dockerfile path or image ref; None → local sandbox
     report: ReportSpec | None = None
     pass_reward: float = 1.0        # reward when the run signals full success
+    select: str | None = None       # subset-run template with a {tests} slot (cost opt);
+                                     # needs PER_TEST. None → always run the full `run`.
 
     @property
     def capabilities(self) -> set[Capability]:
