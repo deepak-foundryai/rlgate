@@ -39,8 +39,7 @@ class GitUnreachableObjects(Probe):
         except NotImplementedError:
             env = ctx.sandbox.overlay(None)
         with env:
-            res = env.exec("git fsck --unreachable --no-reflogs 2>/dev/null | head -n 2000",
-                           timeout=300)
+            res = env.exec(_FSCK, timeout=300)
             refs = env.exec(_REFS, timeout=300)
             known = [(label, hit) for label, text in _changes(task)
                      for hit in _known_versions(env, text)]
@@ -61,7 +60,11 @@ class GitUnreachableObjects(Probe):
         sample = ""
         for ln in res.stdout.splitlines():
             parts = ln.split()
-            if len(parts) >= 3 and parts[0] == "unreachable":
+            if len(parts) == 3 and parts[0] == "count":            # awk's totals
+                kinds[parts[1]] = int(parts[2])
+            elif len(parts) == 2 and parts[0] == "sample":
+                sample = parts[1][:12]
+            elif len(parts) >= 3 and parts[0] == "unreachable":    # no awk: a capped list
                 kinds[parts[1]] = kinds.get(parts[1], 0) + 1
                 if parts[1] == "commit" and not sample:
                     sample = parts[2][:12]
@@ -123,6 +126,13 @@ class GitUnreachableObjects(Probe):
             fix_hint=fix,
         )
 
+
+# Unreachable objects, counted per type. --connectivity-only skips re-hashing every object
+# (seconds instead of minutes on a large pack); awk counts without a cap.
+_FSCK = ("git fsck --unreachable --no-reflogs --connectivity-only 2>/dev/null | "
+         "if command -v awk >/dev/null 2>&1; then awk '$1==\"unreachable\" {n[$2]++; "
+         "if ($2==\"commit\" && s==\"\") s=$3} END {for (k in n) print \"count\", k, n[k]; "
+         "if (s!=\"\") print \"sample\", s}'; else head -n 2000; fi")
 
 _FIX_HISTORY = ("ship the repository without the history that holds the change: a fresh "
                 "single-commit snapshot of the starting tree (no other refs, no packs from the "

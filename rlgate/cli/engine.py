@@ -180,6 +180,23 @@ class Selection:
         return list(self.review.models) if self.review is not None else None
 
 
+def _needs_baseline(sel: Selection) -> bool:
+    """Whether the selected checks grade anything. False only for a run of checks that
+    just inspect the environment (e.g. --only leaks), as the pipeline decides."""
+    from rlgate.core.registry import all_probes
+    from rlgate.core.rules import step_of_probe
+
+    if sel.steps is None or sel.steps & {1, 2}:
+        return True
+    for pid, cls in all_probes().items():
+        st = step_of_probe(pid)
+        if st is None or st.number not in sel.steps:
+            continue
+        if (sel.only is None or pid in sel.only) and cls.meta.needs_baseline:
+            return True
+    return False
+
+
 def select(only_groups: list[str] | None, skip: list[str], *, step: int | None = None,
            start: int | None = None, keep_going: bool = False, parallel: bool = False,
            workers: int = 1, depth: str = "fast") -> Selection:
@@ -284,10 +301,11 @@ def check_task(task: Task, target: str, *, mode: Mode, runs: int, sel: Selection
     if steps and prior is not None:
         _say_resume(prior, reuse, sel)
     if mode.name == "full" and steps and not reuse:
-        ui.err().print(f"Full run on {_backend_name(mode.backend)}: builds every image, then "
-                       f"grades the reference solution and a do-nothing submission {runs} "
-                       f"times each before the later steps. --quick skips all of that.",
-                       style="dim", highlight=False)
+        grades = (f", then grades the reference solution and a do-nothing submission {runs} "
+                  "times each before the later steps" if _needs_baseline(sel) else
+                  " (these checks only look at the environment, so nothing is graded)")
+        ui.err().print(f"Full run on {_backend_name(mode.backend)}: builds every image{grades}. "
+                       "--quick skips all of that.", style="dim", highlight=False)
     try:
         result = audit(task, k=runs, only=only, backend=mode.backend,
                        static_only=mode.name == "quick", include_review=True,

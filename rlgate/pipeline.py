@@ -190,6 +190,9 @@ class _Run:
            reuse: set[int], parallel: bool = False) -> None:
         r = self.result
         later: list[Step] = []             # parallel: steps 3-6 to run together at the end
+        to_run = [st for st in STEPS if st.number >= 3 and st.number not in reuse
+                  and (steps is None or st.number in steps)]
+        parallel = parallel and len(to_run) > 1      # one step has nothing to overlap with
         for st in STEPS:
             n = st.number
             if r.stopped_at is not None:
@@ -271,7 +274,8 @@ class _Run:
         from rlgate.variants.engine import pmap
 
         r = self.result
-        if not self.quick and not self._ensure_baseline():    # the build broke after all
+        need = any(self._needs_baseline(st) for st in later)
+        if not self.quick and not self._ensure_baseline(need=need):   # the build broke
             for st in later:
                 r.steps.append(StepRun(st.number, StepRun.NOT_RUN,
                                        reason=f"fix step {r.stopped_at} first"))

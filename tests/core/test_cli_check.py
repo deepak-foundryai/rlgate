@@ -476,14 +476,23 @@ def test_jobs_and_output_are_check_options(tmp_path, capsys):
     assert code in (0, 1, 2) and json.loads(out.read_text())["tasks"] >= 2
 
 
-def test_a_leak_only_run_skips_the_reference_and_do_nothing_gradings(capsys, monkeypatch):
+def test_a_leak_only_run_skips_the_reference_and_do_nothing_gradings(capsys, monkeypatch,
+                                                                    tmp_path):
     import rlgate.pipeline as P
 
     def no(*a, **k):
         raise AssertionError("graded the baseline for a leak-only run")
     monkeypatch.setattr(P, "establish", no)
-    code, out, _ = run(capsys, "check", CLEAN, "--only", "leaks", "--fresh")
-    assert code in (0, 1) and "Step 3 Leaks ✓ passed" in _flat(out)
+    for extra in ([], ["--config", str(_parallel_toml(tmp_path))]):   # sequential, parallel
+        code, out, err = run(capsys, "check", CLEAN, "--only", "leaks", "--fresh", *extra)
+        assert code in (0, 1) and "Step 3 Leaks ✓ passed" in _flat(out)
+        assert "nothing is graded" in _flat(err) and "5 times each" not in _flat(err)
+
+
+def _parallel_toml(tmp_path):
+    p = tmp_path / "rlgate.toml"
+    p.write_text("[checks]\nparallel = true\n")
+    return p
 
 
 def test_each_run_gets_a_named_folder_with_results_reports_and_a_log(capsys, tmp_path):
