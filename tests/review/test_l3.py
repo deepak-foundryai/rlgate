@@ -288,13 +288,6 @@ def test_a_made_up_repo_quote_does_not_resolve_a_lead():
     assert any("not verbatim" in x for x in agent.results["ambiguity"])
 
 
-def test_estimate_adds_the_agent_on_full_runs():
-    s = Session(["openai/gpt-x"], client=Agent(), votes=1, agent_turns=10)
-    task = spec.load(SHOP)
-    # two L3 audits and three L4 hack runs, 10 turns each at most
-    assert s.estimate([task], agentic=True).calls == s.estimate([task]).calls + 50
-
-
 def test_the_agent_is_told_its_turns_and_reminded_before_they_run_out():
     seen: list[list[dict]] = []
 

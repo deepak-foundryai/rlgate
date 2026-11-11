@@ -52,7 +52,7 @@ Example ``rlgate.toml``::
     votes = 3                   # independent calls per review question
     author = "openai/<model>"   # the model that wrote the tasks: judges of its family are
                                 # left out (a task's own metadata author_model wins)
-    budget_usd = 5.0            # stop the LLM review once this much is spent in one run
+    # budget_usd = 5.0          # optional: stop the LLM review at this spend (no cap by default)
     min_confidence = 0.5        # judge negatives below this are discarded
     agent = "openai/<model>"    # the L3 agent that writes and runs implementations
                                 # (empty: the first review judge)

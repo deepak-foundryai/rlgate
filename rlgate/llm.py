@@ -141,25 +141,6 @@ def _register(litellm: Any, todo: dict[str, dict], info: dict[str, dict]) -> Non
         _REGISTERED[m] = info[m]
 
 
-def price(model: str, tokens_in: int, tokens_out: int) -> float | None:
-    """Dollars for one call, from LiteLLM's price table; None when the price is unknown.
-
-    LiteLLM answers $0 for some models it has no price for (e.g. many behind OpenRouter),
-    so $0 counts as unknown unless ``[models.info]`` sets the price (a local model is
-    free only when you say so)."""
-    try:
-        import litellm
-        litellm.suppress_debug_info = True
-        a, b = litellm.cost_per_token(model=model, prompt_tokens=tokens_in,
-                                      completion_tokens=tokens_out)
-        usd = float(a) + float(b)
-    except Exception:  # noqa: BLE001 - an unknown model has no price, not an error
-        return None
-    if usd == 0.0 and not _priced(model):
-        return None
-    return usd
-
-
 def _priced(model: str) -> bool:
     v = _REGISTERED.get(model) or {}
     return "input_cost_per_token" in v or "output_cost_per_token" in v
@@ -297,7 +278,7 @@ class LLM:
         choice = resp.choices[0]
         text = choice.message.content or ""
         usage = getattr(resp, "usage", None)
-        cost = _cost(resp)
+        cost = _cost(resp, self.model)
         if cost is not None:
             self.spent_usd += cost
         finish = (choice.finish_reason or "").lower()
@@ -364,7 +345,7 @@ def chat(llm: LLM, messages: list[dict], tools: list[dict], *,
     message["role"] = "assistant"
     message.setdefault("content", "")
     usage = getattr(resp, "usage", None)
-    cost = _cost(resp)
+    cost = _cost(resp, llm.model)
     if cost is not None:
         llm.spent_usd += cost
     return ChatTurn(message, calls, getattr(msg, "content", "") or "",
@@ -401,12 +382,16 @@ def _with_schema_instruction(messages: list[dict], schema: dict) -> list[dict]:
     return [{"role": "system", "content": instr}] + messages
 
 
-def _cost(resp) -> float | None:
+def _cost(resp, model: str) -> float | None:
+    """Dollars for one call; None when unknown. LiteLLM answers $0 for some models it has no
+    price for (many behind OpenRouter), so $0 counts as unknown unless ``[models.info]`` sets
+    the price (a local model is free only when you say so)."""
     try:
         import litellm
-        return float(litellm.completion_cost(completion_response=resp))
+        usd = float(litellm.completion_cost(completion_response=resp))
     except Exception:  # noqa: BLE001 - unknown pricing is not an error
         return None
+    return None if usd == 0.0 and not _priced(model) else usd
 
 
 def _classify(e: Exception, model: str) -> LLMError:
@@ -512,5 +497,5 @@ def provider_env_hint(model: str) -> str:
     return f"{model.split('/', 1)[0].upper()}_API_KEY" if "/" in model else "API key"
 
 
-__all__ = ["LLM", "ROUTERS", "ChatTurn", "LLMError", "LLMResult", "chat", "family", "price",
+__all__ = ["LLM", "ROUTERS", "ChatTurn", "LLMError", "LLMResult", "chat", "family",
            "provider_env_hint", "register_models", "same_family", "validate"]

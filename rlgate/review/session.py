@@ -33,7 +33,6 @@ if TYPE_CHECKING:
     from rlgate.agentic.judges import Audit
 from rlgate.llm import LLM, ChatTurn, LLMError, LLMResult, family, register_models
 from rlgate.llm import chat as llm_chat
-from rlgate.llm import price as llm_price
 from rlgate.review import judges as J
 from rlgate.review.bundle import Bundle, build
 from rlgate.review.cite import Negative, why_invalid
@@ -79,15 +78,6 @@ class Rewrite:
     remaining: list[str]               # problems the re-review still found
 
 
-@dataclass
-class Estimate:
-    calls: int
-    input_tokens: int
-    output_tokens: int
-    usd: float | None                  # None: a model's price is unknown to LiteLLM
-    unpriced: list[str] = field(default_factory=list)
-
-
 class Session:
     def __init__(self, models: list[str], *, votes: int = 3, min_confidence: float = 0.5,
                  author: str | None = None, budget_usd: float | None = None,
@@ -112,6 +102,9 @@ class Session:
         self.spent = 0.0
         self.calls = 0
         self.cached = 0
+        self.tokens_in = 0
+        self.tokens_out = 0
+        self.unpriced = 0          # calls whose cost the provider didn't report
         self._lock = threading.Lock()
         self._memo: dict[tuple, Any] = {}
         self._keylocks: dict[tuple, threading.Lock] = {}
@@ -458,9 +451,15 @@ class Session:
         except LLMError as e:
             raise CouldNotJudge(str(e)) from e
         with self._lock:
-            self.calls += 1
-            self.spent += t.cost_usd or 0.0
+            self._count(t)
         return t
+
+    def _count(self, r) -> None:   # under self._lock
+        self.calls += 1
+        self.spent += r.cost_usd or 0.0
+        self.tokens_in += r.input_tokens
+        self.tokens_out += r.output_tokens
+        self.unpriced += r.cost_usd is None
 
     # -- calls -----------------------------------------------------------------------------
 
@@ -489,8 +488,7 @@ class Session:
         except LLMError as e:
             raise CouldNotJudge(str(e)) from e
         with self._lock:
-            self.calls += 1
-            self.spent += res.cost_usd or 0.0
+            self._count(res)
         self._save(key, res)
         return res
 
@@ -529,54 +527,6 @@ class Session:
         if kind == "err":
             raise val
         return val
-
-    # -- cost ------------------------------------------------------------------------------
-
-    def estimate(self, tasks: list[Task], *, agentic: bool = False) -> Estimate:
-        """Calls, tokens and dollars for reviewing ``tasks`` (no network; LiteLLM's price
-        table). Rewrites are not counted: they happen only when a statement needs one.
-        ``agentic``: add the two L3 audits and the three L4 hack runs per task at their
-        turn limit (an upper bound: most runs finish earlier)."""
-        calls = tin = tout = 0
-        usd = 0.0
-        unpriced: set[str] = set()
-        sys_tokens = len(J.SYSTEM) // 4
-        for task in tasks:
-            b = self.bundle(task)
-            try:
-                panel = self.panel(task)
-            except CouldNotJudge:
-                continue
-            plan: list[tuple[str, int]] = []      # (model, prompt tokens)
-            first = len(b.render(repo=False)) // 4 + sys_tokens + 400
-            for a in J.ARTIFACTS:
-                if _applies_quiet(a, b):
-                    plan.append((panel[0], first))
-            second = len(b.hidden.render(repo=True)) // 4 + sys_tokens + 400
-            for q in J.QUESTIONS:
-                if _applies_quiet(q, b):
-                    plan += [(panel[i % len(panel)], second) for i in range(self.votes)]
-            if agentic and task.gold_patch is not None and b.statement.strip():
-                model = self.agent or panel[0]
-                base = (len(b.statement) + len("\n".join(b.tree[:200]))) // 4 + 1500
-                # L3: two audits (one without tests to read); L4: three hack runs (on a
-                # container backend). Old tool outputs are masked, so a turn's prompt stops
-                # growing after about KEEP + STEP tool results.
-                from rlgate.agentic.loop import KEEP, STEP
-                runs = (2 if b.tests else 1) + 3
-                for _ in range(runs):
-                    for t in range(self.agent_turns):
-                        plan.append((model, base + AGENT_TURN_GROWTH * min(t, KEEP + STEP)))
-            for model, tokens in plan:
-                calls += 1
-                tin += tokens
-                tout += OUTPUT_TOKENS
-                price = llm_price(model, tokens, OUTPUT_TOKENS)
-                if price is None:
-                    unpriced.add(model)
-                else:
-                    usd += price
-        return Estimate(calls, tin, tout, None if unpriced else usd, sorted(unpriced))
 
 
 def _applies(check: str, b: Bundle) -> None:

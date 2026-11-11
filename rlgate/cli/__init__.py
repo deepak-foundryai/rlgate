@@ -335,14 +335,13 @@ def check(
                                         "Docker.", rich_help_panel=DEPTH)] = False,
     deep_review: Annotated[bool, typer.Option(
         "--deep-review", help="Add the LLM review: judges read the task, and an agent tries "
-        "to cheat. Shows the cost and asks before spending.", rich_help_panel=DEPTH)] = False,
+        "to cheat. Prints the total cost at the end.",
+        rich_help_panel=DEPTH)] = False,
     model: Annotated[list[str] | None, typer.Option(
         "--model", help="With --deep-review: the judge model, any LiteLLM provider/model "
         "(anthropic/..., openai/..., gemini/..., ollama/...). Repeat it for a panel.",
         rich_help_panel=DEPTH)] = None,
-    yes: Annotated[bool, typer.Option("--yes", "-y", help="With --deep-review: don't ask "
-                                      "before spending. The budget in rlgate.toml still "
-                                      "applies.", rich_help_panel=DEPTH)] = False,
+    yes: Annotated[bool, typer.Option("--yes", "-y", hidden=True)] = False,   # no-op now
     exhaustive: Annotated[bool, typer.Option(
         "--exhaustive", help="Grade every mutation instead of skipping variants that can't "
         "add a finding.", rich_help_panel=DEPTH)] = False,
@@ -460,9 +459,7 @@ def check(
                  "depth": "full" if exhaustive else None}
         go_on = not fail_fast
         if deep_review:
-            review = _deep_review(cfg, model or [], tasks, yes=yes, quick=quick)
-            if review is None:
-                return 1
+            review = _deep_review(cfg, model or [])
         only_ = only or None
         if kind == "bank":
             views, mode, secs = E.check_bank(
@@ -496,10 +493,9 @@ def check(
     return view.exit_code
 
 
-def _deep_review(cfg: S.Settings, models: list[str], tasks: list, *, yes: bool,
-                 quick: bool = False):
-    """--deep: the judge panel, checked and priced, after the user says yes. None when the
-    user says no; CheckError when it can't run."""
+def _deep_review(cfg: S.Settings, models: list[str]):
+    """--deep-review: the judge panel, checked before the run; CheckError when it can't run.
+    The cost is shown at the end (_spent); [models] budget_usd caps it."""
     from rlgate.cli import engine as E
     from rlgate.llm import family
     from rlgate.review.session import Session
@@ -511,7 +507,7 @@ def _deep_review(cfg: S.Settings, models: list[str], tasks: list, *, yes: bool,
         ms.review = list(models)
     panel = ms.panel()
     if not panel:
-        raise E.CheckError("--deep needs a judge model.", "add --model provider/model, or "
+        raise E.CheckError("--deep-review needs a judge model.", "add --model provider/model, or "
                            "[models] review in rlgate.toml")
     bad = [m for m in panel if "/" not in m]
     if bad:
@@ -531,7 +527,7 @@ def _deep_review(cfg: S.Settings, models: list[str], tasks: list, *, yes: bool,
         elif cfg_source == "defaults":
             nxt = ("rlgate init --user writes ~/.config/rlgate/rlgate.toml for every folder; "
                    "or pass --model provider/model")
-        raise E.CheckError(f"--deep can't call its judge: {problems[0]} ({where}).", nxt)
+        raise E.CheckError(f"--deep-review can't call its judge: {problems[0]} ({where}).", nxt)
     if ms.author and all(family(m) == family(ms.author) for m in panel):
         raise E.CheckError(
             f"every judge is from the {family(ms.author)} family, which wrote the tasks "
@@ -541,39 +537,20 @@ def _deep_review(cfg: S.Settings, models: list[str], tasks: list, *, yes: bool,
     if len(fams) == 1 and ms.votes > 1:
         ui.notice(f"Every judge is from one model family ({fams.pop()}). Independent votes "
                   "work best from mixed families: add one with another --model.")
-    est = review.estimate(tasks, agentic=not quick)
-    cost = (f"about ${est.usd:.2f}" if est.usd is not None else
-            "cost unknown (LiteLLM has no price for " + ", ".join(est.unpriced) + "; set "
-            "one under [models.info.\"<model>\"] in rlgate.toml)")
-    cap = (f" Stops at ${ms.budget_usd:.2f} ([models] budget_usd)." if ms.budget_usd
-           else "")
-    n = len(tasks)
-    agent = (" On a full run that includes the L3 agent (at most "
-             f"{ms.agent_turns} turns and {ms.agent_grades} gradings per audit, two audits "
-             "per task), so it is an upper bound." if not quick else
-             " The L3 agent needs a full run, so --quick leaves it out.")
-    ui.notice(f"--deep: the LLM review makes about {est.calls} calls "
-              f"({est.input_tokens:,} tokens in, about {est.output_tokens:,} out) "
-              f"for {n} task{'s' if n != 1 else ''} with {', '.join(panel)}: {cost}. "
-              f"A statement that needs a rewrite adds 2-3 calls.{agent}{cap} Review "
-              "answers already in the cache cost nothing.")
-    if yes:
-        return review
-    if not sys.stdin.isatty():
-        raise E.CheckError("--deep asks before spending money, and there is no terminal to "
-                           "ask on.", "add --yes to run the LLM review without asking")
-    if not typer.confirm("Run the LLM review?", default=False, err=True):
-        ui.echo("Nothing was run.", console=ui.err())
-        return None
     return review
 
 
 def _spent(review) -> None:
     if review is None:
         return
-    cached = f", {review.cached} from the cache" if review.cached else ""
+    cached = f", {review.cached} answered from the cache" if review.cached else ""
+    cost = f"${review.spent:.2f}"
+    if review.unpriced:
+        cost = (f"at least {cost} ({review.unpriced} call(s) had no price; set one under "
+                '[models.info."<model>"] in rlgate.toml)')
     ui.err().print(f"LLM review: {review.calls} call{'s' if review.calls != 1 else ''}"
-                   f"{cached}, ${review.spent:.2f} spent.", style="dim", highlight=False)
+                   f"{cached}, {review.tokens_in:,} tokens in, {review.tokens_out:,} out, "
+                   f"{cost} spent.", style="dim", highlight=False)
 
 
 # -- explain / repro -------------------------------------------------------------------------
@@ -954,7 +931,7 @@ _USER_STARTER = '''# Your rlgate settings, used from every folder. A project's o
 type = "auto"
 
 [models]
-# Only rlgate check --deep uses models. Any LiteLLM provider/model, with that provider's
+# Only rlgate check --deep-review uses models. Any LiteLLM provider/model, with that provider's
 # key in .env (ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, ...).
 # review = ["openrouter/<maker>/<model>", "openrouter/<other-maker>/<model>"]
 # agent = "openrouter/<maker>/<model>"     # the L3 agent (empty: the first review judge)
@@ -1028,8 +1005,7 @@ def selftest(
                                               "(most planted defects need it).")] = False,
     model: Annotated[list[str] | None, typer.Option("--model", help="Judge model(s).")
                      ] = None,
-    yes: Annotated[bool, typer.Option("--yes", "-y", help="Don't ask before spending.")
-                   ] = False,
+    yes: Annotated[bool, typer.Option("--yes", "-y", hidden=True)] = False,   # no-op now
     backend: Annotated[str | None, typer.Option("--backend", help="auto, docker, daytona, "
                                                 "local.")] = None,
 ) -> int:

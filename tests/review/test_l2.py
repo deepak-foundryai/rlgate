@@ -369,11 +369,6 @@ def test_answers_are_cached_on_disk(task, tmp_path):
     assert first.calls and not again.calls and s.cached == len(first.calls)
 
 
-def test_estimate_counts_every_call(task):
-    est = _session(Judge()).estimate([task])
-    assert est.calls == 13 and est.input_tokens > 0
-
-
 # -- settings and CLI ---------------------------------------------------------------------
 
 def test_review_settings(tmp_path, monkeypatch):
@@ -395,17 +390,6 @@ def test_cli_model_needs_deep(capsys):
     from rlgate.cli import main
     assert main(["check", "examples/taskbank/clean", "--quick", "--model", "openai/x"]) == 2
     assert "--deep" in capsys.readouterr().err
-
-
-def test_cli_deep_asks_first_and_needs_yes_without_a_terminal(capsys, monkeypatch):
-    pytest.importorskip("litellm")
-    from rlgate.cli import main
-    monkeypatch.setenv("OPENAI_API_KEY", "test")
-    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
-    assert main(["check", "examples/taskbank/clean", "--quick", "--deep",
-                 "--model", "openai/gpt-4o"]) == 2
-    err = capsys.readouterr().err
-    assert "calls" in err and "--yes" in err
 
 
 def test_cli_deep_end_to_end_through_litellm(capsys, monkeypatch):
@@ -435,11 +419,14 @@ def test_cli_deep_end_to_end_through_litellm(capsys, monkeypatch):
     monkeypatch.setattr(litellm, "completion", completion)
     monkeypatch.setattr(litellm, "completion_cost", lambda completion_response: 0.002)
     monkeypatch.setattr(litellm, "supports_response_schema", lambda model: True)
-    code = main(["check", "examples/taskbank/clean", "--quick", "--deep", "--yes",
+    # no question up front, even without a terminal; the total comes at the end
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+    code = main(["check", "examples/taskbank/clean", "--quick", "--deep-review",
                  "--model", "openai/gpt-4o", "--fresh"])
     err = capsys.readouterr().err
     assert seen and all(kw["model"] == "openai/gpt-4o" for kw in seen)
-    assert "LLM review:" in err and "spent" in err
+    assert "LLM review:" in err and "tokens in" in err and "spent" in err
+    assert "Run the LLM review?" not in err
     assert code in (0, 1)
 
 

@@ -408,7 +408,7 @@ def test_check_help_groups_its_flags():
              if not getattr(p, "hidden", False)}
     want = {"--only": "Scope", "--from": "Scope", "--failed": "Scope", "--fresh": "Scope",
             "--limit": "Scope", "--quick": "Depth", "--deep-review": "Depth",
-            "--model": "Depth", "--yes": "Depth", "--exhaustive": "Depth", "--runs": "Depth",
+            "--model": "Depth", "--exhaustive": "Depth", "--runs": "Depth",
             "--jobs": "Execution", "--backend": "Execution", "--backend-opt": "Execution",
             "--fail-fast": "Execution", "--format": "Output", "--output": "Output",
             "--config": "Config", "--layout": "Config"}

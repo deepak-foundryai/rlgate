@@ -11,6 +11,17 @@
   each step). A bank stays one step at a time per task. `parallel = false` under
   `[checks]` in `rlgate.toml` turns it off.
 
+### Added
+
+- **RG301 also reports refs outside the starting commit's history** (an upstream branch or
+  tag behind a fresh "task base" commit, a side branch) and leftover file contents or trees
+  in the object store. These need your judgment: the fix may be there, but rlgate can't
+  prove it without a reference solution. Refs past the starting commit are still proven.
+
+- **`--deep-review` no longer estimates the cost or asks before running.** It prints the
+  calls, tokens and total cost at the end. `budget_usd` under `[models]` is an optional cap, off by default.
+  `--yes` is accepted as a no-op.
+
 ### Renamed (the old names still work, with a notice, until the next release)
 
 | Old | New |

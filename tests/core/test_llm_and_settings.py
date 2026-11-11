@@ -171,19 +171,18 @@ def test_openrouter_key_is_what_check_asks_for(monkeypatch):
     assert LLM(model="openrouter/openai/gpt-4o").check() is None
 
 
-def test_a_zero_price_litellm_guessed_counts_as_unknown():
-    from rlgate.llm import price, register_models
+def test_a_zero_price_litellm_guessed_counts_as_unknown(monkeypatch):
+    from rlgate.llm import _cost, register_models
     # LiteLLM answers $0 for some OpenRouter models it has no price for.
-    assert price("openrouter/anthropic/claude-sonnet-4", 10_000, 1_500) is None
-    assert price("openrouter/rlgate-test/no-such-model", 10_000, 1_500) is None
-    register_models({"openrouter/rlgate-test/priced": {
-        "input_cost_per_token": 1e-6, "output_cost_per_token": 2e-6,
-        "supports_function_calling": True}})
-    assert price("openrouter/rlgate-test/priced", 10_000, 1_500) == pytest.approx(0.013)
-    assert litellm.supports_function_calling("openrouter/rlgate-test/priced")
+    monkeypatch.setattr(litellm, "completion_cost", lambda completion_response: 0.0)
+    assert _cost(object(), "openrouter/rlgate-test/no-such-model") is None
     register_models({"ollama/rlgate-test-free": {"input_cost_per_token": 0,
-                                                 "output_cost_per_token": 0}})
-    assert price("ollama/rlgate-test-free", 10, 10) == 0.0      # free because you said so
+                                                 "output_cost_per_token": 0,
+                                                 "supports_function_calling": True}})
+    assert _cost(object(), "ollama/rlgate-test-free") == 0.0      # free because you said so
+    assert litellm.supports_function_calling("ollama/rlgate-test-free")
+    monkeypatch.setattr(litellm, "completion_cost", lambda completion_response: 0.013)
+    assert _cost(object(), "openrouter/rlgate-test/no-such-model") == pytest.approx(0.013)
 
 
 def test_model_info_in_the_config(tmp_path):
