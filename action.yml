@@ -1,0 +1,46 @@
+name: rlgate
+description: Check RL training environments for reward-hacking holes; findings appear as pull-request annotations.
+branding:
+  icon: shield
+  color: purple
+inputs:
+  path:
+    description: A task folder, or a folder of tasks.
+    required: true
+  args:
+    description: Extra arguments for `rlgate check` (for example `--quick` or `--only cheating`).
+    required: false
+    default: ""
+  version:
+    description: rlgate version or git ref to install (default: this action's ref).
+    required: false
+    default: ""
+  upload-sarif:
+    description: Upload findings to GitHub code scanning so they show on the pull request.
+    required: false
+    default: "true"
+outputs:
+  exit-code:
+    description: 0 ready, 1 needs fixes, 2 broken or could not run.
+    value: ${{ steps.check.outputs.exit-code }}
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v6
+    - id: check
+      shell: bash
+      run: |
+        set +e
+        SRC="git+https://github.com/${{ github.action_repository || 'deepak-foundryai/rlgate' }}@${{ inputs.version || github.action_ref || 'main' }}"
+        uvx --from "$SRC" rlgate check "${{ inputs.path }}" ${{ inputs.args }} --format sarif --output rlgate.sarif --quiet
+        code=$?
+        uvx --from "$SRC" rlgate report --format markdown >> "$GITHUB_STEP_SUMMARY"
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        exit 0
+    - if: inputs.upload-sarif == 'true'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: rlgate.sarif
+        category: rlgate
+    - shell: bash
+      run: exit ${{ steps.check.outputs.exit-code }}

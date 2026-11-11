@@ -1,0 +1,13 @@
+# Use in a task repo's .pre-commit-config.yaml:
+#   - repo: https://github.com/deepak-foundryai/rlgate
+#     rev: <tag>
+#     hooks:
+#       - id: rlgate-quick
+#         args: [./tasks]
+- id: rlgate-quick
+  name: rlgate quick check
+  description: File-only rlgate checks (seconds, no Docker); fails on proven problems or items to review.
+  entry: rlgate check --quick --quiet
+  language: python
+  pass_filenames: false
+  always_run: true

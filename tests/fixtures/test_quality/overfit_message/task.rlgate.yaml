@@ -1,0 +1,8 @@
+id: overfit_message
+source: fixture
+workspace: ./repo
+gold_patch: ./fix.patch
+instruction: "Implement classify(n): return 'big' when n > 10, else 'small'."
+grader:
+  run: "python3 -m pytest -q"
+languages: [python]

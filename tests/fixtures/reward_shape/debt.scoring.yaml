@@ -1,0 +1,15 @@
+components:
+  - {name: f2p,       signal: f2p,        weight: 0.7, enters_train: true}
+  - {name: p2p,       signal: p2p,        weight: 1.0, gate: true, enters_train: true}   # A4
+  - {name: held,      signal: held_out,   weight: 0.0, enters_train: false}              # A1
+  - {name: lint_build, signal: lint_build, weight: 0.1, gated_by: [f2p]}                 # A5
+milestones:                     # A2
+  weights: {m1: 0.2, m2: 0.3}
+  used_in_reward: false
+weights_by_file:                # A3
+  task.json:           {f2p: 0.7, p2p: 0.3}
+  scoring_config.json: {f2p: 0.6, p2p: 0.4}
+reward_hacking_rule: train_gt_eval   # A6 (wrong direction)
+metadata_by_file:               # A7
+  task.json:           {num_tests: 44}
+  scoring_config.json: {num_tests: 43}

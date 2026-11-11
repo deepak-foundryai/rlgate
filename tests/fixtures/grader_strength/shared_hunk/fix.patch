@@ -1,0 +1,11 @@
+--- a/calc.py
++++ b/calc.py
+@@ -1,6 +1,6 @@
+ def f(x):
+-    return 0
++    return x + 1
+ 
+ 
+ def g(x):
+-    return 0
++    return x + 2

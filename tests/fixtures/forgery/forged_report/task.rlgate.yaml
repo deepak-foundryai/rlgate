@@ -1,0 +1,10 @@
+id: forged_report
+source: fixture
+workspace: ./repo
+gold_patch: ./fix.patch
+grader:
+  # trusts a report that is already there (the forgeable pattern)
+  run: "test -f results.xml || python3 -m pytest -q -p no:cacheprovider --junitxml=results.xml"
+  report: {format: junit, path: results.xml}
+  verdict: report
+languages: [python]

@@ -1,0 +1,7 @@
+id: conftest_hijack
+source: fixture
+workspace: ./repo
+gold_patch: ./fix.patch
+grader:
+  run: "python3 -m pytest -q"
+languages: [python]

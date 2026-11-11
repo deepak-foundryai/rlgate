@@ -1,0 +1,14 @@
+--- a/shop.py
++++ b/shop.py
+@@ -1,6 +1,9 @@
+ def classify(n):
+-    return None
++    print("classify called")
++    if n > 10:
++        return "big"
++    return "small"
+ 
+ 
+ def double(x):
+-    return None
++    return x * 2

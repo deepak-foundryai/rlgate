@@ -1,0 +1,12 @@
+name: swebench
+# SWE-bench(-style) JSONL: one row per instance. Point target at the .jsonl (or a dir of them).
+# Live scoring needs the repo checked out at <jsonl_dir>/<instance_id>.
+enumerate: {records: "*.jsonl"}
+map:
+  id:           {field: instance_id}
+  instruction:  {field: problem_statement}
+  gold_patch:   {field: patch}
+  grader_image: {field: image_name}
+  grader_run:   {literal: "python -m pytest -q"}
+  languages:    {literal: [python]}
+  workspace:    "{field.instance_id}"

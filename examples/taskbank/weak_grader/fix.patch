@@ -1,0 +1,15 @@
+--- a/calc.py
++++ b/calc.py
+@@ -1,5 +1,5 @@
+ def f(x):
+-    return 0
++    return x + 1
+ 
+ 
+ # -- filler to keep the two fixes in separate diff hunks --
+@@ -11,4 +11,4 @@
+ 
+ 
+ def g(x):
+-    return 0
++    return x + 2

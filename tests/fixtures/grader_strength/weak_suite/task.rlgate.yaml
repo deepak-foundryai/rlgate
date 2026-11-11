@@ -1,0 +1,7 @@
+id: weak_suite
+source: fixture
+workspace: ./repo
+gold_patch: ./fix.patch
+grader:
+  run: "python3 check.py"
+languages: [python]

@@ -1,0 +1,7 @@
+id: slow_task
+source: fixture
+workspace: ./repo
+gold_patch: ./fix.patch
+grader:
+  run: "python3 -m pytest -q -p no:cacheprovider"
+languages: [python]

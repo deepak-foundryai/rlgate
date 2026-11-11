@@ -1,0 +1,20 @@
+--- a/app/limiter.py
++++ b/app/limiter.py
+@@ -11,11 +11,13 @@
+         self.tokens = float(capacity)
+         self.last = clock()
+ 
+-    def allow(self) -> tuple[bool, str]:
+-        now = self.clock()
+-        self.tokens += (now - self.last) * self.refill_per_s
++    def _refill(self, now: float) -> None:
++        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.refill_per_s)
+         self.last = now
++
++    def allow(self) -> tuple[bool, str]:
++        self._refill(self.clock())
+         if self.tokens >= 1:
+             self.tokens -= 1
+             return True, "ok"
+-        return False, "denied"
++        return False, "Rate limit exceeded, retry later"

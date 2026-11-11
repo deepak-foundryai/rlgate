@@ -1,0 +1,10 @@
+id: shop
+source: fixture
+workspace: ./repo
+gold_patch: ./fix.patch
+instruction: "In shop.py, implement classify(n), which returns 'big' when n > 10 and 'small' otherwise, and double(x), which returns x multiplied by 2 for any integer x."
+grader:
+  run: "python3 -m pytest -q -p no:cacheprovider .graded --junitxml=.graded/report.xml"
+  tests: [{from: ./hidden, to: .graded}]
+  report: {format: junit, path: .graded/report.xml}
+languages: [python]

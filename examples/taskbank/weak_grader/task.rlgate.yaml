@@ -1,0 +1,8 @@
+id: weak_grader
+source: example
+workspace: ./repo
+gold_patch: ./fix.patch
+instruction: "Implement f(x)=x+1 and g(x)=x+2."
+grader:
+  run: "python3 check.py"
+languages: [python]

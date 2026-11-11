@@ -1,0 +1,18 @@
+.venv/
+dist/
+build/
+__pycache__/
+
+# Evaluation data (MiMo envs etc.) — large, kept out of git
+data/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+.DS_Store
+.env
+.rlgate/
+
+# maintainers-only test cases on task banks that cannot be distributed
+tests/cases/private.py
+.claude/

@@ -1,0 +1,9 @@
+--- a/mod.py
++++ b/mod.py
+@@ -1,6 +1,5 @@
+ import time
+ 
+ 
+ def work():
+-    time.sleep(0.3)
+     return 1

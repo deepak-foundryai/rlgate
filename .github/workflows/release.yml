@@ -1,0 +1,18 @@
+name: release
+on:
+  push:
+    tags: ["v*"]           # e.g. v0.0.1
+
+jobs:
+  pypi:
+    runs-on: ubuntu-latest
+    environment: pypi       # configure PyPI Trusted Publishing for this repo+environment
+    permissions:
+      id-token: write       # OIDC token for Trusted Publishing (no API token needed)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - name: Build
+        run: uv build
+      - name: Publish to PyPI (Trusted Publishing via OIDC)
+        uses: pypa/gh-action-pypi-publish@release/v1
