@@ -31,9 +31,11 @@ rlgate check ./rate-limiter                             quick run · 0.0s
 ## Install
 
 ```bash
-uv tool install 'git+https://github.com/deepak-foundryai/rlgate'
-# optional extras: 'rlgate[daytona]' for Daytona sandboxes, 'rlgate[llm]' for --deep-review
+uv tool install rlgate                          # or: pip install rlgate
+uv tool install 'rlgate[daytona,llm]'          # with Daytona sandboxes and --deep-review
 ```
+
+The latest unreleased version: `uv tool install 'git+https://github.com/deepak-foundryai/rlgate'`.
 
 Python 3.12+. Full runs need Docker or a Daytona account; `--quick` needs neither.
 
