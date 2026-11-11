@@ -36,6 +36,8 @@ def revert_variants(gold: Patch) -> list[Variant]:
     ps = gold.patchset
     variants: list[Variant] = []
     for pf in ps:
+        if _vcs_metadata(pf.path):
+            continue    # git's own files (ORIG_HEAD, logs, index): no test guards a hunk there
         for i, _hunk in enumerate(pf):
             origin = f"{pf.path}#hunk{i}"
             text = _patch_without(ps, pf.path, i)
@@ -48,6 +50,11 @@ def revert_variants(gold: Patch) -> list[Variant]:
                 origin=origin,
             ))
     return variants
+
+
+def _vcs_metadata(path: str) -> bool:
+    """A file inside a ``.git`` directory, where a solution that runs git leaves changes."""
+    return ".git" in path.replace("\\", "/").split("/")[:-1]
 
 
 def _patch_without(ps, file_path: str, drop_index: int) -> str | None:

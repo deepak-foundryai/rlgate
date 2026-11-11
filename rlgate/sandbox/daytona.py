@@ -91,6 +91,8 @@ class DaytonaOptions:
                                           # goes over rather than deadlock
     region: str | None = None             # region whose quota to watch (default: largest)
     dind_image: str = "docker:28.3.3-dind"   # compose stacks run in Docker-in-Docker
+    stack_hosts: int = 4                  # compose tasks: Docker-in-Docker sandboxes per
+                                          # task, one live stack each (more run at once)
     dockerd_wait_s: float = 120
 
     @classmethod

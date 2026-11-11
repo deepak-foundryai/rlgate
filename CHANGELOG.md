@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.1.3 (2026-11-11)
+
+### Fixed
+
+- **Compose tasks on Daytona no longer hang or crawl.** 0.1.1 ran a task's stacks one at a
+  time on one sandbox; with steps 3-6 and the agents running together they queued behind
+  each other (the hack agent holds a stack for its whole session) and could wait forever.
+  Now each live stack gets its own Docker-in-Docker sandbox, sized for one stack as the
+  harness runs it: sandboxes are added as needed, up to `stack_hosts` per task (default 4,
+  `--backend-opt stack_hosts=N`), each building the task's images once. A thread that
+  already holds a stack never waits for a second one.
+- **`--model` now drives the agents too.** An `agent` model in an `rlgate.toml` no longer
+  overrides the model you pass on the command line; `--agent-model` picks the agents' model
+  separately. The run prints which model each role uses.
+- **A model that can't answer stops the run before it starts:** `--deep-review` makes one
+  tiny call per model first, so a wrong model name shows at once instead of every judge
+  failing later.
+- `pip install 'rlgate[llm]'` installs `tenacity`, which LiteLLM needs to retry a call;
+  without it a failing call showed "tenacity import failed" instead of the real error.
+- **A stack that fails to start is retried once** from scratch (a database's first-boot
+  race, a slow disk) before the task counts as not checked; if it fails again the error
+  names the stopped containers and their exit codes.
+- **A judge answer cut off at `max_tokens`** (a reasoning model can spend its budget
+  thinking) is asked once more with twice the room, same model, up to 65,536 tokens.
+- A reference solution that runs git no longer makes git's own files (`.git/ORIG_HEAD`,
+  logs) count as untested parts of the fix (RG101).
+- Each agent turn is logged in `rlgate.log` (the model's time and the tools it called);
+  a check that doesn't apply is logged as such, not as failed.
+- The cost line names how to price a model LiteLLM doesn't know (the hint was cut out of
+  the message).
+- The single-task progress line is kept well inside the terminal width, so it can't wrap
+  and repeat down the screen.
+
 ## 0.1.2 (2026-11-11)
 
 ### Fixed

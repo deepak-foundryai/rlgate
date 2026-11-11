@@ -4,4 +4,4 @@ Public surface is intentionally small; everything extensible lives behind the re
 in ``rlgate.core.registry`` (probes, loaders, sandboxes, scoring schemas).
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"

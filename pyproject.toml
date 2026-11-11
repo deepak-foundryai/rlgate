@@ -1,6 +1,6 @@
 [project]
 name = "rlgate"
-version = "0.1.2"
+version = "0.1.3"
 description = "A deterministic, third-party auditor that finds reward-hacking vulnerabilities in RL/eval environments."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -30,10 +30,11 @@ Issues = "https://github.com/deepak-foundryai/rlgate/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.6", "pyright>=1.1",
-       "litellm>=1.108.4", "daytona>=0.100"]   # so the LLM and Daytona code paths are tested
+       "litellm>=1.108.4", "tenacity>=8", "daytona>=0.100"]   # so the LLM and Daytona code paths are tested
 daytona = ["daytona>=0.100"]   # cloud sandbox backend (default for container tasks)
 llm = [
     "litellm>=1.108.4",
+    "tenacity>=8",          # LiteLLM needs it for num_retries, but doesn't declare it
 ]
 
 [project.scripts]

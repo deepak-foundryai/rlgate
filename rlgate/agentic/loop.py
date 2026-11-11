@@ -15,10 +15,14 @@ cost and the author-family rule apply to the agent exactly as to the L2 judges).
 
 from __future__ import annotations
 
+import logging
+import time
 from collections.abc import Callable
 
 from rlgate.agentic.judges import AmbiguityJudge, StrengthJudge, _Judge
 from rlgate.llm import ChatTurn
+
+log = logging.getLogger("rlgate.agent")
 
 NUDGES = 2                      # replies without a tool call before the loop gives up
 KEEP = 8                        # tool outputs kept in full; older ones are masked
@@ -155,7 +159,10 @@ def run(judge: _Judge, turn: Callable[[list[dict], list[dict]], ChatTurn], user:
             messages.append({"role": "user", "content": (
                 f"{max_turns - i} turns left and nothing graded yet. Stop exploring: write "
                 "your best candidate now, check it with run, and grade it.")})
+        t0 = time.monotonic()
         t = turn(messages, tools)
+        log.info("agent turn %d/%d: model %.1fs; tools: %s", i + 1, max_turns,
+                 time.monotonic() - t0, ", ".join(n for _, n, _ in t.calls) or "none")
         messages.append(t.message)
         if not t.calls:
             nudges += 1
@@ -165,7 +172,9 @@ def run(judge: _Judge, turn: Callable[[list[dict], list[dict]], ChatTurn], user:
                              "finish when you are done."})
             continue
         for call_id, name, args in t.calls:
+            t0 = time.monotonic()
             out = judge.call(name, args)
+            log.debug("agent tool %s took %.1fs", name, time.monotonic() - t0)
             messages.append({"role": "tool", "tool_call_id": call_id, "name": name,
                              "content": out})
         if judge.done:

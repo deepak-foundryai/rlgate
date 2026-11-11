@@ -158,32 +158,138 @@ class DockerImageEnv(EnvProvider):
         self._live.clear()
 
 
-class ComposeEnv(EnvProvider):
-    """A multi-service stack on a Docker host (local, or a Docker-in-Docker sandbox).
+class StackHosts:
+    """The Docker hosts compose stacks run on.
 
-    Images are built once under fixed tags (an override file names them), so every
+    On Daytona each host is a Docker-in-Docker sandbox sized for ONE stack, as the harness
+    runs a task, so a stack gets a host to itself: the pool grows on demand up to ``cap``
+    hosts (each builds the task's images once). Past that a stack waits for a free host. A
+    thread that already holds a host never waits for a second one (that could wait forever);
+    it shares the least busy host instead. Locally there is one host (this machine's
+    daemon) and stacks share it."""
+
+    def __init__(self, make: Callable[[], Machine], cap: int, *, exclusive: bool = True,
+                 wait_log_s: float = 120) -> None:
+        self._make = make
+        self.cap = max(1, cap)
+        self.exclusive = exclusive
+        self._wait_log_s = wait_log_s
+        self._hosts: list[_StackHost] = []
+        self._cond = threading.Condition()
+        self._held = threading.local()
+        self._closed = False
+
+    @property
+    def size(self) -> int:
+        return len(self._hosts)
+
+    def lease(self) -> _StackHost:
+        held = getattr(self._held, "n", 0)
+        waited = time.monotonic()
+        with self._cond:
+            while True:
+                if self._closed:
+                    raise MachineError("the task's stack hosts were closed")
+                ready = [h for h in self._hosts if h.machine is not None]
+                free = [h for h in ready if h.busy == 0]
+                if free or (not self.exclusive and ready):
+                    h = min(free or ready, key=lambda h: h.busy)
+                    break
+                if len(self._hosts) < self.cap:
+                    h = _StackHost(len(self._hosts))
+                    self._hosts.append(h)        # reserved; made outside the lock
+                    break
+                if held and ready:
+                    h = min(ready, key=lambda h: h.busy)
+                    log.info("stack host %d shared: this thread already holds one", h.n)
+                    break
+                if not self._cond.wait(timeout=self._wait_log_s):
+                    log.info("waiting %.0fs for a free stack host (%d in use)",
+                             time.monotonic() - waited, len(self._hosts))
+            h.busy += 1
+        if h.machine is None:
+            try:
+                log.info("starting stack host %d of at most %d", h.n + 1, self.cap)
+                m = self._make()
+            except BaseException:
+                with self._cond:
+                    self._hosts.remove(h)
+                    self._cond.notify_all()
+                raise
+            with self._cond:
+                h.machine = m
+                self._cond.notify_all()
+        self._held.n = held + 1
+        return h
+
+    def release(self, h: _StackHost) -> None:
+        self._held.n = max(0, getattr(self._held, "n", 1) - 1)
+        with self._cond:
+            h.busy -= 1
+            self._cond.notify_all()
+
+    def close(self) -> None:
+        with self._cond:
+            self._closed = True
+            hosts, self._hosts = self._hosts, []
+            self._cond.notify_all()
+        for h in hosts:
+            if h.machine is not None:
+                try:
+                    h.machine.close()
+                except Exception as e:  # noqa: BLE001 - cleanup must reach every host
+                    log.warning("could not close a stack host: %s", e)
+
+
+class _StackHost:
+    def __init__(self, n: int) -> None:
+        self.n = n
+        self.machine: Machine | None = None
+        self.busy = 0
+        self.ready: set[str] = set()         # ComposeEnv keys whose images are built here
+        self.prep = threading.Lock()
+
+
+class ComposeEnv(EnvProvider):
+    """A multi-service stack on a Docker host (local, or Docker-in-Docker sandboxes).
+
+    Images are built once per host under fixed tags (an override file names them), so every
     ``fresh`` is a new compose project brought up from those images with no rebuild — each
     candidate gets its own database and services, torn down (``down -v``) when it closes."""
 
     _counter = 0
     _counter_lock = threading.Lock()
 
-    def __init__(self, spec: EnvSpec, key: str, host: Callable[[], Machine],
-                 slots: threading.Semaphore | None = None) -> None:
+    def __init__(self, spec: EnvSpec, key: str, hosts: StackHosts) -> None:
         super().__init__(spec)
         assert spec.compose is not None
         self.key = _slug(key)[:40]
-        self._host_factory = host
-        self._slots = slots     # stacks that fit on the host at once (None: no limit)
-        self.host: Machine | None = None
+        self.hosts = hosts
         self.remote_dir = f"/rlgate/{self.key}"
-        self._base = ""
+        rd = self.remote_dir
+        self._base = (f"docker compose --project-directory {rd} -f {rd}/.rlgate-base.yaml "
+                      f"-f {rd}/{spec.compose.name} -f {rd}/.rlgate-override.yaml")
 
     def provision(self) -> None:
+        """Build on the first host now, so a broken build is reported by step 1."""
+        h = self.hosts.lease()
+        try:
+            self._ready_on(h)
+        finally:
+            self.hosts.release(h)
+
+    def _ready_on(self, h: _StackHost) -> None:
+        with h.prep:
+            if self.key in h.ready:
+                return
+            assert h.machine is not None
+            self._setup(h.machine)
+            h.ready.add(self.key)
+
+    def _setup(self, host: Machine) -> None:
         s = self.spec
         assert s.compose is not None
-        self.host = self._host_factory()
-        upload_dir(self.host, s.compose.parent, self.remote_dir, replace=True)
+        upload_dir(host, s.compose.parent, self.remote_dir, replace=True)
         layers = {".rlgate-base.yaml": _compose_base(s),
                   ".rlgate-override.yaml": _compose_override(s.compose, self.key, s.service,
                                                              prebuilt=bool(s.image))}
@@ -191,52 +297,64 @@ class ComposeEnv(EnvProvider):
         try:
             for name, doc in layers.items():
                 (tmp / name).write_text(yaml.safe_dump(doc, sort_keys=False))
-                upload_file(self.host, tmp / name, f"{self.remote_dir}/{name}")
+                upload_file(host, tmp / name, f"{self.remote_dir}/{name}")
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
-        rd = self.remote_dir
-        self._base = (f"docker compose --project-directory {rd} -f {rd}/.rlgate-base.yaml "
-                      f"-f {rd}/{s.compose.name} -f {rd}/.rlgate-override.yaml")
-        self.host.check(f"{self._base} -p rlgate-{self.key}-build build",
-                        what=f"compose build ({s.compose})", timeout=int(s.build_timeout_s))
+        host.check(f"{self._base} -p rlgate-{self.key}-build build",
+                   what=f"compose build ({s.compose})", timeout=int(s.build_timeout_s))
 
     def fresh(self) -> Machine:
-        assert self.host is not None, "provision() first"
         with ComposeEnv._counter_lock:
             ComposeEnv._counter += 1
             n = ComposeEnv._counter
         cmd = f"{self._base} -p rlgate-{self.key}-{n}"
-        host = self.host
-        slots = self._slots
+        h = self.hosts.lease()
         released = threading.Event()
 
         def down() -> None:
             try:
-                host.exec(f"{cmd} down -v --remove-orphans --timeout 5", timeout=300)
+                if h.machine is not None:
+                    h.machine.exec(f"{cmd} down -v --remove-orphans --timeout 5", timeout=300)
             finally:
-                if slots is not None and not released.is_set():
+                if not released.is_set():
                     released.set()
-                    slots.release()
+                    self.hosts.release(h)
 
-        if slots is not None:
-            slots.acquire()     # each stack is sized for the whole host: one at a time
-        log.debug("compose up %s", cmd)
+        try:
+            self._ready_on(h)
+        except BaseException:
+            released.set()
+            self.hosts.release(h)
+            raise
+        host = h.machine
+        assert host is not None
+        log.debug("compose up on host %d: %s", h.n + 1, cmd)
         up = host.exec(f"{cmd} up -d --no-build", timeout=900)
         if up.exit_code != 0:
+            # a service that fails to start once (a database's first-boot race, a slow
+            # disk) is retried once from scratch before the stack counts as broken
+            state = _stack_state(host, cmd)
+            log.info("compose up failed on host %d, retrying once:%s\n%s", h.n + 1, state,
+                     (up.stdout + up.stderr)[-1500:])
+            host.exec(f"{cmd} down -v --remove-orphans --timeout 5", timeout=300)
+            up = host.exec(f"{cmd} up -d --no-build", timeout=900)
+        if up.exit_code != 0:
+            state = _stack_state(host, cmd)
             down()
-            raise MachineError(f"compose up failed:\n{(up.stdout + up.stderr)[-2000:]}")
+            raise MachineError(f"compose up failed twice:{state}\n"
+                               f"{(up.stdout + up.stderr)[-2000:]}")
         m = ComposeMachine(host, cmd, self.spec.service, self.spec.workdir, on_close=down)
         for _ in range(60):
             if m.exec("true", timeout=30).exit_code == 0:
                 return m
-            import time
             time.sleep(2)
+        state = _stack_state(host, cmd)
         m.close()
         raise MachineError(f"compose service {self.spec.service!r} never became ready"
-                           + _stack_state(host, cmd))
+                           + state)
 
     def close(self) -> None:
-        self.host = None    # the host machine is owned (and closed) by the sandbox
+        pass                # the hosts are owned (and closed) by the sandbox
 
 
 def _stack_state(host: Machine, cmd: str) -> str:
@@ -345,9 +463,8 @@ class StagedSandbox(Sandbox):
         self._outside: Path | None = None            # pristine artifacts outside the workdir
         self._ws_env: EnvProvider | None = None
         self._grader_env: EnvProvider | None = None
-        self._dind: Machine | None = None
-        self._dind_lock = threading.Lock()
-        self._stack_slots = threading.Semaphore(1)   # live compose stacks on the DinD host
+        self._stack_hosts: StackHosts | None = None  # compose: where the stacks run
+        self._hosts_lock = threading.Lock()
         self._oracle_capture: Path | None = None     # separate: artifacts after solve.sh
         self._oracle_ws: Path | None = None          # workdir after solve.sh
         self._oracle_log: str = ""
@@ -403,9 +520,9 @@ class StagedSandbox(Sandbox):
                 env.close()
             except Exception as e:  # noqa: BLE001
                 log.warning("environment cleanup failed: %s", e)
-        if self._dind is not None:
-            self._dind.close()
-            self._dind = None
+        if self._stack_hosts is not None:
+            self._stack_hosts.close()
+            self._stack_hosts = None
         for p in (self.workspace_dir, self._outside, self._oracle_capture, self._oracle_ws,
                   *self._tmp):
             if p is not None:
@@ -527,34 +644,50 @@ class StagedSandbox(Sandbox):
     def _provider(self, spec: EnvSpec, role: str) -> EnvProvider:
         key = f"{self.task.id}-{role}"
         if spec.compose is not None:
-            # on a Docker-in-Docker sandbox sized for ONE stack, stacks run one at a time
-            # (as the harness runs them); several at once can run the host out of memory
-            slots = None if self.backend == "docker" else self._stack_slots
-            return ComposeEnv(spec, key, self._docker_host, slots)
+            return ComposeEnv(spec, key, self._hosts())
         if self.backend == "daytona":
             return DaytonaImageEnv(spec, self.task.id, self.options)
         return DockerImageEnv(spec, self.task.id)
 
-    def _docker_host(self) -> Machine:
-        """Where compose stacks run: this machine's daemon, or ONE Docker-in-Docker sandbox
-        per task (shared by its workspace and grader stacks, so images build once)."""
-        if self.backend == "docker":
-            return HostMachine()
-        with self._dind_lock:
-            if self._dind is None:
-                from rlgate.sandbox.daytona import DaytonaSandbox
-                specs = [s for s in (self.ws_spec, self.grader_spec) if s is not None]
-                biggest = max(specs, key=lambda s: (s.memory_mb or 0, s.cpus or 0))
-                fleet = DaytonaSandbox.for_env(
-                    EnvSpec(compose=biggest.compose or Path("docker-compose.yaml"),
-                            cpus=max((s.cpus or 0) for s in specs) or None,
-                            memory_mb=max((s.memory_mb or 0) for s in specs) or None,
-                            storage_mb=max((s.storage_mb or 0) for s in specs) or None,
-                            build_timeout_s=max(s.build_timeout_s for s in specs)),
-                    self.task.id, self.options)
-                fleet.build()
-                self._dind = _OwningMachine(fleet.machine(), fleet)
-            return self._dind
+    def _hosts(self) -> StackHosts:
+        """Where compose stacks run: this machine's daemon, or Docker-in-Docker sandboxes
+        each sized for one stack (``stack_hosts`` of them at most, default 4)."""
+        with self._hosts_lock:
+            if self._stack_hosts is not None:
+                return self._stack_hosts
+            if self.backend == "docker":
+                self._stack_hosts = StackHosts(HostMachine, 1, exclusive=False)
+                return self._stack_hosts
+            from rlgate.sandbox.daytona import DaytonaOptions, DaytonaSandbox
+            specs = [s for s in (self.ws_spec, self.grader_spec) if s is not None]
+            biggest = max(specs, key=lambda s: (s.memory_mb or 0, s.cpus or 0))
+            opts = DaytonaOptions.from_kwargs(self.options)
+            fleet = DaytonaSandbox.for_env(
+                EnvSpec(compose=biggest.compose or Path("docker-compose.yaml"),
+                        cpus=max((s.cpus or 0) for s in specs) or None,
+                        memory_mb=max((s.memory_mb or 0) for s in specs) or None,
+                        storage_mb=max((s.storage_mb or 0) for s in specs) or None,
+                        build_timeout_s=max(s.build_timeout_s for s in specs)),
+                self.task.id, opts)
+            built = threading.Lock()
+            state = {"built": False}
+
+            def make() -> Machine:
+                with built:
+                    if not state["built"]:
+                        fleet.build()
+                        state["built"] = True
+                return fleet.machine()
+
+            pool = StackHosts(make, opts.stack_hosts)
+            outer = pool.close
+
+            def close() -> None:
+                outer()
+                fleet.close()           # deletes every sandbox the fleet made
+            pool.close = close          # type: ignore[method-assign]
+            self._stack_hosts = pool
+            return pool
 
     def _pull_workspace(self, m: Machine) -> Path:
         assert self.workdir is not None
@@ -670,25 +803,6 @@ class StagedSandbox(Sandbox):
             return g.cwd
         spec = self.grader_spec if self.separate else self.ws_spec
         return (spec.workdir if spec else None) or self.workdir
-
-
-class _OwningMachine(Machine):
-    """A machine that also releases its factory when closed (the DinD host)."""
-
-    def __init__(self, inner: Machine, owner) -> None:
-        self.inner, self.owner = inner, owner
-
-    def exec(self, cmd: str, *, cwd: str | None = None, timeout: int = 900) -> ExecResult:
-        return self.inner.exec(cmd, cwd=cwd, timeout=timeout)
-
-    def put_file(self, local: Path, remote: str) -> None:
-        self.inner.put_file(local, remote)
-
-    def get_file(self, remote: str, local: Path) -> None:
-        self.inner.get_file(remote, local)
-
-    def close(self) -> None:
-        self.owner.close()          # deletes every sandbox the factory made
 
 
 # -- helpers ----------------------------------------------------------------------------

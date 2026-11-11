@@ -94,7 +94,8 @@ There are 76 rules in total, listed in [docs/rules.md](docs/rules.md) or by `rlg
 | `--limit N` | At most N tasks of a folder |
 | `--quick` | File-only checks: seconds, no Docker |
 | `--deep-review` | Add the LLM review (below); prints the total cost at the end |
-| `--model M` | Judge model for `--deep-review`; repeat it for a panel |
+| `--model M` | Model for `--deep-review` (judges and agents); repeat it for a panel |
+| `--agent-model M` | A different model for the agents (L3, L4) |
 | `--exhaustive` | Grade every mutation instead of skipping ones that can't add a finding |
 | `--runs N` | Grading runs of the reference and do-nothing submissions (default 5) |
 | `-j N` | Check N tasks at once |
@@ -188,6 +189,9 @@ On Daytona:
 - **Account limits:** rlgate reads your plan's limits (snapshots, and CPU, memory and disk
   per region) and works within them. To free a snapshot slot it deletes only idle
   `rlgate-*` snapshots it made itself, never yours.
+- **Multi-container tasks** (a `docker-compose.yaml`): each running stack gets its own
+  sandbox, sized for one stack as the harness runs it; up to 4 per task
+  (`--backend-opt stack_hosts=N`), each building the task's images once.
 - **Infrastructure errors:** a task the backend failed on is reported as **Not checked**.
   Run the same command again without `--fresh` and only those tasks re-run.
 
@@ -202,6 +206,19 @@ pip install 'rlgate[llm]'
 export OPENROUTER_API_KEY=...
 rlgate check ./task --deep-review --model openrouter/openai/gpt-4o --model openrouter/google/gemini-2.5-pro
 ```
+
+Any OpenAI-compatible endpoint works the same way, with no settings file. For example,
+Tinker:
+
+```bash
+export OPENAI_API_BASE=https://tinker.thinkingmachines.dev/services/tinker-prod/oai/api/v1
+export OPENAI_API_KEY=<your Tinker key>
+rlgate check ./task --deep-review --model "openai/deepseek-ai/DeepSeek-V4.1-Flash:peft:262144"
+```
+
+Use the model name the endpoint serves (`rlgate doctor --ping --model M` checks it). Before
+the review starts, rlgate makes one tiny call to each model, so a wrong name stops the run
+at once.
 
 It runs in three layers:
 

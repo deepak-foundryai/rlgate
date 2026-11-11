@@ -26,11 +26,15 @@ Robustness rules, because a judge verdict feeds a keep/drop decision:
 from __future__ import annotations
 
 import json
+import logging
 import re
 from dataclasses import dataclass, field
 from typing import Any
 
 from rlgate.config import load_dotenv
+
+log = logging.getLogger("rlgate.llm")
+MAX_TOKENS_RETRY = 65536        # a truncated answer is retried once, up to this budget
 
 
 class LLMError(RuntimeError):
@@ -272,22 +276,33 @@ class LLM:
         elif schema is not None:
             kwargs["messages"] = _with_schema_instruction(messages, schema)
 
-        try:
-            resp: Any = litellm.completion(**kwargs)
-        except Exception as e:
-            raise _classify(e, self.model) from e
-        self.calls += 1
+        retried = False
+        while True:
+            try:
+                resp: Any = litellm.completion(**kwargs)
+            except Exception as e:
+                raise _classify(e, self.model) from e
+            self.calls += 1
 
-        choice = resp.choices[0]
-        text = choice.message.content or ""
-        usage = getattr(resp, "usage", None)
-        cost = _cost(resp, self.model)
-        if cost is not None:
-            self.spent_usd += cost
-        finish = (choice.finish_reason or "").lower()
-        if finish == "length":
-            raise LLMError("truncated", f"{self.model} hit max_tokens before finishing; "
-                                        "raise models.max_tokens")
+            choice = resp.choices[0]
+            text = choice.message.content or ""
+            usage = getattr(resp, "usage", None)
+            cost = _cost(resp, self.model)
+            if cost is not None:
+                self.spent_usd += cost
+            finish = (choice.finish_reason or "").lower()
+            if finish != "length":
+                break
+            # a reasoning model can spend its budget thinking: the same model once more,
+            # with twice the room (never a different model)
+            room = kwargs["max_tokens"]
+            if retried or room >= MAX_TOKENS_RETRY:
+                raise LLMError("truncated", f"{self.model} hit max_tokens ({room}) before "
+                                            "finishing")
+            retried = True
+            kwargs["max_tokens"] = min(2 * room, MAX_TOKENS_RETRY)
+            log.info("%s hit max_tokens=%d; retrying once with %d", self.model, room,
+                     kwargs["max_tokens"])
         if finish in ("content_filter", "refusal"):
             raise LLMError("refused", f"{self.model} declined to answer ({finish})")
         return LLMResult(

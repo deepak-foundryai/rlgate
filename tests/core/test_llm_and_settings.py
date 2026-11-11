@@ -84,10 +84,11 @@ def test_invalid_twice_fails_closed(stub):
 
 
 def test_truncated_reply_is_never_parsed(stub):
-    stub.replies = [_resp('{"verdict": "pass", "conf', finish="length")]
+    stub.replies = [_resp('{"verdict": "pass", "conf', finish="length"),
+                    _resp('{"verdict": "pass", "confide', finish="length")]
     with pytest.raises(LLMError) as e:
         _llm().complete("x", schema=SCHEMA)
-    assert e.value.kind == "truncated"
+    assert e.value.kind == "truncated" and len(stub.calls) == 2   # retried once, bigger
 
 
 def test_provider_rejecting_native_schema_falls_back_to_prompt(stub):
@@ -293,3 +294,63 @@ def test_family_looks_past_an_openai_compatible_prefix():
     assert family("openai/deepseek-ai/DeepSeek-V4.1-Flash") == "deepseek"   # Tinker, vLLM...
     assert family("openai/gpt-4o") == "openai"
     assert family("openrouter/google/gemini-2.5-pro") == "google"
+
+
+def test_model_on_the_command_line_also_drives_the_agents(monkeypatch, capsys):
+    from rlgate import llm
+    from rlgate import settings as S
+    from rlgate.cli import _deep_review
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setattr(llm.LLM, "ping", lambda self: None)       # no network in tests
+    cfg = S.Settings()
+    cfg.models.review = ["openrouter/deepseek/deepseek-v4.1-flash"]
+    cfg.models.agent = "openrouter/deepseek/deepseek-v4.1-flash"      # from a user's toml
+    review = _deep_review(cfg, ["openai/deepseek-ai/DeepSeek-V4.1-Flash"])
+    assert review.agent is None and review.models == ["openai/deepseek-ai/DeepSeek-V4.1-Flash"]
+    assert "openrouter" not in capsys.readouterr().err
+    review = _deep_review(S.Settings(), ["openai/a-model"], "openai/b-model")
+    assert review.agent == "openai/b-model"
+
+
+def test_a_model_that_does_not_answer_stops_the_run_before_it_starts(monkeypatch):
+    import pytest
+
+    from rlgate import llm
+    from rlgate import settings as S
+    from rlgate.cli import _deep_review
+    from rlgate.cli.engine import CheckError
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    def refuse(self):
+        raise llm.LLMError("bad_request", "Sampling is not supported for this model")
+    monkeypatch.setattr(llm.LLM, "ping", refuse)
+    with pytest.raises(CheckError) as e:
+        _deep_review(S.Settings(), ["openai/deepseek-ai/DeepSeek-V4.1-Flash"])
+    assert "Sampling is not supported" in str(e.value)
+
+
+def test_a_truncated_answer_is_retried_once_with_twice_the_room(monkeypatch):
+    from types import SimpleNamespace
+
+    import litellm
+    import pytest
+
+    from rlgate import llm
+    budgets = []
+
+    def completion(**kw):
+        budgets.append(kw["max_tokens"])
+        cut = len(budgets) == 1 or kw["max_tokens"] >= 9000
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content="ok"),
+                                     finish_reason="length" if cut else "stop")],
+            usage=SimpleNamespace(prompt_tokens=5, completion_tokens=5), model="m")
+    monkeypatch.setattr(litellm, "completion", completion)
+    monkeypatch.setattr(llm, "_cost", lambda resp, model: 0.0)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    c = llm.LLM(model="openai/x", max_tokens=4000)
+    assert c.complete("hi").text == "ok" and budgets == [4000, 8000]
+    budgets.clear()
+    with pytest.raises(llm.LLMError) as e:      # still cut off: once only, then an error
+        llm.LLM(model="openai/x", max_tokens=9000).complete("hi")
+    assert e.value.kind == "truncated" and budgets == [9000, 18000]

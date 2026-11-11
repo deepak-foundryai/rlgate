@@ -341,7 +341,12 @@ def check(
         rich_help_panel=DEPTH)] = False,
     model: Annotated[list[str] | None, typer.Option(
         "--model", help="With --deep-review: the judge model, any LiteLLM provider/model "
-        "(anthropic/..., openai/..., gemini/..., ollama/...). Repeat it for a panel.",
+        "(anthropic/..., openai/..., gemini/..., ollama/...). Repeat it for a panel. Also "
+        "drives the agents unless --agent-model is given; overrides rlgate.toml.",
+        rich_help_panel=DEPTH)] = None,
+    agent_model: Annotated[str | None, typer.Option(
+        "--agent-model", help="With --deep-review: the model that drives the agents (L3 "
+        "audits, L4 hack agent). Default: the first --model.",
         rich_help_panel=DEPTH)] = None,
     yes: Annotated[bool, typer.Option("--yes", "-y", hidden=True)] = False,   # no-op now
     exhaustive: Annotated[bool, typer.Option(
@@ -439,9 +444,10 @@ def check(
     cfg = _settings(config, backend, opts, near=target)
     lay = layout or cfg.checks.layout
     source = E.Source(*(_layout(lay) if lay else (None, None, None)), limit)
-    if model and not deep_review:
-        ui.error("--model chooses the judges for the LLM review, which runs with "
-                 "--deep-review.", f"rlgate check {target} --deep-review --model {model[0]}")
+    if (model or agent_model) and not deep_review:
+        flag = f"--model {model[0]}" if model else f"--agent-model {agent_model}"
+        ui.error("--model and --agent-model choose the LLM review's models, which runs with "
+                 "--deep-review.", f"rlgate check {target} --deep-review {flag}")
         return 2
     if not deep_review and any(n.strip().lower() == "questions" for g in only
                                for n in g.split(",")):
@@ -465,6 +471,7 @@ def check(
                        argv=list(G.argv),
                        options={"only": only, "from": start, "quick": quick,
                                 "deep_review": deep_review, "models": model,
+                                "agent_model": agent_model,
                                 "exhaustive": exhaustive, "runs": runs, "jobs": G.jobs,
                                 "backend": backend, "backend_opt": opts, "fresh": fresh,
                                 "failed": failed, "fail_fast": fail_fast, "limit": limit,
@@ -478,7 +485,7 @@ def check(
                  "depth": "full" if exhaustive else None}
         go_on = not fail_fast
         if deep_review:
-            review = _deep_review(cfg, model or [])
+            review = _deep_review(cfg, model or [], agent_model)
         only_ = only or None
         if kind == "bank":
             views, mode, secs = E.check_bank(
@@ -535,7 +542,7 @@ def _saved(job, views, *, kind: str, target: str, seconds: float = 0.0) -> None:
             "rlgate.log)", console=ui.err())
 
 
-def _deep_review(cfg: S.Settings, models: list[str]):
+def _deep_review(cfg: S.Settings, models: list[str], agent_model: str | None = None):
     """--deep-review: the judge panel, checked before the run; CheckError when it can't run.
     The cost is shown at the end (_spent); [models] budget_usd caps it."""
     from rlgate.cli import engine as E
@@ -545,8 +552,11 @@ def _deep_review(cfg: S.Settings, models: list[str]):
     cfg_source = cfg.source
 
     ms = cfg.models
-    if models:
+    if models:                  # the command line wins over every rlgate.toml, agents too
         ms.review = list(models)
+        ms.agent = None         # the first judge allowed on each task (not rlgate.toml's)
+    if agent_model:
+        ms.agent = agent_model
     panel = ms.panel()
     if not panel:
         raise E.CheckError("--deep-review needs a judge model.", "add --model provider/model, or "
@@ -575,11 +585,38 @@ def _deep_review(cfg: S.Settings, models: list[str]):
             f"every judge is from the {family(ms.author)} family, which wrote the tasks "
             f"([models] author = {ms.author}); judges must come from another family.",
             "add a judge from another family: --model provider/model")
+    agent = ms.agent or f"{panel[0]} (the first judge)"
+    if "/" not in agent:
+        raise E.CheckError(f"model {agent!r} has no provider prefix.",
+                           f"use provider/model, e.g. --agent-model anthropic/{agent}")
+    src = "" if models or agent_model else f" (from {cfg_source})"
+    ui.err().print(f"Models: judges {', '.join(panel)}; agents {agent}{src}",
+                   style="dim", highlight=False)
+    _answers(review, list(dict.fromkeys([*panel, *([ms.agent] if ms.agent else [])])))
     fams = {family(m) for m in panel}
     if len(fams) == 1 and ms.votes > 1:
         ui.notice(f"Every judge is from one model family ({fams.pop()}). Independent votes "
                   "work best from mixed families: add one with another --model.")
     return review
+
+
+def _answers(review, models: list[str]) -> None:
+    """One tiny real call per model before the run: a wrong model name or endpoint stops
+    here, not as every judge and agent failing later."""
+    from rlgate.cli import engine as E
+    from rlgate.llm import LLMError
+
+    for m in models:
+        ping = getattr(review._get(m), "ping", None)
+        if ping is None:
+            continue
+        try:
+            ping()
+        except LLMError as e:
+            raise E.CheckError(
+                f"the model {m} didn't answer a test call: {str(e)[:400]}",
+                f"rlgate doctor --ping --model {m} shows the full error; check the model "
+                "name your provider serves") from None
 
 
 def _spent(review) -> None:
@@ -588,11 +625,13 @@ def _spent(review) -> None:
     cached = f", {review.cached} answered from the cache" if review.cached else ""
     cost = f"${review.spent:.2f}"
     if review.unpriced:
-        cost = (f"at least {cost} ({review.unpriced} call(s) had no price; set one under "
-                '[models.info."<model>"] in rlgate.toml)')
+        cost = (f"at least {cost} ({review.unpriced} call(s) to a model LiteLLM has no "
+                "price for; the token counts are exact. To price it, add "
+                '[models.info."<model>"] input_cost_per_token / output_cost_per_token '
+                "to an rlgate.toml)")
     ui.err().print(f"LLM review: {review.calls} call{'s' if review.calls != 1 else ''}"
                    f"{cached}, {review.tokens_in:,} tokens in, {review.tokens_out:,} out, "
-                   f"{cost} spent.", style="dim", highlight=False)
+                   f"{cost} spent.", style="dim", highlight=False, markup=False)
 
 
 # -- explain / repro -------------------------------------------------------------------------

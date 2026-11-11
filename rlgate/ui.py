@@ -210,7 +210,9 @@ _CUR = _Step()
 def _fit(text: str, c: Console) -> Text:
     """A spinner line cut to the terminal width: a wrapped line can't be redrawn in place,
     so it would repeat down the screen."""
-    room = max(10, (c.width or 80) - 4)            # the spinner and its space
+    import shutil
+    width = min(c.width or 80, shutil.get_terminal_size((80, 24)).columns)
+    room = max(10, min(width - 6, 110))     # the spinner, its space, and a safe margin
     if len(text) > room:
         text = text[:room - 1] + ("." if ascii_on(c) else "…")
     return Text(text, no_wrap=True, overflow="ellipsis")
@@ -226,7 +228,10 @@ def step(label: str):
         with _step(label):
             yield
     except BaseException as e:
-        _log.info("failed after %.1fs: %s (%s: %s)", time.monotonic() - t_log, label,
+        from rlgate.core.probe import CouldNotJudge, NotApplicable
+        how = ("doesn't apply" if isinstance(e, NotApplicable) else
+               "no verdict" if isinstance(e, CouldNotJudge) else "failed")
+        _log.info("%s after %.1fs: %s (%s: %s)", how, time.monotonic() - t_log, label,
                   type(e).__name__, str(e)[:500])
         raise
     _log.info("done in %.1fs: %s", time.monotonic() - t_log, label)

@@ -404,6 +404,11 @@ def test_cli_deep_end_to_end_through_litellm(capsys, monkeypatch):
 
     def completion(**kw):
         seen.append(kw)
+        if "response_format" not in kw:            # the test call before the run
+            return SimpleNamespace(
+                choices=[SimpleNamespace(message=SimpleNamespace(content="ok"),
+                                         finish_reason="stop")],
+                usage=SimpleNamespace(prompt_tokens=5, completion_tokens=1), model="gpt-4o")
         schema = kw["response_format"]["json_schema"]["schema"]
         if "results" in schema["properties"]:
             names = schema["properties"]["results"]["items"]["properties"]["criterion"]["enum"]
