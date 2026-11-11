@@ -385,26 +385,38 @@ def test_bad_depth_and_workers_say_what_to_do(capsys):
 
 # -- the command surface: 8 commands, grouped check flags, old names as hidden aliases ----
 
-def test_main_help_lists_the_eight_commands_only(capsys):
-    code, out, _ = run(capsys, "--help")
-    assert code == 0
-    listed = set(re.findall(r"│ (\w+)\s{2,}", out))
-    assert {"check", "explain", "repro", "waive", "report", "doctor", "init",
-            "demo"} <= listed
-    assert not listed & {"show", "rules", "waivers", "cache", "planted", "clean", "selftest"}
-    assert "--jobs" not in out and "--output" not in out        # now on check / report
+def _cli():
+    import typer
+
+    from rlgate.cli import app
+    return typer.main.get_command(app)
 
 
-def test_check_help_groups_its_flags(capsys):
-    _, out, _ = run(capsys, "check", "--help")
-    for panel in ("Scope", "Depth", "Execution", "Output", "Config"):
-        assert f"─ {panel} " in out, panel
-    for flag in ("--deep-review", "--exhaustive", "--fail-fast", "--backend-opt", "--layout",
-                 "--jobs", "--output"):
-        assert flag in out, flag
-    for old in ("--deep ", "--keep-going", "--parallel", "--workers", "--depth", "--ek",
+def test_main_help_lists_the_eight_commands_only():
+    group = _cli()
+    shown = {n for n, c in group.commands.items() if not c.hidden}
+    assert shown == {"check", "explain", "repro", "waive", "report", "doctor", "init", "demo"}
+    hidden = {n for n, c in group.commands.items() if c.hidden}
+    assert {"show", "rules", "waivers", "cache", "planted", "clean", "selftest"} <= hidden
+    root = {o for p in group.params if not getattr(p, "hidden", False) for o in p.opts}
+    assert "--jobs" not in root and "--output" not in root       # now on check / report
+
+
+def test_check_help_groups_its_flags():
+    check = _cli().commands["check"]
+    panel = {o: getattr(p, "rich_help_panel", None) for p in check.params for o in p.opts
+             if not getattr(p, "hidden", False)}
+    want = {"--only": "Scope", "--from": "Scope", "--failed": "Scope", "--fresh": "Scope",
+            "--limit": "Scope", "--quick": "Depth", "--deep-review": "Depth",
+            "--model": "Depth", "--yes": "Depth", "--exhaustive": "Depth", "--runs": "Depth",
+            "--jobs": "Execution", "--backend": "Execution", "--backend-opt": "Execution",
+            "--fail-fast": "Execution", "--format": "Output", "--output": "Output",
+            "--config": "Config", "--layout": "Config"}
+    for flag, group in want.items():
+        assert panel.get(flag) == group, (flag, panel.get(flag))
+    for old in ("--deep", "--keep-going", "--parallel", "--workers", "--depth", "--ek",
                 "--preset", "--mapping", "--adapter", "--step"):
-        assert old not in out, old
+        assert old not in panel, old                                 # hidden aliases
 
 
 def test_explain_lists_rules_explains_one_and_shows_a_finding(capsys):
