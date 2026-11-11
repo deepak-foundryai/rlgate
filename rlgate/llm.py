@@ -88,9 +88,12 @@ def family(model: str) -> str:
     """The model's maker, independent of where it's hosted: ``bedrock/anthropic.claude-…``,
     ``vertex_ai/claude-…`` and ``openrouter/anthropic/claude-…`` are all ``anthropic``."""
     name = model.lower()
-    for rx, fam in _FAMILY_BY_NAME:
-        if rx.search(name.split("/", 1)[-1]) or rx.search(name):
-            return fam
+    # the model's own name first: openai/deepseek-ai/DeepSeek-V4 (an OpenAI-compatible
+    # endpoint such as Tinker serving DeepSeek) is deepseek, not openai
+    for part in (name.split("/", 1)[-1], name):
+        for rx, fam in _FAMILY_BY_NAME:
+            if rx.search(part):
+                return fam
     parts = name.split("/")
     if len(parts) >= 3 and parts[0] in ROUTERS:
         if parts[0] == "fireworks_ai" and parts[1] == "accounts" and len(parts) >= 5:

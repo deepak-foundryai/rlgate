@@ -1,0 +1,609 @@
+# swe-rebench-v2: published task-level flaw labels. See README.md and ../README.md.
+benchmark: swe-rebench-v2
+description: 'SWE-rebench-V2 (Nebius): images that ship a newer release with the fix (HF #7), plus Prime Intellect''s per-row gold / no-op validation.'
+versions:
+- HF nebius/SWE-rebench-V2
+- HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified (validation files)
+runnable_by_rlgate: partial
+how_to_run: SWE-style rows in `<out>/swe-rebench-v2/<benchmark>.jsonl`; needs a mapping YAML (`--layout file`) and the repo checked out per row
+datasets:
+  swe-rebench-v2:
+    hf: nebius/SWE-rebench-V2
+    revision: main
+    files:
+    - data/*.parquet
+    id_field: instance_id
+    image: '{image_name}'
+    approx_mb: 2200
+    image_gb: 2.5
+    layout: yaml-needed
+    note: '2.2 GB parquet; short ids from HF #7 resolve by suffix match'
+tasks:
+- id: swerebench2-keras-20609
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (pip cache; >=50% of the gold patch's added non-test lines readable on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: keras-20609
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - core
+  - all
+- id: swerebench2-keras-19924
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (pip cache; >=50% of the gold patch's added non-test lines readable on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: keras-19924
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - all
+- id: swerebench2-keras-19863
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (pip cache; >=50% of the gold patch's added non-test lines readable on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: keras-19863
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - all
+- id: swerebench2-quacc-1689
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (pip cache; >=50% of the gold patch's added non-test lines readable on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: quacc-1689
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - all
+- id: swerebench2-more-itertools-892
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (pip cache; >=50% of the gold patch's added non-test lines readable on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: more-itertools-892
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - all
+- id: swerebench2-celery-8984
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (pip cache; >=50% of the gold patch's added non-test lines readable on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: celery-8984
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - core
+  - all
+- id: swerebench2-rich-2031
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (another installation; >=50% of the gold patch's added non-test lines readable
+    on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: rich-2031
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - core
+  - all
+- id: swerebench2-attrs-1321
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (another installation; >=50% of the gold patch's added non-test lines readable
+    on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: attrs-1321
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - core
+  - all
+- id: swerebench2-kedro-kubeflow-202
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (another installation; >=50% of the gold patch's added non-test lines readable
+    on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: kedro-kubeflow-202
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - all
+- id: swerebench2-conda-8015
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (another installation; >=50% of the gold patch's added non-test lines readable
+    on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: conda-8015
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - all
+- id: swerebench2-pyflakes-745
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (another installation; >=50% of the gold patch's added non-test lines readable
+    on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: pyflakes-745
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - core
+  - all
+- id: swerebench2-setuptools-1100
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (another installation; >=50% of the gold patch's added non-test lines readable
+    on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: setuptools-1100
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - all
+- id: swerebench2-setuptools-1389
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (another installation; >=50% of the gold patch's added non-test lines readable
+    on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: setuptools-1389
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - all
+- id: swerebench2-setuptools-4911
+  benchmark: swe-rebench-v2
+  version: 'HF nebius/SWE-rebench-V2@main (32,079 rows; images per row image_name); fixed twin: Harbor hub ibragim-badertdinov/swe-rebench-v2.1-rl'
+  polarity: positive
+  category: answer_leak
+  label: image contains a newer release of the project with the fix (another installation; >=50% of the gold patch's added non-test lines readable
+    on disk)
+  expected_rules:
+  - RG302
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: 'Fangjian Ju (HF discussion #7, acknowledged by Nebius)'
+    url: https://huggingface.co/datasets/nebius/SWE-rebench-V2/discussions/7
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: setuptools-4911
+    match: suffix
+  layout: yaml-needed
+  control: swe-rebench-v2.1-rl (Harbor hub) - claimed fixed for 'another installation'; pip-cache fix announced, not confirmed
+  note: 'short id as given in HF discussion #7; map to the full instance_id via the thread''s appendices (fetch.py does a suffix match and refuses
+    ambiguity)'
+  tiers:
+  - all
+- id: swerebench2-hyperledger__firefly-1017
+  benchmark: swe-rebench-v2
+  version: HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified@main (validation files) over nebius/SWE-rebench-V2 rows
+  polarity: positive
+  category: flaky
+  label: binds ports; 2,422 tests graded all-or-nothing (always-fail exclusions)
+  expected_rules:
+  - RG003
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: hyperledger__firefly-1017
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: swerebench2-alecaivazis__survey-208
+  benchmark: swe-rebench-v2
+  version: HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified@main (validation files) over nebius/SWE-rebench-V2 rows
+  polarity: positive
+  category: flaky
+  label: flaky across 5 gold passes (flaky_instances.json)
+  expected_rules:
+  - RG003
+  confidence: medium
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: alecaivazis__survey-208
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swerebench2-apollographql__apollo-rs-242
+  benchmark: swe-rebench-v2
+  version: HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified@main (validation files) over nebius/SWE-rebench-V2 rows
+  polarity: positive
+  category: flaky
+  label: flaky across gold passes (flaky_instances.json)
+  expected_rules:
+  - RG003
+  confidence: medium
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: apollographql__apollo-rs-242
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swerebench2-bluebrain__nexus-5018
+  benchmark: swe-rebench-v2
+  version: HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified@main (validation files) over nebius/SWE-rebench-V2 rows
+  polarity: positive
+  category: flaky
+  label: flaky across gold passes (flaky_instances.json)
+  expected_rules:
+  - RG003
+  confidence: medium
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: bluebrain__nexus-5018
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swerebench2-rooseveltframework__roosevelt-745
+  benchmark: swe-rebench-v2
+  version: HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified@main (validation files) over nebius/SWE-rebench-V2 rows
+  polarity: positive
+  category: nop_passes
+  label: passes with no edit (swe-rebench-v2-no-edit-pass-exclusions.jsonl)
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: rooseveltframework__roosevelt-745
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swerebench2-deepjavalibrary__djl-2056
+  benchmark: swe-rebench-v2
+  version: HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified@main (validation files) over nebius/SWE-rebench-V2 rows
+  polarity: positive
+  category: nop_passes
+  label: passes with no edit
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: deepjavalibrary__djl-2056
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swerebench2-symfony__flex-867
+  benchmark: swe-rebench-v2
+  version: HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified@main (validation files) over nebius/SWE-rebench-V2 rows
+  polarity: positive
+  category: nop_passes
+  label: passes with no edit
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: symfony__flex-867
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swerebench2-rumbledb__rumble-943
+  benchmark: swe-rebench-v2
+  version: HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified@main (validation files) over nebius/SWE-rebench-V2 rows
+  polarity: positive
+  category: nop_passes
+  label: passes with no edit
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: rumbledb__rumble-943
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swerebench2-square__anvil-192
+  benchmark: swe-rebench-v2
+  version: HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified@main (validation files) over nebius/SWE-rebench-V2 rows
+  polarity: positive
+  category: broken_env
+  label: test_cmd never enables Dagger mode, so 157/398 F2P tests never run (always-fail diagnosis)
+  expected_rules:
+  - RG001
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: square__anvil-192
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swerebench2-kotlin__binary-compatibility-validator-271
+  benchmark: swe-rebench-v2
+  version: HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified@main (validation files) over nebius/SWE-rebench-V2 rows
+  polarity: positive
+  category: broken_env
+  label: needs JDK 11/17 which the image lacks; `&&` skips the results-XML step
+  expected_rules:
+  - RG001
+  - RG608
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: swe-rebench-v2
+    id: kotlin__binary-compatibility-validator-271
+  layout: yaml-needed
+  tiers:
+  - all
+bulk:
+- id: prime-swe-rebench-v2
+  benchmark: swe-rebench-v2
+  file: 'HF PrimeIntellect/SWE-rebench-V2-Filtered-Verified: flaky_instances.json, swe-rebench-v2-no-edit-pass-exclusions.jsonl, swe-rebench-v2-rl-alwaysfail-exclusions.json,
+    validation.jsonl'
+  rules:
+  - file: flaky_instances.json
+    category: flaky
+    expected_rules:
+    - RG003
+  - file: swe-rebench-v2-no-edit-pass-exclusions.jsonl
+    category: nop_passes
+    expected_rules:
+    - RG002
+  - file: validation.jsonl
+    where:
+    - - reason
+      - ==
+      - gold_apply_failed
+    category: gold_fails
+    expected_rules:
+    - RG001
+  - note: 'repo statamic/cms dropped: scores 1.0 without the fix (nop_passes); Julia/C++/Clojure images broken'
+  source:
+    org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  count: 634 flaky / 145 no-edit / 49 apply-fail / 3 always-fail
+  url: https://huggingface.co/datasets/PrimeIntellect/SWE-rebench-V2-Filtered-Verified

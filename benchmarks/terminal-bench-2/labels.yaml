@@ -1,0 +1,2239 @@
+# terminal-bench-2: published task-level flaw labels. See README.md and ../README.md.
+benchmark: terminal-bench-2
+description: Terminal-Bench 2.0 (89 Harbor tasks). Positives are pinned to the Harbor registry commit; controls are the same task in Terminal-Bench
+  2.1, which fixed the flagged issue.
+versions:
+- terminal-bench-2@69671fbaac6d (2.0 registry pin)
+- terminal-bench-2-1@12b7565679ce (2.1, controls)
+runnable_by_rlgate: 'yes'
+how_to_run: 'Harbor task dirs: `rlgate check <out>/terminal-bench-2 -j 8`'
+tasks:
+- id: tb2-adaptive-rejection-sampler
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: underspecified
+  label: tests and oracle require a function signature the instruction never states; a hollow ARS delegating to built-in samplers passes
+  expected_rules:
+  - RG402
+  - RG704
+  - RG701
+  - RG110
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: adaptive-rejection-sampler
+    approx_mb: 5
+  layout: harbor
+  control: tb21-adaptive-rejection-sampler
+  tiers:
+  - smoke
+  - core
+  - all
+  other_categories:
+  - weak_tests
+- id: tb2-build-pmars
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: gold_fails
+  label: oracle fails (#59); build destination ambiguous; pins drifted
+  expected_rules:
+  - RG001
+  - RG608
+  - RG701
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: build-pmars
+    approx_mb: 5
+  layout: harbor
+  control: tb21-build-pmars
+  tiers:
+  - smoke
+  - core
+  - all
+  other_categories:
+  - underspecified
+  - broken_env
+- id: tb2-caffe-cifar-10
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: too_strict
+  label: test hard-codes a `make` build and rejects cmake; nproc reports host CPUs (OOM); cpu/mem/timeout too small for the oracle; verifier reuses
+    agent-controlled dataset (#154)
+  expected_rules:
+  - RG407
+  - RG408
+  - RG603
+  - RG011
+  - RG213
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: caffe-cifar-10
+    approx_mb: 5
+  layout: harbor
+  control: tb21-caffe-cifar-10
+  note: 'TB2.1 fixes the strictness and limits only; #154 (label poisoning) was filed against 2.1'
+  tiers:
+  - core
+  - all
+  other_categories:
+  - broken_env
+  - forgeable_grader
+- id: tb2-compile-compcert
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: nproc reports host CPUs, so the build OOMs
+  expected_rules:
+  - RG603
+  - RG011
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: compile-compcert
+    approx_mb: 5
+  layout: harbor
+  control: tb21-compile-compcert
+  note: already a natural case in tests/cases (legacy/compile-compcert -> RG603)
+  tiers:
+  - core
+  - all
+- id: tb2-configure-git-webserver
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: a hook that writes a literal 'hello world' passes; reward 1 without working SSH; instruction promised auth handling the tests assume
+    a format for
+  expected_rules:
+  - RG104
+  - RG109
+  - RG110
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: configure-git-webserver
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - core
+  - all
+  other_categories:
+  - underspecified
+- id: tb2-extract-moves-from-video
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: remote video fetch unreliable (replaced with a local copy in 2.1)
+  expected_rules:
+  - RG608
+  - RG003
+  - RG307
+  clean_for:
+  - RG101
+  - RG104
+  - RG110
+  confidence: medium
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: extract-moves-from-video
+    approx_mb: 5
+  layout: harbor
+  control: tb21-extract-moves-from-video
+  note: Gabor's human review marks the weak-test claim a false positive (negative for weak_tests); Poolside saw online-solution attempts
+  tiers:
+  - all
+- id: tb2-filter-js-from-html
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: too_strict
+  label: tests apply an undescribed BeautifulSoup normalisation; failed page load counted as blocked; one-sided normalisation; timeouts pass;
+    4 GB too small
+  expected_rules:
+  - RG407
+  - RG408
+  - RG110
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: filter-js-from-html
+    approx_mb: 5
+  layout: harbor
+  control: tb21-filter-js-from-html
+  tiers:
+  - core
+  - all
+  other_categories:
+  - weak_tests
+- id: tb2-fix-git
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: answer_leak
+  label: install/patch files (target file versions in resources/patch_files) left in the container; tests don't check that a merge happened
+  expected_rules:
+  - RG306
+  - RG304
+  - RG308
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: Jonathan Gabor (independent)
+    url: https://jonathanpgabor.substack.com/p/every-benchmark-is-broken
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: fix-git
+    approx_mb: 5
+  layout: harbor
+  control: tb21-fix-git
+  tiers:
+  - smoke
+  - core
+  - all
+  other_categories:
+  - weak_tests
+- id: tb2-hf-model-inference
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: too_strict
+  label: tests accept only the save_pretrained format, not the HF cache format
+  expected_rules:
+  - RG407
+  - RG408
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: hf-model-inference
+    approx_mb: 5
+  layout: harbor
+  control: tb21-hf-model-inference
+  tiers:
+  - core
+  - all
+- id: tb2-install-windows-3.11
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: underspecified
+  label: tests need a QEMU monitor socket at an unstated path and hard-coded VGA flags; multi-PID test bug; 10% pixel-change threshold too strict
+    and too loose
+  expected_rules:
+  - RG704
+  - RG701
+  - RG003
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: install-windows-3.11
+    approx_mb: 5
+  layout: harbor
+  control: tb21-install-windows-3.11
+  note: very large image
+  tiers:
+  - all
+  other_categories:
+  - flaky
+- id: tb2-make-doom-for-mips
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: forgeable_grader
+  label: agent-controlled vm.js lets it pass without a DOOM build (#67); stale /tmp/frame.bmp accepted (#161); oracle broken by stale apt index;
+    doom1.wad URL 404 (#246)
+  expected_rules:
+  - RG004
+  - RG213
+  - RG215
+  - RG608
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: make-doom-for-mips
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - core
+  - all
+  other_categories:
+  - broken_env
+  - flaky
+- id: tb2-make-mips-interpreter
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: forgeable_grader
+  label: 'observed leaderboard hack: vm.js builds and runs doom itself (TB1 #1429); doom1.wad URL 404 (#246); ambiguous (#9)'
+  expected_rules:
+  - RG004
+  - RG213
+  - RG215
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: make-mips-interpreter
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - core
+  - all
+  other_categories:
+  - broken_env
+- id: tb2-mteb-leaderboard
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: underspecified
+  label: test filters to models with all 28/28 tasks (unstated); Pillow missing on rebuild; answer found in AGENTS.md (DebugML)
+  expected_rules:
+  - RG704
+  - RG701
+  - RG608
+  - RG308
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  - org: DebugML (UPenn)
+    url: https://debugml.github.io/cheating-agents
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: mteb-leaderboard
+    approx_mb: 5
+  layout: harbor
+  control: tb21-mteb-leaderboard
+  tiers:
+  - core
+  - all
+  other_categories:
+  - broken_env
+  - answer_leak
+- id: tb2-mteb-retrieve
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: underspecified
+  label: must use mteb (unstated; SentenceTransformer differs); transformers unpinned (5.x on rebuild)
+  expected_rules:
+  - RG704
+  - RG604
+  - RG608
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: mteb-retrieve
+    approx_mb: 5
+  layout: harbor
+  control: tb21-mteb-retrieve
+  tiers:
+  - core
+  - all
+  other_categories:
+  - broken_env
+- id: tb2-polyglot-c-py
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: too_strict
+  label: test asserts os.listdir == ['main.c'], rejecting allowed build byproducts
+  expected_rules:
+  - RG407
+  - RG408
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: polyglot-c-py
+    approx_mb: 5
+  layout: harbor
+  control: tb21-polyglot-c-py
+  tiers:
+  - smoke
+  - core
+  - all
+- id: tb2-polyglot-rust-c
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: too_strict
+  label: os.listdir == ['main.rs'] rejects byproducts; passable via side effects (#185)
+  expected_rules:
+  - RG407
+  - RG408
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: polyglot-rust-c
+    approx_mb: 5
+  layout: harbor
+  control: tb21-polyglot-rust-c
+  tiers:
+  - core
+  - all
+  other_categories:
+  - weak_tests
+- id: tb2-protein-assembly
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: the RCSB API the verifier and oracle use changed; FLAG tag requirement unstated
+  expected_rules:
+  - RG001
+  - RG607
+  - RG307
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: protein-assembly
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - core
+  - all
+  other_categories:
+  - underspecified
+- id: tb2-rstan-to-pystan
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: gold_fails
+  label: oracle creates a py3.10 venv but calls system python 3.13; apt pins went stale (fixed in commit 53ff2b87)
+  expected_rules:
+  - RG001
+  - RG608
+  - RG604
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: rstan-to-pystan
+    approx_mb: 5
+  layout: harbor
+  control: tb21-rstan-to-pystan
+  tiers:
+  - core
+  - all
+  other_categories:
+  - broken_env
+- id: tb2-sam-cell-seg
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: underspecified
+  label: instruction implies positional args but tests need --flags
+  expected_rules:
+  - RG704
+  - RG408
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: sam-cell-seg
+    approx_mb: 5
+  layout: harbor
+  control: tb21-sam-cell-seg
+  tiers:
+  - core
+  - all
+- id: tb2-torch-tensor-parallelism
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: pre-scattered input to RowParallelLinear.forward() unstated; bias is zero in every test so a per-rank bias passes (#103); 4 GB memory;
+    hang without timeout (#81)
+  expected_rules:
+  - RG110
+  - RG109
+  - RG704
+  - RG011
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: torch-tensor-parallelism
+    approx_mb: 5
+  layout: harbor
+  note: '#103 is unchanged in TB2.1, so the 2.1 twin is still a weak_tests positive'
+  tiers:
+  - core
+  - all
+  other_categories:
+  - underspecified
+  - flaky
+- id: tb2-torch-pipeline-parallelism
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: no backward pass or a non-AFAB schedule passes (#102); 4 GB memory with spikes during pip install; hang (#81)
+  expected_rules:
+  - RG110
+  - RG109
+  - RG011
+  - RG003
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: torch-pipeline-parallelism
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+  other_categories:
+  - flaky
+- id: tb2-query-optimize
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: underspecified
+  label: test checks the DB file's SHA256 but 'do not modify the DB' is unstated; agent can modify the database
+  expected_rules:
+  - RG704
+  - RG213
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: query-optimize
+    approx_mb: 5
+  layout: harbor
+  control: tb21-query-optimize
+  note: '2.1 blog summary said ''Spark SQL vs PostgreSQL'' instead; conflicts with PR #53 and the paper - trust the PR'
+  tiers:
+  - all
+  other_categories:
+  - forgeable_grader
+- id: tb2-train-fasttext
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: flaky
+  label: test uses unreliable Python fasttext.load_model and depends on the agent's PATH
+  expected_rules:
+  - RG003
+  - RG004
+  - RG010
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: train-fasttext
+    approx_mb: 5
+  layout: harbor
+  control: tb21-train-fasttext
+  tiers:
+  - all
+- id: tb2-build-pov-ray
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: povray.org returns 403 so the oracle fails (#76); stale pins
+  expected_rules:
+  - RG608
+  - RG001
+  - RG607
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: build-pov-ray
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-financial-document-processor
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: pinned apt/package versions went stale
+  expected_rules:
+  - RG608
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: financial-document-processor
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-mcmc-sampling-stan
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: 'unpinned RcppParallel needs cmake, so the oracle fails (#74); brittle parser (2.1 #11)'
+  expected_rules:
+  - RG608
+  - RG001
+  - RG604
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: mcmc-sampling-stan
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+  other_categories:
+  - flaky
+- id: tb2-overfull-hbox
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: 2.0 build broken, so the verifier had no ground truth; oracle needed DEBIAN_FRONTEND
+  expected_rules:
+  - RG608
+  - RG001
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: overfull-hbox
+    approx_mb: 5
+  layout: harbor
+  control: tb21-overfull-hbox
+  tiers:
+  - all
+- id: tb2-crack-7z-hash
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: memory (2 GB) and timeout too small; raised in 2.1 (commit 53ff2b87)
+  expected_rules:
+  - RG011
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: crack-7z-hash
+    approx_mb: 5
+  layout: harbor
+  control: tb21-crack-7z-hash
+  tiers:
+  - all
+- id: tb2-gpt2-codegolf
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: 'the <5000-byte limit can be dodged with #includes (#62); verifier accepts a hard-coded answer (#1631); public solution exists; only
+    one input tested'
+  expected_rules:
+  - RG104
+  - RG110
+  - RG307
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: Terminal-Bench maintainers
+    url: https://github.com/harbor-framework/terminal-bench/releases/tag/v4.0.0
+  - org: Jonathan Gabor (independent)
+    url: https://jonathanpgabor.substack.com/p/every-benchmark-is-broken
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: gpt2-codegolf
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+  other_categories:
+  - answer_leak
+- id: tb2-model-extraction-relu-logits
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: answer_leak
+  label: '/app/forward.py exposes the hidden weights (#60, #228)'
+  expected_rules:
+  - RG308
+  - RG306
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: model-extraction-relu-logits
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-path-tracing
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: answer_leak
+  label: 'Dockerfile leaves the /app/orig reference binary, which newer models decompile (#61, #229); relative output path unstated'
+  expected_rules:
+  - RG306
+  - RG308
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: path-tracing
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+  other_categories:
+  - underspecified
+- id: tb2-regex-log
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: invalid-date samples are rejected for their IP, so the date rules are never tested (#92); oracle accepts leading-zero IP octets and no
+    test covers them
+  expected_rules:
+  - RG110
+  - RG109
+  - RG104
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: Jonathan Gabor (independent)
+    url: https://jonathanpgabor.substack.com/p/every-benchmark-is-broken
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: regex-log
+    approx_mb: 5
+  layout: harbor
+  note: unchanged in TB2.1; the monorepo copy legacy/regex-log is already an rlgate RG004 case
+  tiers:
+  - smoke
+  - core
+  - all
+- id: tb2-git-leak-recovery
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: the secret can remain in a dangling-commit blob and commit messages can be rewritten (#93)
+  expected_rules:
+  - RG110
+  - RG109
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: git-leak-recovery
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-prove-plus-comm
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: an Axiom stating the theorem, or Admitted. with Qed. in a comment, passes (#94)
+  expected_rules:
+  - RG110
+  - RG111
+  - RG109
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: prove-plus-comm
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+  other_categories:
+  - forgeable_grader
+- id: tb2-db-wal-recovery
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: step 1 'fix the WAL' is never checked (#96)
+  expected_rules:
+  - RG108
+  - RG110
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: db-wal-recovery
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-modernize-scientific-stack
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: '''DO NOT MODIFY'' and version-constraint requirements never checked; numbers can be hard-coded (#97, #242)'
+  expected_rules:
+  - RG108
+  - RG104
+  - RG110
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: Jonathan Gabor (independent)
+    url: https://jonathanpgabor.substack.com/p/every-benchmark-is-broken
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: modernize-scientific-stack
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-cobol-modernization
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: every graded transaction is a valid sale (#98); a Python wrapper that runs the original COBOL passes (TW)
+  expected_rules:
+  - RG110
+  - RG109
+  needs: deep-review
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  - org: Jonathan Gabor (independent)
+    url: https://jonathanpgabor.substack.com/p/every-benchmark-is-broken
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: cobol-modernization
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-sparql-university
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: graph can't distinguish wrong EU membership or >=10 (#99)
+  expected_rules:
+  - RG110
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: sparql-university
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-headless-terminal
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: test_cancel_command passes without Ctrl-C working (#100)
+  expected_rules:
+  - RG110
+  - RG406
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: headless-terminal
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-openssl-selfsigned-cert
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: a CA-signed cert, wrong key permissions, or a mismatched key pair all pass (#101)
+  expected_rules:
+  - RG110
+  - RG108
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: openssl-selfsigned-cert
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-git-multibranch
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: 'post-receive deploy never checked; silent bypass of the deploy hook (#237 -> #2172)'
+  expected_rules:
+  - RG110
+  - RG108
+  needs: deep-review
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: git-multibranch
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-nginx-request-logging
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: 'rate limit never applied; error log unchecked (#243 -> #2174)'
+  expected_rules:
+  - RG108
+  - RG110
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: nginx-request-logging
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-dna-insert
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: too_strict
+  label: 3 valid insertion sites but the grader hard-codes one; reverse-primer bases misattributed on circular plasmids
+  expected_rules:
+  - RG408
+  - RG407
+  needs: deep-review
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: dna-insert
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-fix-code-vulnerability
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: answer_leak
+  label: leftover git HEAD contains the oracle fix (#134); only _hkey is checked, not _hval
+  expected_rules:
+  - RG301
+  - RG305
+  - RG308
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: Jonathan Gabor (independent)
+    url: https://jonathanpgabor.substack.com/p/every-benchmark-is-broken
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: fix-code-vulnerability
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+  other_categories:
+  - weak_tests
+- id: tb2-schemelike-metacircular-eval
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: forgeable_grader
+  label: eval() in the interpreter's * operator allows Python injection; tests gameable by special-casing eval.scm (#135)
+  expected_rules:
+  - RG111
+  - RG215
+  - RG110
+  needs: deep-review
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: schemelike-metacircular-eval
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+  other_categories:
+  - weak_tests
+- id: tb2-custom-memory-heap-crash
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: forgeable_grader
+  label: _Exit(0) skips the crashing destructors and the Valgrind checks (#185)
+  expected_rules:
+  - RG202
+  - RG110
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: custom-memory-heap-crash
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+  other_categories:
+  - weak_tests
+- id: tb2-sanitize-git-repo
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: too_strict
+  label: 'verifier crashes / diffs a hard-coded SHA when history is rewritten as instructed (#84, #239)'
+  expected_rules:
+  - RG408
+  - RG001
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: sanitize-git-repo
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-build-cython-ext
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: 'unpinned planarity 1.0.0 is a PyPI name takeover (verifier KeyError); unpinned upstream test suite makes it unpassable (#75, #240, #1954)'
+  expected_rules:
+  - RG604
+  - RG608
+  - RG001
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: harbor-framework/terminal-bench maintainers + reporters
+    url: https://github.com/harbor-framework/terminal-bench/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: build-cython-ext
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - smoke
+  - core
+  - all
+- id: tb2-cancel-async-tasks
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: underspecified
+  label: cancellation semantics are checked but not stated (#238)
+  expected_rules:
+  - RG704
+  - RG701
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: cancel-async-tasks
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-extract-elf
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: underspecified
+  label: requirements missing from the instruction (#194)
+  expected_rules:
+  - RG704
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: extract-elf
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-qemu-startup
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: 'bullseye-security expired; image/verifier broken (#233, #1950)'
+  expected_rules:
+  - RG608
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: harbor-framework/terminal-bench maintainers + reporters
+    url: https://github.com/harbor-framework/terminal-bench/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: qemu-startup
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-qemu-alpine-ssh
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: broken_env
+  label: 'bullseye-security expired; image broken (#195, #1951)'
+  expected_rules:
+  - RG608
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  - org: harbor-framework/terminal-bench maintainers + reporters
+    url: https://github.com/harbor-framework/terminal-bench/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: qemu-alpine-ssh
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-raman-fitting
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: underspecified
+  label: verifier locks in unstated conventions (format, units, formula, windows) (#85)
+  expected_rules:
+  - RG704
+  - RG701
+  needs: deep-review
+  confidence: high
+  source:
+  - org: harbor-framework/terminal-bench-2 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2/issues
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: raman-fitting
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-pytorch-model-cli
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: underspecified
+  label: preprocessing conventions unstated; README requires C but instruction and verifier don't (#156)
+  expected_rules:
+  - RG704
+  - RG701
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  - org: harbor-framework/terminal-bench-2-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-2-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: pytorch-model-cli
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-largest-eigenval
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: forgeable_grader
+  label: monkeypatched time.perf_counter and slowed the reference np.linalg.eig
+  expected_rules:
+  - RG206
+  - RG215
+  confidence: high
+  source:
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: largest-eigenval
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-multi-source-data-merger
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: hard-coded output computed from the tiny inputs passes
+  expected_rules:
+  - RG104
+  - RG110
+  confidence: high
+  source:
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: multi-source-data-merger
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-portfolio-optimization
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: forgeable_grader
+  label: overwrote the baseline to return tiny fixed data and faked the speedup
+  expected_rules:
+  - RG213
+  - RG206
+  - RG215
+  confidence: high
+  source:
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: portfolio-optimization
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-pypi-server
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: forgeable_grader
+  label: planted the package in site-packages plus sitecustomize instead of a real index
+  expected_rules:
+  - RG205
+  - RG215
+  confidence: high
+  source:
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: pypi-server
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+  other_categories:
+  - weak_tests
+- id: tb2-regex-chess
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: forgeable_grader
+  label: patched Python's re stdlib
+  expected_rules:
+  - RG205
+  - RG215
+  clean_for:
+  - RG101
+  - RG104
+  - RG110
+  confidence: high
+  source:
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: regex-chess
+    approx_mb: 5
+  layout: harbor
+  note: 'Gabor''s human review: weak-test claim is a false positive (negative for weak_tests)'
+  tiers:
+  - all
+- id: tb2-sqlite-with-gcov
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: apt sqlite plus a gcov-instrumented wrapper passes
+  expected_rules:
+  - RG110
+  - RG205
+  confidence: high
+  source:
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: sqlite-with-gcov
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-winning-avg-corewars
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: forgeable_grader
+  label: replaced the pmars binary with a script that prints 100 wins
+  expected_rules:
+  - RG205
+  - RG215
+  confidence: high
+  source:
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: winning-avg-corewars
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-bn-fit-modify
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: hard-coded answer passes
+  expected_rules:
+  - RG104
+  - RG110
+  confidence: medium
+  source:
+  - org: DebugML (UPenn)
+    url: https://debugml.github.io/cheating-agents
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: bn-fit-modify
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb2-merge-diff-arc-agi-task
+  benchmark: terminal-bench-2.0
+  version: terminal-bench-2@69671fbaac6d (Harbor registry pin 'terminal-bench 2.0', 2025-10-31)
+  polarity: positive
+  category: weak_tests
+  label: doesn't actually verify that a git merge occurred (minor)
+  expected_rules:
+  - RG108
+  - RG110
+  needs: deep-review
+  confidence: low
+  source:
+  - org: Jonathan Gabor (independent)
+    url: https://jonathanpgabor.substack.com/p/every-benchmark-is-broken
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2
+    ref: 69671fbaac6d67a7ef0dfec016cc38a64ef7a77c
+    path: merge-diff-arc-agi-task
+    approx_mb: 5
+  layout: harbor
+  tiers:
+  - all
+- id: tb21-adaptive-rejection-sampler
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: underspecified
+  label: 'fixed twin: signature now stated in the instruction'
+  expected_rules: []
+  clean_for:
+  - RG402
+  - RG704
+  - RG701
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: adaptive-rejection-sampler
+    approx_mb: 5
+  layout: harbor
+  control: tb2-adaptive-rejection-sampler
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - smoke
+  - core
+  - all
+- id: tb21-build-pmars
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: gold_fails
+  label: 'fixed twin: oracle and build destination fixed'
+  expected_rules: []
+  clean_for:
+  - RG001
+  - RG608
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: build-pmars
+    approx_mb: 5
+  layout: harbor
+  control: tb2-build-pmars
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - smoke
+  - core
+  - all
+- id: tb21-fix-git
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: answer_leak
+  label: 'fixed twin: patch/install files removed from the container'
+  expected_rules: []
+  clean_for:
+  - RG306
+  - RG304
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: fix-git
+    approx_mb: 5
+  layout: harbor
+  control: tb2-fix-git
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - smoke
+  - core
+  - all
+- id: tb21-polyglot-c-py
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: too_strict
+  label: 'fixed twin: listdir check relaxed to allow byproducts'
+  expected_rules: []
+  clean_for:
+  - RG407
+  - RG408
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: polyglot-c-py
+    approx_mb: 5
+  layout: harbor
+  control: tb2-polyglot-c-py
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - smoke
+  - core
+  - all
+- id: tb21-polyglot-rust-c
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: too_strict
+  label: 'fixed twin: listdir check relaxed'
+  expected_rules: []
+  clean_for:
+  - RG407
+  - RG408
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: polyglot-rust-c
+    approx_mb: 5
+  layout: harbor
+  control: tb2-polyglot-rust-c
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - core
+  - all
+- id: tb21-hf-model-inference
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: too_strict
+  label: 'fixed twin: HF-cache format accepted'
+  expected_rules: []
+  clean_for:
+  - RG407
+  - RG408
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: hf-model-inference
+    approx_mb: 5
+  layout: harbor
+  control: tb2-hf-model-inference
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - core
+  - all
+- id: tb21-filter-js-from-html
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: too_strict
+  label: 'fixed twin: normalisation described; memory raised'
+  expected_rules: []
+  clean_for:
+  - RG407
+  - RG408
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: filter-js-from-html
+    approx_mb: 5
+  layout: harbor
+  control: tb2-filter-js-from-html
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - core
+  - all
+- id: tb21-sam-cell-seg
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: underspecified
+  label: 'fixed twin: argument style stated'
+  expected_rules: []
+  clean_for:
+  - RG704
+  - RG408
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: sam-cell-seg
+    approx_mb: 5
+  layout: harbor
+  control: tb2-sam-cell-seg
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - core
+  - all
+- id: tb21-compile-compcert
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: broken_env
+  label: 'fixed twin: nproc/limits fixed'
+  expected_rules: []
+  clean_for:
+  - RG603
+  - RG011
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: compile-compcert
+    approx_mb: 5
+  layout: harbor
+  control: tb2-compile-compcert
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - core
+  - all
+- id: tb21-rstan-to-pystan
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: gold_fails
+  label: 'fixed twin: oracle venv fixed'
+  expected_rules: []
+  clean_for:
+  - RG001
+  - RG608
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: rstan-to-pystan
+    approx_mb: 5
+  layout: harbor
+  control: tb2-rstan-to-pystan
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - core
+  - all
+- id: tb21-query-optimize
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: underspecified
+  label: 'fixed twin: ''do not modify the DB'' stated'
+  expected_rules: []
+  clean_for:
+  - RG704
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: query-optimize
+    approx_mb: 5
+  layout: harbor
+  control: tb2-query-optimize
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - all
+- id: tb21-mteb-retrieve
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: underspecified
+  label: 'fixed twin: requirement stated; transformers pinned'
+  expected_rules: []
+  clean_for:
+  - RG704
+  - RG604
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: mteb-retrieve
+    approx_mb: 5
+  layout: harbor
+  control: tb2-mteb-retrieve
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - core
+  - all
+- id: tb21-mteb-leaderboard
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: underspecified
+  label: 'fixed twin: filter stated; Pillow added'
+  expected_rules: []
+  clean_for:
+  - RG704
+  - RG608
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: mteb-leaderboard
+    approx_mb: 5
+  layout: harbor
+  control: tb2-mteb-leaderboard
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - core
+  - all
+- id: tb21-caffe-cifar-10
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: too_strict
+  label: 'fixed twin: make/cmake and limits fixed'
+  expected_rules: []
+  clean_for:
+  - RG407
+  - RG603
+  - RG011
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: caffe-cifar-10
+    approx_mb: 5
+  layout: harbor
+  control: tb2-caffe-cifar-10
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - core
+  - all
+- id: tb21-train-fasttext
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: flaky
+  label: 'fixed twin: test no longer depends on Python bindings/PATH'
+  expected_rules: []
+  clean_for:
+  - RG003
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: train-fasttext
+    approx_mb: 5
+  layout: harbor
+  control: tb2-train-fasttext
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - all
+- id: tb21-overfull-hbox
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: broken_env
+  label: 'fixed twin: build fixed'
+  expected_rules: []
+  clean_for:
+  - RG608
+  - RG001
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: overfull-hbox
+    approx_mb: 5
+  layout: harbor
+  control: tb2-overfull-hbox
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - all
+- id: tb21-extract-moves-from-video
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: broken_env
+  label: 'fixed twin: local copy of the video'
+  expected_rules: []
+  clean_for:
+  - RG608
+  - RG003
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: extract-moves-from-video
+    approx_mb: 5
+  layout: harbor
+  control: tb2-extract-moves-from-video
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - all
+- id: tb21-install-windows-3.11
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: underspecified
+  label: 'fixed twin: socket path/flags stated; multi-PID bug fixed'
+  expected_rules: []
+  clean_for:
+  - RG704
+  - RG701
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: install-windows-3.11
+    approx_mb: 5
+  layout: harbor
+  control: tb2-install-windows-3.11
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - all
+- id: tb21-crack-7z-hash
+  benchmark: terminal-bench-2.1
+  version: terminal-bench-2-1@12b7565679ce (HEAD 2026-11-05, no tags)
+  polarity: negative
+  category: broken_env
+  label: 'fixed twin: limits raised'
+  expected_rules: []
+  clean_for:
+  - RG011
+  confidence: high
+  source:
+  - org: Terminal-Bench team (Laude/Stanford)
+    url: https://github.com/harbor-framework/terminal-bench-2/pull/53
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-2-1
+    ref: 12b7565679ce
+    path: crack-7z-hash
+    approx_mb: 5
+  layout: harbor
+  control: tb2-crack-7z-hash
+  note: clean only for the rules in clean_for; other issues on this task may remain
+  tiers:
+  - all
+bulk:
+- id: gabor-tb2-ratings
+  benchmark: terminal-bench-2.0
+  format: 'ratings json {task: 1-5} + human notes'
+  rules:
+  - where:
+    - - rating
+      - <=
+      - 3
+    category: weak_tests
+    confidence: low unless in human-notes 'Major issues'
+  - human_notes_section: False positives
+    polarity: negative
+    clean_for:
+    - RG101
+    - RG104
+    - RG110
+  source:
+    org: Jonathan Gabor (independent)
+    url: https://jonathanpgabor.substack.com/p/every-benchmark-is-broken
+  count: 88 rated
+  url: https://github.com/JonathanGabor/terminal-bench-2-audit
+  licence: no licence file - linked, not copied
+- id: aba-tb2
+  url: https://data.autobenchaudit.com/benchmarks/tb2/benchmark.json
+  source:
+    org: Wang, Zou et al.
+    url: https://arxiv.org/abs/2605.26079
+  count: 5 majors / 89
+  confidence: low
+  rules: as swe-bench-verified aba
+- id: rdi-all-forgeable
+  benchmark: swe-bench-verified, swe-bench-pro v1, terminal-bench-2.0
+  file: (rule, no file)
+  rules:
+  - all: every instance
+    category: forgeable_grader
+    expected_rules:
+    - RG201
+    - RG004
+    - RG205
+    - RG214
+    note: 'conftest.py hook (Verified, Pro also overwrites parser.py); Django: TestCase.run monkey-patch; TB: curl/pip/python/uvx wrappers fake
+      pytest and write the reward'
+  source:
+    org: UC Berkeley RDI
+    url: https://rdi.berkeley.edu/blog/trustworthy-benchmarks-cont/
+  count: 500 / 731 / 89
+  url: https://rdi.berkeley.edu/blog/trustworthy-benchmarks-cont/
+- id: zai-tb2-verified
+  url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  source:
+    org: Z.ai (zai-org)
+    url: https://huggingface.co/datasets/zai-org/terminal-bench-2-verified
+  count: ~32 TB2 tasks changed
+  rules:
+  - all: tasks listed in the dataset card change log
+    category: per change-log entry
+    confidence: medium

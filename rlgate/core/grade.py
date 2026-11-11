@@ -25,9 +25,11 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+import logging
 import math
 import secrets
 import shlex
+import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, cast
 
@@ -36,6 +38,8 @@ from rlgate.sandbox.parsers import TestReport, collect
 if TYPE_CHECKING:
     from rlgate.core.task import Task
     from rlgate.sandbox.base import Overlay
+
+log = logging.getLogger(__name__)
 
 VERDICT_MODES = ("exit_code", "report", "both", "reward_file")
 
@@ -71,8 +75,13 @@ def run_grader(overlay: Overlay, task: Task, cmd: str | None = None) -> GradeRes
     overlay.before_grade()
     files = (g.reward_files if g.verdict == "reward_file" else ()) + (
         (g.report.path,) if g.report else ())
+    t0 = time.monotonic()
     res, reader = _grade_once(overlay, _with_env(cmd, g.env_vars), g.reward_files, files,
                               g.timeout_s)
+    log.info("graded in %.1fs: exit %s (%s)", time.monotonic() - t0, res.exit_code,
+             cmd if len(cmd) < 200 else cmd[:200] + "...")
+    if res.exit_code != 0:
+        log.debug("grader output (tail):\n%s", (res.stdout + res.stderr)[-3000:])
     read = cast("Overlay", reader)       # only its exec() is used
     report = collect(read, g.report) if g.report else None
     if g.verdict == "reward_file":

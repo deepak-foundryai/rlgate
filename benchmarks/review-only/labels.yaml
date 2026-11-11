@@ -1,0 +1,146 @@
+# Labelled tasks rlgate cannot run today (no Harbor/SWE-style container + test grader: tool-calling sims,
+# VMs, live web apps, GPU kernels, Q&A keys). Kept for an LLM-review-only (L2) comparison or future layouts.
+# Ids copied from the public sources; where a list is long it is referenced by the source page instead of copied.
+schema: rlgate-benchmarks-review-only/1
+generated: '2026-11-11'
+benchmarks:
+- benchmark: tau2-bench
+  why_not_runnable: Python simulator with an LLM user, tool-calling not code; no container grader
+  version: sierra-research/tau2-bench CHANGELOG.md [1.0.0], [1.0.1] 2026-07-15, [2.0.0] 2026-10-19
+  source: {org: Sierra, url: 'https://github.com/sierra-research/tau2-bench/blob/main/CHANGELOG.md'}
+  confidence: high
+  labels:
+    airline:
+      gold_fails: [2, 27, 38, 7, 9, 37, 44, 23, 33, 35]       # incorrect expected actions + data fixes
+      underspecified: [5, 12, 15, 16, 18, 19, 21, 25, 30, 36, 39, 43]
+      impossible: [14, 34, 42]
+      forgeable_grader: [13, 29, 32, 45]                      # policy loophole
+    retail:
+      gold_fails: [12, 13, 33, 34, 59]
+      underspecified: [0, 1, 2, 3, 4, 8, 15, 22, 28, 55, 76, 98, 99, 100, 20, 54, 62]
+      impossible: [18, 29, 91, 107]
+      broken_env: [21]                                        # tool addition
+    banking_knowledge:
+      gold_fails: ['019', '048', '058', '061', '062', '084', '100', '102', '074']
+      underspecified: ['027', '046', '056', '061', '062', '075', '081', '083', '084', '088', '100']
+  control: same task id at the [1.0.0] tag (fixed); diff data/tau2/domains/*/tasks.json across tags
+- benchmark: tau2-bench-verified
+  why_not_runnable: as tau2
+  version: amazon-agi/tau2-bench-verified FIXES.md (873 lines)
+  source: {org: Amazon AGI, url: 'https://github.com/amazon-agi/tau2-bench-verified'}
+  vendored: upstream/tau2_bench_verified_FIXES.md (MIT, amazon-agi/tau2-bench-verified)
+  confidence: medium (high where Sierra also fixed the same task)
+  labels:
+    retail_sections: [W2378156, mia_garcia_4516, 12, 13, 15, 17, 20, 21, 22, 24, 26, 27, 33, 39, 45, 48, 49, 59, 62, 65, 66, 68, 69, 75, 76, 78, 79, 80, 84, 86]
+    airline_sections: [2, 5, 7, 9, 11, 13, 15, 16, 18, 20, 21, 23, 25, 27, 29, 30, 31, 34, 36, 37, 38, 39, 42, 43, 44, 45]
+  category_map: {Policy Compliance: gold_fails, Database Accuracy: gold_fails, Instruction Clarity: underspecified, Logical Consistency: gold_fails, Evaluation Determinism: flaky}
+- benchmark: tau-bench (v1)
+  why_not_runnable: as tau2
+  version: sierra-research/tau-bench@14bf0ef
+  source: {org: ABC (UIUC Kang lab), url: 'https://github.com/uiuc-kang-lab/agentic-benchmarks/tree/main/benchmarks/tau-bench'}
+  confidence: high
+  labels:
+    nop_passes: every airline task touched by tau-bench-issue-1-fix.patch (actions=[]), e.g. users amelia_sanchez_4739, james_lee_6136, james_patel_9828, liam_khan_2521
+    forgeable_grader: ~2% airline / 3.6% retail substring targets (exploit-2.patch spam agent)
+- benchmark: osworld
+  why_not_runnable: needs desktop VMs
+  version: xlang-ai/OSWorld main evaluation_examples (OSWorld-Verified 2025-07-28)
+  source: {org: XLANG Lab, url: 'https://xlang.ai/blog/osworld-verified'}
+  label_file: 'https://docs.google.com/spreadsheets/d/19GSOVCtYM7j3V84Zl5QiaeiEtgK_NIvqtDVXEoVb4U0/export?format=csv&gid=0 (licence not stated; linked, not copied)'
+  confidence: high
+  labels:
+    fixlog: 360 rows / 216 task UUIDs; Finished? = ✅ -> positive (Reason text -> flaky | broken_env | underspecified); '🙅✅' (~100 rows) -> negative
+    abc_patches: 'chrome 2888b4e6, b070486d, b7895e80, da46d875, fc6d8143; gimp 38f48d40, 62f7fd55, 72f83cdc; multi_apps 26660ad1, 69acbb55; os 4783cc41, 5812b315 (UUID prefixes; full ids in benchmarks/osworld/<domain>-<uuid>.patch)'
+- benchmark: osworld-2.1
+  why_not_runnable: needs desktop VMs
+  source: {org: Epoch AI, url: 'https://epoch.ai/benchmarks/osworld-2-1/review'}
+  confidence: medium
+  labels: 36 flagged + 10 clean by task number (on-page Errors table; numbering may not match github.com/xlang-ai/OSWorld-V2)
+- benchmark: webarena
+  why_not_runnable: needs self-hosted web apps
+  version: ServiceNow/webarena-verified assets/dataset/webarena-verified.json (812 tasks, revision>=2) vs test.raw.json
+  source: {org: ServiceNow, url: 'https://github.com/ServiceNow/webarena-verified'}
+  confidence: medium
+  labels: derive by diffing test.raw.json -> verified per task (no category field); 40 tasks with new NOT_FOUND/ACTION_NOT_ALLOWED/PERMISSION_DENIED status -> nop_passes in the original; original config_files/test.raw.json -> answer_leak (benchmark-wide, RDI)
+- benchmark: bfcl-v4
+  why_not_runnable: function-calling AST/exec grader, not a container task
+  sources:
+  - org: Tokenless
+    url: 'https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects'
+    confidence: high
+    label_file: findings.jsonl in the repo above (cases with sweep bfcl-v4)
+    tasks: [irrelevance_189, irrelevance_228, live_parallel_0-0-0, live_parallel_5-2-0, live_parallel_multiple_2-2-0, live_relevance_0-0-0, live_simple_106-63-0, memory_kv_25-customer-25, multi_turn_base_0, multi_turn_miss_param_0, parallel_178, parallel_185, simple_java_35, simple_javascript_16, simple_python_13, web_search_base_1, web_search_base_57, web_search_no_snippet_1, web_search_no_snippet_37]
+  - org: Epoch AI
+    url: 'https://epoch.ai/benchmarks/berkeley-function-calling-leaderboard/review'
+    confidence: medium
+    tasks: 24 flagged + 26 clean (on-page table); FN -> gold_fails (stale gold), FP -> weak_tests
+- benchmark: kernelbench
+  why_not_runnable: needs a CUDA GPU; labels are per generated kernel, not per task
+  sources:
+  - org: ABC (UIUC Kang lab)
+    url: 'https://github.com/uiuc-kang-lab/agentic-benchmarks/tree/main/benchmarks/kernel-bench'
+    labels: tests_verified/level_*/<problem>/test_<kernelid>.py - 129 hand-verified tests over 71 problems; a 'correct'-marked kernel failing its verified test = weak_tests positive for that problem
+    confidence: high
+  - org: Berkeley RDI
+    url: 'https://github.com/moogician/trustworthy-env/blob/main/detection/catalog.py'
+    labels: K-1..K-20 (problem/mechanism level; e.g. K-1 MSELoss partial, K-5 Gemm_Max_Subtract_GELU always zeros, K-6 memory reuse, K-13/K-14 timer monkey-patch)
+    confidence: high
+- benchmark: swe-lancer
+  why_not_runnable: benchmark-wide flaw, no per-task labels (tests in a zip the agent can overwrite)
+  version: openai/SWELancer-Benchmark@6fee3b0
+  source: {org: ABC, url: 'https://github.com/uiuc-kang-lab/agentic-benchmarks/tree/main/benchmarks/swe-lancer'}
+  labels: all tasks forgeable_grader (exploit.patch / fix.patch)
+  confidence: high
+- benchmark: swe-bench-multimodal
+  why_not_runnable: JS/visual tasks; react-pdf ids not in the notes
+  source: {org: Anthropic, url: 'https://www-cdn.anthropic.com/08ab9158070959f88f296514c21b7facce6f52bc.pdf'}
+  labels: 5 tasks (Mythos Preview system card §8.6; react-pdf)
+  confidence: medium
+- benchmark: hle
+  why_not_runnable: Q&A answer key
+  source: {org: Epoch AI, url: 'https://epoch.ai/benchmarks/hle/review'}
+  labels: 22 named question ids (on-page Errors table); impossible -> underspecified, wrong key -> gold_fails, narrow key -> too_strict
+  confidence: medium
+- benchmark: healthbench-professional
+  source: {org: Epoch AI, url: 'https://epoch.ai/benchmarks/healthbench-professional/review'}
+  labels: 25 flagged + 25 clean (on-page list)
+  confidence: medium
+- benchmark: critpt-v1
+  source: {org: Epoch AI, url: 'https://epoch.ai/benchmarks/critpt/review'}
+  labels: 21 (19 repaired, 2 excluded) + 35 clean
+  confidence: medium
+- benchmark: cmt-benchmark-v1.0.0
+  source: {org: Epoch AI, url: 'https://epoch.ai/benchmarks'}
+  confidence: medium
+- benchmark: simpleqa-verified
+  source: {org: Epoch AI, url: 'https://epoch.ai/benchmarks/simple-qa-verified/review'}
+  labels: 5 flagged + 45 clean (original_index)
+  confidence: medium
+- benchmark: textquests
+  source: {org: Epoch AI, url: 'https://epoch.ai/benchmarks/textquests/review'}
+  labels: 24 games / 74 checkpoints; impossible/inert -> broken_env
+  confidence: medium
+- benchmark: agents-last-exam-v1.1
+  source: {org: Epoch AI, url: 'https://epoch.ai/benchmarks/agents-last-exam/review'}
+  labels: 22 (public answer -> answer_leak, lax grader -> weak_tests, grader tampering -> forgeable_grader)
+  confidence: medium
+- benchmark: vending-bench-2
+  source: {org: Epoch AI, url: 'https://epoch.ai/benchmarks/vending-bench-2/review'}
+  labels: 0 tasks (2 tools named); environment not public
+  confidence: low
+- benchmark: intercode-ctf / cybench
+  source: {org: Docent / ABC / 'Every Model Cheats' arXiv 2607.21763, url: 'https://arxiv.org/abs/2607.21763'}
+  labels: behaviour audits (cheating rate), no task-flaw list
+  confidence: low
+- benchmark: metr-re-bench
+  source: {org: METR (second-hand reports), url: 'https://metr.org/'}
+  labels: "'optimize finetune script' hackable by copying weights; scorer timing shrink (o3)"
+  confidence: low
+- benchmark: mimo-v2.6 general / cyber
+  why_not_runnable: non-code configs; the code config is in ../mimo/labels.yaml
+  source: {org: Vals AI / HF XiaomiMiMo/MiMo-V2.6-RL-oss, url: 'https://www.vals.ai/blogs/mimo-reward-hacking'}
+  confidence: low
+- benchmark: gaia
+  source: {org: HF discussions (second-hand), url: 'https://huggingface.co/datasets/gaia-benchmark/GAIA/discussions'}
+  labels: wrong answers ded28325-3447-4c56-860f-e497d6fb3577, 6b078778-0b90-464d-83f6-59511c811b01 (search snippet, unopened)
+  confidence: low

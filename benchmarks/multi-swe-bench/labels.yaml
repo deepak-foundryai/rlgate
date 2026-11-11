@@ -1,0 +1,229 @@
+# multi-swe-bench: published task-level flaw labels. See README.md and ../README.md.
+benchmark: multi-swe-bench
+description: 'Multi-SWE-bench (1,632): tasks reported broken in its issue tracker.'
+versions:
+- HF ByteDance-Seed/Multi-SWE-bench
+runnable_by_rlgate: partial
+how_to_run: SWE-style rows in `<out>/multi-swe-bench/<benchmark>.jsonl`; needs a mapping YAML (`--layout file`) and the repo checked out per row
+datasets:
+  multi-swe-bench:
+    hf: ByteDance-Seed/Multi-SWE-bench
+    revision: main
+    files:
+    - '**/*.jsonl'
+    id_field: instance_id
+    image: mswebench/{org}_m_{repo}:pr-{number}
+    approx_mb: 80
+    image_gb: 3.0
+    layout: yaml-needed
+tasks:
+- id: mswebench-google__gson-2479
+  benchmark: multi-swe-bench
+  version: HF ByteDance-Seed/Multi-SWE-bench@main (1,632 tasks)
+  polarity: positive
+  category: broken_env
+  label: test patch fails to apply at base (2 rejected hunks) -> false positive (#100)
+  expected_rules:
+  - RG001
+  - RG006
+  - RG009
+  confidence: medium
+  source:
+  - org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-bench
+    id: google__gson-2479
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: mswebench-cli__cli-4803
+  benchmark: multi-swe-bench
+  version: HF ByteDance-Seed/Multi-SWE-bench@main (1,632 tasks)
+  polarity: positive
+  category: underspecified
+  label: linked issue already fixed at base; F2P tests check unrelated error formats introduced by the PR (#105)
+  expected_rules:
+  - RG701
+  - RG405
+  - RG002
+  confidence: medium
+  source:
+  - org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-bench
+    id: cli__cli-4803
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: mswebench-cli__cli-590
+  benchmark: multi-swe-bench
+  version: HF ByteDance-Seed/Multi-SWE-bench@main (1,632 tasks)
+  polarity: positive
+  category: underspecified
+  label: F2P tests need a SurveyAsk mock hook found only in the gold patch (#106)
+  expected_rules:
+  - RG402
+  - RG704
+  confidence: medium
+  source:
+  - org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-bench
+    id: cli__cli-590
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: mswebench-cli__cli-10364
+  benchmark: multi-swe-bench
+  version: HF ByteDance-Seed/Multi-SWE-bench@main (1,632 tasks)
+  polarity: positive
+  category: too_strict
+  label: F2P tests need an exact error message found only in the gold patch (#106)
+  expected_rules:
+  - RG403
+  - RG401
+  - RG704
+  confidence: medium
+  source:
+  - org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-bench
+    id: cli__cli-10364
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: mswebench-zeromicro__go-zero-2537
+  benchmark: multi-swe-bench
+  version: HF ByteDance-Seed/Multi-SWE-bench@main (1,632 tasks)
+  polarity: positive
+  category: underspecified
+  label: F2P tests need a []byte input contract found only in the gold patch (#106)
+  expected_rules:
+  - RG402
+  - RG704
+  confidence: medium
+  source:
+  - org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-bench
+    id: zeromicro__go-zero-2537
+  layout: yaml-needed
+  tiers:
+  - all
+- id: mswebench-google__gson-1787
+  benchmark: multi-swe-bench
+  version: HF ByteDance-Seed/Multi-SWE-bench@main (1,632 tasks)
+  polarity: positive
+  category: gold_fails
+  label: gold patch does not resolve google/gson:pr-1787 (#57; reporter built images on demand, may be build drift)
+  expected_rules:
+  - RG001
+  - RG608
+  confidence: low
+  source:
+  - org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-bench
+    id: google/gson:pr-1787
+    id_as_given: true
+  layout: yaml-needed
+  note: 'id kept as written in issue #57 (org/repo:pr-N); fetch.py matches it against org/repo/number'
+  tiers:
+  - all
+- id: mswebench-google__gson-1703
+  benchmark: multi-swe-bench
+  version: HF ByteDance-Seed/Multi-SWE-bench@main (1,632 tasks)
+  polarity: positive
+  category: gold_fails
+  label: gold patch does not resolve google/gson:pr-1703 (#57; reporter built images on demand, may be build drift)
+  expected_rules:
+  - RG001
+  - RG608
+  confidence: low
+  source:
+  - org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-bench
+    id: google/gson:pr-1703
+    id_as_given: true
+  layout: yaml-needed
+  note: 'id kept as written in issue #57 (org/repo:pr-N); fetch.py matches it against org/repo/number'
+  tiers:
+  - all
+- id: mswebench-apache__dubbo-7041
+  benchmark: multi-swe-bench
+  version: HF ByteDance-Seed/Multi-SWE-bench@main (1,632 tasks)
+  polarity: positive
+  category: gold_fails
+  label: gold patch does not resolve apache/dubbo:pr-7041 (#57; reporter built images on demand, may be build drift)
+  expected_rules:
+  - RG001
+  - RG608
+  confidence: low
+  source:
+  - org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-bench
+    id: apache/dubbo:pr-7041
+    id_as_given: true
+  layout: yaml-needed
+  note: 'id kept as written in issue #57 (org/repo:pr-N); fetch.py matches it against org/repo/number'
+  tiers:
+  - all
+- id: mswebench-elastic__logstash-16968
+  benchmark: multi-swe-bench
+  version: HF ByteDance-Seed/Multi-SWE-bench@main (1,632 tasks)
+  polarity: positive
+  category: gold_fails
+  label: gold patch does not resolve elastic/logstash:pr-16968 (#57; reporter built images on demand, may be build drift)
+  expected_rules:
+  - RG001
+  - RG608
+  confidence: low
+  source:
+  - org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-bench
+    id: elastic/logstash:pr-16968
+    id_as_given: true
+  layout: yaml-needed
+  note: 'id kept as written in issue #57 (org/repo:pr-N); fetch.py matches it against org/repo/number'
+  tiers:
+  - all
+bulk:
+- id: mswe-70-future-commits
+  benchmark: multi-swe-bench, multi-swe-rl
+  file: (rule, no file)
+  rules:
+  - all: every image built before a rebuild (none announced)
+    category: answer_leak
+    expected_rules:
+    - RG301
+    confidence: medium
+  source:
+    org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  count: all
+  url: https://github.com/multi-swe-bench/multi-swe-bench/issues/70

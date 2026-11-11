@@ -168,11 +168,13 @@ class ComposeEnv(EnvProvider):
     _counter = 0
     _counter_lock = threading.Lock()
 
-    def __init__(self, spec: EnvSpec, key: str, host: Callable[[], Machine]) -> None:
+    def __init__(self, spec: EnvSpec, key: str, host: Callable[[], Machine],
+                 slots: threading.Semaphore | None = None) -> None:
         super().__init__(spec)
         assert spec.compose is not None
         self.key = _slug(key)[:40]
         self._host_factory = host
+        self._slots = slots     # stacks that fit on the host at once (None: no limit)
         self.host: Machine | None = None
         self.remote_dir = f"/rlgate/{self.key}"
         self._base = ""
@@ -205,10 +207,20 @@ class ComposeEnv(EnvProvider):
             n = ComposeEnv._counter
         cmd = f"{self._base} -p rlgate-{self.key}-{n}"
         host = self.host
+        slots = self._slots
+        released = threading.Event()
 
         def down() -> None:
-            host.exec(f"{cmd} down -v --remove-orphans --timeout 5", timeout=300)
+            try:
+                host.exec(f"{cmd} down -v --remove-orphans --timeout 5", timeout=300)
+            finally:
+                if slots is not None and not released.is_set():
+                    released.set()
+                    slots.release()
 
+        if slots is not None:
+            slots.acquire()     # each stack is sized for the whole host: one at a time
+        log.debug("compose up %s", cmd)
         up = host.exec(f"{cmd} up -d --no-build", timeout=900)
         if up.exit_code != 0:
             down()
@@ -220,10 +232,27 @@ class ComposeEnv(EnvProvider):
             import time
             time.sleep(2)
         m.close()
-        raise MachineError(f"compose service {self.spec.service!r} never became ready")
+        raise MachineError(f"compose service {self.spec.service!r} never became ready"
+                           + _stack_state(host, cmd))
 
     def close(self) -> None:
         self.host = None    # the host machine is owned (and closed) by the sandbox
+
+
+def _stack_state(host: Machine, cmd: str) -> str:
+    """Why a stack's containers stopped, for the error message: each one that is not
+    running, with its exit code and whether the kernel killed it for memory."""
+    r = host.exec(f"for c in $({cmd} ps -aq); do docker inspect -f "
+                  "'{{.Name}} {{.State.Status}} exit={{.State.ExitCode}} "
+                  "oom={{.State.OOMKilled}}' \"$c\"; done", timeout=120)
+    down = [ln.strip().lstrip("/") for ln in r.stdout.splitlines()
+            if ln.strip() and " running " not in ln]
+    if not down:
+        return ""
+    oom = any("oom=true" in ln for ln in down)
+    why = (" — the task's containers ran out of memory; give the sandbox more "
+           "(--backend-opt memory_gb=N)" if oom else "")
+    return "\nstopped containers: " + "; ".join(down) + why
 
 
 def _compose_base(spec: EnvSpec) -> dict:
@@ -318,6 +347,7 @@ class StagedSandbox(Sandbox):
         self._grader_env: EnvProvider | None = None
         self._dind: Machine | None = None
         self._dind_lock = threading.Lock()
+        self._stack_slots = threading.Semaphore(1)   # live compose stacks on the DinD host
         self._oracle_capture: Path | None = None     # separate: artifacts after solve.sh
         self._oracle_ws: Path | None = None          # workdir after solve.sh
         self._oracle_log: str = ""
@@ -497,7 +527,10 @@ class StagedSandbox(Sandbox):
     def _provider(self, spec: EnvSpec, role: str) -> EnvProvider:
         key = f"{self.task.id}-{role}"
         if spec.compose is not None:
-            return ComposeEnv(spec, key, self._docker_host)
+            # on a Docker-in-Docker sandbox sized for ONE stack, stacks run one at a time
+            # (as the harness runs them); several at once can run the host out of memory
+            slots = None if self.backend == "docker" else self._stack_slots
+            return ComposeEnv(spec, key, self._docker_host, slots)
         if self.backend == "daytona":
             return DaytonaImageEnv(spec, self.task.id, self.options)
         return DockerImageEnv(spec, self.task.id)

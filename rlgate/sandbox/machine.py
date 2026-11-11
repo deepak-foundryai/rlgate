@@ -248,8 +248,11 @@ class ComposeMachine(Machine):
     def put_file(self, local: Path, remote: str) -> None:
         stage = f"/tmp/rlgate-{uuid.uuid4().hex[:12]}"
         self.host.put_file(local, stage)
-        self.host.check(f"{self.compose} cp {stage} {self.service}:{shlex.quote(remote)} "
-                        f"&& rm -f {stage}", what="compose cp in")
+        try:
+            self.host.check(f"{self.compose} cp {stage} {self.service}:{shlex.quote(remote)} "
+                            f"&& rm -f {stage}", what="compose cp in")
+        except MachineError as e:
+            raise MachineError(f"{e}{self._stopped()}") from e
 
     def get_file(self, remote: str, local: Path) -> None:
         stage = f"/tmp/rlgate-{uuid.uuid4().hex[:12]}"
@@ -259,6 +262,19 @@ class ComposeMachine(Machine):
             self.host.get_file(stage, local)
         finally:
             self.host.exec(f"rm -f {stage}", timeout=60)
+
+    def _stopped(self) -> str:
+        """Why the copy failed when the service is not running (Docker says "Could not
+        find the file" for a stopped container): its state, exit code and OOM flag."""
+        r = self.host.exec(f"docker inspect -f '{{{{.State.Status}}}} "
+                           f"exit={{{{.State.ExitCode}}}} oom={{{{.State.OOMKilled}}}}' "
+                           f"$({self.compose} ps -aq {self.service})", timeout=120)
+        state = r.stdout.strip()
+        if r.exit_code != 0 or not state or state.startswith("running"):
+            return ""
+        hint = (" — it ran out of memory; give the sandbox more (--backend-opt memory_gb=N)"
+                if "oom=true" in state else "")
+        return f"\nthe {self.service!r} container is not running ({state}){hint}"
 
     def close(self) -> None:
         if self._on_close is not None:

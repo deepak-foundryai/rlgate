@@ -1,0 +1,438 @@
+# impossiblebench: published task-level flaw labels. See README.md and ../README.md.
+benchmark: impossiblebench
+description: 'ImpossibleBench: SWE-bench tasks whose tests were mutated to contradict the spec (`oneoff`, `conflicting`); the `original` row with
+  the same instance id is the control. Labels are planted, so they are exact.'
+versions:
+- HF fjzzq2002/impossible_swebench
+runnable_by_rlgate: 'yes'
+how_to_run: SWE-style rows in `<out>/impossiblebench/<benchmark>.jsonl`; `--layout swebench`; needs the repo checked out per row
+datasets:
+  impossible-swebench:
+    hf: fjzzq2002/impossible_swebench
+    revision: main
+    files:
+    - data/{split}-00000-of-00001.parquet
+    id_field: instance_id
+    image: swebench/sweb.eval.x86_64.{iid_1776}:{tag}
+    default_tag: v2
+    approx_mb: 3
+    image_gb: 2.5
+    layout: swebench
+    note: rows keep the SWE-bench schema; test_patch is the mutated one (original_test_patch kept)
+tasks:
+- id: impossible-oneoff-row0
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: positive
+  category: impossible
+  label: one test expectation flipped so a correct fix fails it (planted; diff = test_patch vs original_test_patch; mutated test = first_fail_to_pass_test)
+  expected_rules:
+  - RG001
+  - RG408
+  - RG704
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: oneoff
+    row_index: 0
+    image_tag: v2
+  layout: swebench
+  control: impossible-original-of-oneoff-row0
+  note: the gold `patch` is unchanged, so the gold fix must fail the mutated test (RG001 is the deterministic hit)
+  tiers:
+  - smoke
+  - core
+  - all
+- id: impossible-oneoff-row1
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: positive
+  category: impossible
+  label: one test expectation flipped so a correct fix fails it (planted; diff = test_patch vs original_test_patch; mutated test = first_fail_to_pass_test)
+  expected_rules:
+  - RG001
+  - RG408
+  - RG704
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: oneoff
+    row_index: 1
+    image_tag: v2
+  layout: swebench
+  control: impossible-original-of-oneoff-row1
+  note: the gold `patch` is unchanged, so the gold fix must fail the mutated test (RG001 is the deterministic hit)
+  tiers:
+  - core
+  - all
+- id: impossible-oneoff-row2
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: positive
+  category: impossible
+  label: one test expectation flipped so a correct fix fails it (planted; diff = test_patch vs original_test_patch; mutated test = first_fail_to_pass_test)
+  expected_rules:
+  - RG001
+  - RG408
+  - RG704
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: oneoff
+    row_index: 2
+    image_tag: v2
+  layout: swebench
+  control: impossible-original-of-oneoff-row2
+  note: the gold `patch` is unchanged, so the gold fix must fail the mutated test (RG001 is the deterministic hit)
+  tiers:
+  - core
+  - all
+- id: impossible-oneoff-row3
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: positive
+  category: impossible
+  label: one test expectation flipped so a correct fix fails it (planted; diff = test_patch vs original_test_patch; mutated test = first_fail_to_pass_test)
+  expected_rules:
+  - RG001
+  - RG408
+  - RG704
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: oneoff
+    row_index: 3
+    image_tag: v2
+  layout: swebench
+  control: impossible-original-of-oneoff-row3
+  note: the gold `patch` is unchanged, so the gold fix must fail the mutated test (RG001 is the deterministic hit)
+  tiers:
+  - core
+  - all
+- id: impossible-oneoff-row4
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: positive
+  category: impossible
+  label: one test expectation flipped so a correct fix fails it (planted; diff = test_patch vs original_test_patch; mutated test = first_fail_to_pass_test)
+  expected_rules:
+  - RG001
+  - RG408
+  - RG704
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: oneoff
+    row_index: 4
+    image_tag: v2
+  layout: swebench
+  control: impossible-original-of-oneoff-row4
+  note: the gold `patch` is unchanged, so the gold fix must fail the mutated test (RG001 is the deterministic hit)
+  tiers:
+  - core
+  - all
+- id: impossible-conflicting-row0
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: positive
+  category: impossible
+  label: a test contradicting an existing one was added (planted; diff = test_patch vs original_test_patch; mutated test = first_fail_to_pass_test)
+  expected_rules:
+  - RG001
+  - RG408
+  - RG704
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: conflicting
+    row_index: 0
+    image_tag: v2
+  layout: swebench
+  control: impossible-original-of-conflicting-row0
+  note: the gold `patch` is unchanged, so the gold fix must fail the mutated test (RG001 is the deterministic hit)
+  tiers:
+  - core
+  - all
+- id: impossible-conflicting-row1
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: positive
+  category: impossible
+  label: a test contradicting an existing one was added (planted; diff = test_patch vs original_test_patch; mutated test = first_fail_to_pass_test)
+  expected_rules:
+  - RG001
+  - RG408
+  - RG704
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: conflicting
+    row_index: 1
+    image_tag: v2
+  layout: swebench
+  control: impossible-original-of-conflicting-row1
+  note: the gold `patch` is unchanged, so the gold fix must fail the mutated test (RG001 is the deterministic hit)
+  tiers:
+  - all
+- id: impossible-conflicting-row2
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: positive
+  category: impossible
+  label: a test contradicting an existing one was added (planted; diff = test_patch vs original_test_patch; mutated test = first_fail_to_pass_test)
+  expected_rules:
+  - RG001
+  - RG408
+  - RG704
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: conflicting
+    row_index: 2
+    image_tag: v2
+  layout: swebench
+  control: impossible-original-of-conflicting-row2
+  note: the gold `patch` is unchanged, so the gold fix must fail the mutated test (RG001 is the deterministic hit)
+  tiers:
+  - all
+- id: impossible-conflicting-row3
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: positive
+  category: impossible
+  label: a test contradicting an existing one was added (planted; diff = test_patch vs original_test_patch; mutated test = first_fail_to_pass_test)
+  expected_rules:
+  - RG001
+  - RG408
+  - RG704
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: conflicting
+    row_index: 3
+    image_tag: v2
+  layout: swebench
+  control: impossible-original-of-conflicting-row3
+  note: the gold `patch` is unchanged, so the gold fix must fail the mutated test (RG001 is the deterministic hit)
+  tiers:
+  - all
+- id: impossible-conflicting-row4
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: positive
+  category: impossible
+  label: a test contradicting an existing one was added (planted; diff = test_patch vs original_test_patch; mutated test = first_fail_to_pass_test)
+  expected_rules:
+  - RG001
+  - RG408
+  - RG704
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: conflicting
+    row_index: 4
+    image_tag: v2
+  layout: swebench
+  control: impossible-original-of-conflicting-row4
+  note: the gold `patch` is unchanged, so the gold fix must fail the mutated test (RG001 is the deterministic hit)
+  tiers:
+  - all
+- id: impossible-original-of-oneoff-row0
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: negative
+  category: impossible
+  label: the `original` split row with the same instance_id (unmodified tests)
+  expected_rules: []
+  clean_for:
+  - RG001
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: original
+    same_instance_as:
+      split: oneoff
+      row_index: 0
+    image_tag: v2
+  layout: swebench
+  control: impossible-oneoff-row0
+  note: clean only w.r.t. the planted contradiction; the SWE-bench original may still carry other labels
+  tiers:
+  - smoke
+  - core
+  - all
+- id: impossible-original-of-oneoff-row1
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: negative
+  category: impossible
+  label: the `original` split row with the same instance_id (unmodified tests)
+  expected_rules: []
+  clean_for:
+  - RG001
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: original
+    same_instance_as:
+      split: oneoff
+      row_index: 1
+    image_tag: v2
+  layout: swebench
+  control: impossible-oneoff-row1
+  note: clean only w.r.t. the planted contradiction; the SWE-bench original may still carry other labels
+  tiers:
+  - core
+  - all
+- id: impossible-original-of-conflicting-row0
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: negative
+  category: impossible
+  label: the `original` split row with the same instance_id (unmodified tests)
+  expected_rules: []
+  clean_for:
+  - RG001
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: original
+    same_instance_as:
+      split: conflicting
+      row_index: 0
+    image_tag: v2
+  layout: swebench
+  control: impossible-conflicting-row0
+  note: clean only w.r.t. the planted contradiction; the SWE-bench original may still carry other labels
+  tiers:
+  - core
+  - all
+- id: impossible-original-of-conflicting-row1
+  benchmark: impossiblebench-swe
+  version: HF fjzzq2002/impossible_swebench@main (349 rows per split; resolved sha in <out>/LOCK.json)
+  polarity: negative
+  category: impossible
+  label: the `original` split row with the same instance_id (unmodified tests)
+  expected_rules: []
+  clean_for:
+  - RG001
+  confidence: high
+  source:
+  - org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  fetch:
+    kind: hf_row
+    dataset: impossible-swebench
+    id: null
+    split: original
+    same_instance_as:
+      split: conflicting
+      row_index: 1
+    image_tag: v2
+  layout: swebench
+  control: impossible-conflicting-row1
+  note: clean only w.r.t. the planted contradiction; the SWE-bench original may still carry other labels
+  tiers:
+  - all
+bulk:
+- id: impossiblebench-swe-all
+  benchmark: impossiblebench-swe
+  file: HF fjzzq2002/impossible_swebench data/{oneoff,conflicting,original}-00000-of-00001.parquet
+  rules:
+  - split:
+    - oneoff
+    - conflicting
+    category: impossible
+    expected_rules:
+    - RG001
+  - split: original
+    polarity: negative
+    clean_for:
+    - RG001
+  source:
+    org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  count: 698 positives + 349 controls
+  url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+- id: impossiblebench-lcb-all
+  benchmark: impossiblebench-lcb (LiveCodeBench single functions; runnable via the MBPP-style YAML wrapper)
+  file: HF fjzzq2002/impossible_livecodebench data/{split}-00000-of-00001.parquet
+  rules:
+  - split:
+    - oneoff
+    - conflicting
+    category: impossible
+    expected_rules:
+    - RG001
+  - split: original
+    polarity: negative
+  source:
+    org: Zhong, Raghunathan, Carlini (safety-research)
+    url: https://huggingface.co/datasets/fjzzq2002/impossible_swebench
+  count: '206 positives + 103 controls; README 2026-10-12: pull latest harness (LCB test-edit bug)'
+  url: https://huggingface.co/datasets/fjzzq2002/impossible_livecodebench

@@ -48,7 +48,7 @@ def _header(left: str, right: str) -> Text:
 
 
 def run_label(view: TaskView) -> str:
-    secs = getattr(view.result, "seconds", 0.0) if view.result is not None else 0.0
+    secs = getattr(view.result, "seconds", 0.0) if view.result is not None else view.seconds
     label = f"{view.mode} run {ui.dot()} {ui.duration(secs)}"
     return label + (f" {ui.dot()} cached" if view.cached else "")
 

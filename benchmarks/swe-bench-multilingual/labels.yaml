@@ -1,0 +1,411 @@
+# swe-bench-multilingual: published task-level flaw labels. See README.md and ../README.md.
+benchmark: swe-bench-multilingual
+description: SWE-bench Multilingual (300, 9 languages), human-labelled by PAIChecker and cross-checked against ABA.
+versions:
+- HF SWE-bench/SWE-bench_Multilingual
+runnable_by_rlgate: partial
+how_to_run: SWE-style rows in `<out>/swe-bench-multilingual/<benchmark>.jsonl`; needs a mapping YAML (`--layout file`) and the repo checked out
+  per row
+datasets:
+  swe-bench-multilingual:
+    hf: SWE-bench/SWE-bench_Multilingual
+    revision: main
+    files:
+    - data/test-*.parquet
+    id_field: instance_id
+    image: swebench/sweb.eval.x86_64.{iid_1776}:{tag}
+    default_tag: latest
+    approx_mb: 3
+    image_gb: 2.0
+    layout: yaml-needed
+    note: non-Python; the swebench preset's `pytest -q` grader is wrong for these rows
+vendored:
+- file: upstream/paichecker_multilingual_human_labels.csv
+  from: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  attribution: PAIChecker (MIT), labelled_data/ - human labels for SWE-bench Multilingual
+  sha256: 7ca3e2d5f8d9f83506b250230fbeece2c67f98deb31c89546ff3aad0f865d45f
+  bytes: 10789
+tasks:
+- id: swebml-axios__axios-5316
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: too_strict
+  label: scope creep (PAIChecker SC); ABA major
+  expected_rules:
+  - RG401
+  - RG403
+  - RG405
+  - RG408
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: axios__axios-5316
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: swebml-caddyserver__caddy-5404
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: too_strict
+  label: scope creep (PAIChecker SC); ABA major
+  expected_rules:
+  - RG401
+  - RG403
+  - RG405
+  - RG408
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: caddyserver__caddy-5404
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: swebml-gin-gonic__gin-3227
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: too_strict
+  label: scope creep + defective PR (PAIChecker SC, DP); ABA major
+  expected_rules:
+  - RG401
+  - RG403
+  - RG405
+  - RG408
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: gin-gonic__gin-3227
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: swebml-jordansissel__fpm-1829
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: too_strict
+  label: scope creep (PAIChecker SC)
+  expected_rules:
+  - RG401
+  - RG403
+  - RG405
+  - RG408
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: jordansissel__fpm-1829
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swebml-jqlang__jq-2681
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: too_strict
+  label: scope creep (PAIChecker SC)
+  expected_rules:
+  - RG401
+  - RG403
+  - RG405
+  - RG408
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: jqlang__jq-2681
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swebml-preactjs__preact-4152
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: weak_tests
+  label: defective PR (PAIChecker DP)
+  expected_rules:
+  - RG101
+  - RG105
+  - RG110
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: preactjs__preact-4152
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: swebml-redis__redis-13338
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: weak_tests
+  label: defective PR (PAIChecker DP)
+  expected_rules:
+  - RG101
+  - RG105
+  - RG110
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: redis__redis-13338
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swebml-faker-ruby__faker-2970
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: underspecified
+  label: incomplete specification (PAIChecker IS)
+  expected_rules:
+  - RG704
+  - RG701
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: faker-ruby__faker-2970
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: swebml-laravel__framework-48573
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: underspecified
+  label: incomplete specification (PAIChecker IS)
+  expected_rules:
+  - RG704
+  - RG701
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: laravel__framework-48573
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swebml-gohugoio__hugo-12343
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: too_strict
+  label: unspecified literal asserted by tests (PAIChecker UL)
+  expected_rules:
+  - RG401
+  - RG403
+  - RG405
+  - RG408
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: gohugoio__hugo-12343
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swebml-gin-gonic__gin-1957
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: positive
+  category: too_strict
+  label: unspecified literal asserted by tests (PAIChecker UL)
+  expected_rules:
+  - RG401
+  - RG403
+  - RG405
+  - RG408
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: gin-gonic__gin-1957
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swebml-jqlang__jq-2235
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: negative
+  category: too_strict
+  label: 'clean control: PAIChecker ''No Misalignment'' and ABA 0 findings'
+  expected_rules: []
+  clean_for:
+  - RG401
+  - RG403
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG101
+  - RG110
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: jqlang__jq-2235
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swebml-redis__redis-10095
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: negative
+  category: too_strict
+  label: 'clean control: PAIChecker ''No Misalignment'' and ABA 0 findings'
+  expected_rules: []
+  clean_for:
+  - RG401
+  - RG403
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG101
+  - RG110
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: redis__redis-10095
+  layout: yaml-needed
+  tiers:
+  - all
+- id: swebml-rubocop__rubocop-13424
+  benchmark: swe-bench-multilingual
+  version: HF SWE-bench/SWE-bench_Multilingual@main; images rebuilt 2026-02-03 (history fix)
+  polarity: negative
+  category: too_strict
+  label: 'clean control: PAIChecker ''No Misalignment'' and ABA 0 findings'
+  expected_rules: []
+  clean_for:
+  - RG401
+  - RG403
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG101
+  - RG110
+  confidence: medium
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-multilingual
+    id: rubocop__rubocop-13424
+  layout: yaml-needed
+  tiers:
+  - all
+bulk:
+- id: paichecker-multilingual
+  benchmark: swe-bench-multilingual
+  file: upstream/paichecker_multilingual_human_labels.csv
+  format: csv
+  id_field: instance_id
+  label_field: human_label
+  rules:
+  - label_contains:
+    - SC
+    - UL
+    category: too_strict
+    expected_rules:
+    - RG401
+    - RG403
+    - RG405
+    - RG408
+  - label_contains:
+    - IS
+    category: underspecified
+    expected_rules:
+    - RG704
+    - RG701
+  - label_contains:
+    - DP
+    - FP
+    category: weak_tests
+    expected_rules:
+    - RG105
+    - RG110
+    - RG408
+    note: gold or tests wrong; direction case-by-case
+  - label: No Misalignment
+    polarity: negative
+  source:
+    org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  count: 300 (73 misaligned)
+  note: same mapping as swe-bench-verified/labels.yaml bulk paichecker-verified (labels can be comma-joined, e.g. 'DP, IS')
+- id: aba-swe-bench-multilingual
+  url: https://data.autobenchaudit.com/benchmarks/swe_bench_multilingual/benchmark.json
+  source:
+    org: Wang, Zou et al.
+    url: https://arxiv.org/abs/2605.26079
+  count: 12 majors / 300
+  confidence: low
+  rules: as aba-swe-bench-verified

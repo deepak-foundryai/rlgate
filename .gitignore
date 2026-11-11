@@ -17,3 +17,4 @@ rlgate-jobs/
 # maintainers-only test cases on task banks that cannot be distributed
 tests/cases/private.py
 .claude/
+rlgate-benchmarks/

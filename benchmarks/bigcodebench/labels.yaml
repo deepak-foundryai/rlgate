@@ -1,0 +1,180 @@
+# bigcodebench: published task-level flaw labels. See README.md and ../README.md.
+benchmark: bigcodebench
+description: BigCodeBench tasks fixed in later releases (missing requirements, unstated plot titles, network tests). The pre-fix split is the
+  positive.
+versions:
+- HF bigcode/bigcodebench split v0.1.0_hf (positives)
+- split v0.1.4 (twins)
+runnable_by_rlgate: 'yes'
+how_to_run: fetch.py writes `task.rlgate.yaml`
+datasets:
+  bigcodebench:
+    hf: bigcode/bigcodebench
+    revision: main
+    files:
+    - data/{split}-*.parquet
+    id_field: task_id
+    image: python:3.10 + task libs
+    approx_mb: 5
+    image_gb: 3.0
+    layout: yaml (fetch.py writes task.rlgate.yaml)
+tasks:
+- id: bigcodebench-37
+  benchmark: bigcodebench
+  version: HF bigcode/bigcodebench split v0.1.0_hf (pre-fix)
+  polarity: positive
+  category: broken_env
+  label: 'release-note fix: pandas requirement missing (added in v0.2.0.post3)'
+  expected_rules:
+  - RG001
+  - RG608
+  confidence: medium
+  source:
+  - org: BigCode
+    url: https://github.com/bigcode-project/bigcodebench/releases
+  fetch:
+    kind: hf_row
+    dataset: bigcodebench
+    id: BigCodeBench/37
+    split: v0.1.0_hf
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: bigcode/bigcodebench split v0.1.4, BigCodeBench/37 (verify the fix landed in that split)
+  tiers:
+  - core
+  - all
+- id: bigcodebench-178
+  benchmark: bigcodebench
+  version: HF bigcode/bigcodebench split v0.1.0_hf (pre-fix)
+  polarity: positive
+  category: broken_env
+  label: 'release-note fix: bogus `urlib` requirement (removed in v0.2.0.post3)'
+  expected_rules:
+  - RG608
+  - RG001
+  confidence: medium
+  source:
+  - org: BigCode
+    url: https://github.com/bigcode-project/bigcodebench/releases
+  fetch:
+    kind: hf_row
+    dataset: bigcodebench
+    id: BigCodeBench/178
+    split: v0.1.0_hf
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: bigcode/bigcodebench split v0.1.4, BigCodeBench/178 (verify the fix landed in that split)
+  tiers:
+  - core
+  - all
+- id: bigcodebench-241
+  benchmark: bigcodebench
+  version: HF bigcode/bigcodebench split v0.1.0_hf (pre-fix)
+  polarity: positive
+  category: underspecified
+  label: 'release-note fix: required plot title not stated (added in v0.2.0.post3)'
+  expected_rules:
+  - RG704
+  - RG401
+  - RG403
+  confidence: medium
+  source:
+  - org: BigCode
+    url: https://github.com/bigcode-project/bigcodebench/releases
+  fetch:
+    kind: hf_row
+    dataset: bigcodebench
+    id: BigCodeBench/241
+    split: v0.1.0_hf
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: bigcode/bigcodebench split v0.1.4, BigCodeBench/241 (verify the fix landed in that split)
+  tiers:
+  - core
+  - all
+- id: bigcodebench-267
+  benchmark: bigcodebench
+  version: HF bigcode/bigcodebench split v0.1.0_hf (pre-fix)
+  polarity: positive
+  category: underspecified
+  label: 'release-note fix: required plot title not stated (added in v0.2.0.post3)'
+  expected_rules:
+  - RG704
+  - RG401
+  - RG403
+  confidence: medium
+  source:
+  - org: BigCode
+    url: https://github.com/bigcode-project/bigcodebench/releases
+  fetch:
+    kind: hf_row
+    dataset: bigcodebench
+    id: BigCodeBench/267
+    split: v0.1.0_hf
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: bigcode/bigcodebench split v0.1.4, BigCodeBench/267 (verify the fix landed in that split)
+  tiers:
+  - all
+- id: bigcodebench-1006
+  benchmark: bigcodebench
+  version: HF bigcode/bigcodebench split v0.1.0_hf (pre-fix)
+  polarity: positive
+  category: flaky
+  label: 'release-note fix: tests fetch external links (replaced in v0.2.0.post3)'
+  expected_rules:
+  - RG003
+  - RG307
+  - RG607
+  confidence: medium
+  source:
+  - org: BigCode
+    url: https://github.com/bigcode-project/bigcodebench/releases
+  fetch:
+    kind: hf_row
+    dataset: bigcodebench
+    id: BigCodeBench/1006
+    split: v0.1.0_hf
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: bigcode/bigcodebench split v0.1.4, BigCodeBench/1006 (verify the fix landed in that split)
+  tiers:
+  - core
+  - all
+- id: bigcodebench-16
+  benchmark: bigcodebench
+  version: HF bigcode/bigcodebench split v0.1.0_hf (pre-fix)
+  polarity: positive
+  category: too_strict
+  label: 'release-note fix: removed a period (v0.2.0.post3)'
+  expected_rules:
+  - RG403
+  confidence: medium
+  source:
+  - org: BigCode
+    url: https://github.com/bigcode-project/bigcodebench/releases
+  fetch:
+    kind: hf_row
+    dataset: bigcodebench
+    id: BigCodeBench/16
+    split: v0.1.0_hf
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: bigcode/bigcodebench split v0.1.4, BigCodeBench/16 (verify the fix landed in that split)
+  tiers:
+  - all
+- id: bigcodebench-760
+  benchmark: bigcodebench
+  version: HF bigcode/bigcodebench split v0.1.0_hf (pre-fix)
+  polarity: positive
+  category: broken_env
+  label: 'release-note fix: changed the datetime import (v0.2.0.post3)'
+  expected_rules:
+  - RG001
+  confidence: medium
+  source:
+  - org: BigCode
+    url: https://github.com/bigcode-project/bigcodebench/releases
+  fetch:
+    kind: hf_row
+    dataset: bigcodebench
+    id: BigCodeBench/760
+    split: v0.1.0_hf
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: bigcode/bigcodebench split v0.1.4, BigCodeBench/760 (verify the fix landed in that split)
+  tiers:
+  - all

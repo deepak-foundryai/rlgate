@@ -1,0 +1,100 @@
+# terminal-wrench: published task-level flaw labels. See README.md and ../README.md.
+benchmark: terminal-wrench
+description: 'Terminal Wrench: 331 tasks from TB2, terminal-bench-pro, SETA and others where a model got full reward with a hack. Entries here
+  are the non-TB2 originals; TB2 ones are filed under terminal-bench-2.'
+versions:
+- terminal-wrench@d8a29613235a
+runnable_by_rlgate: 'yes'
+how_to_run: 'Harbor task dirs: `rlgate check <out>/terminal-wrench -j 8`'
+tasks:
+- id: tw-logistic-regression-divergence
+  benchmark: terminal-wrench
+  version: terminal-wrench@d8a29613235a original_task/ (TerminalBench-original (TB1 core))
+  polarity: positive
+  category: weak_tests
+  label: labels stored in the model and returned as predictions
+  expected_rules:
+  - RG110
+  - RG104
+  confidence: high
+  source:
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/few-sh/terminal-wrench
+    ref: d8a29613235a0ef56a8b70b3142626a533da28c2
+    path_glob: tasks/logistic-regression-divergence/*/original_task
+    approx_mb: 5
+  layout: harbor
+  note: original_task/ is the exact copy attacked; the model sub-dir name is resolved by glob
+  tiers:
+  - core
+  - all
+- id: tw-train-fraud-detection-model
+  benchmark: terminal-wrench
+  version: terminal-wrench@d8a29613235a original_task/ (terminal-bench-pro (alibaba/terminal-bench-pro@82bc46de))
+  polarity: positive
+  category: weak_tests
+  label: an all-'not fraud' model reaches 97% accuracy on imbalanced data
+  expected_rules:
+  - RG110
+  - RG109
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/few-sh/terminal-wrench
+    ref: d8a29613235a0ef56a8b70b3142626a533da28c2
+    path_glob: tasks/train-fraud-detection-model/*/original_task
+    approx_mb: 5
+  layout: harbor
+  note: original_task/ is the exact copy attacked; the model sub-dir name is resolved by glob
+  tiers:
+  - core
+  - all
+- id: tw-mongodb-sales-aggregation-engine
+  benchmark: terminal-wrench
+  version: terminal-wrench@d8a29613235a original_task/ (terminal-bench-pro (alibaba/terminal-bench-pro@82bc46de))
+  polarity: positive
+  category: forgeable_grader
+  label: a fake pytest plugin fabricates passing reports
+  expected_rules:
+  - RG201
+  - RG203
+  - RG215
+  confidence: high
+  source:
+  - org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  fetch:
+    kind: git
+    repo: https://github.com/few-sh/terminal-wrench
+    ref: d8a29613235a0ef56a8b70b3142626a533da28c2
+    path_glob: tasks/mongodb-sales-aggregation-engine/*/original_task
+    approx_mb: 5
+  layout: harbor
+  note: original_task/ is the exact copy attacked; the model sub-dir name is resolved by glob
+  tiers:
+  - core
+  - all
+bulk:
+- id: terminal-wrench-all
+  benchmark: terminal-wrench (TB2.0 14, terminal-bench-pro 48, OpenThoughts-TB-dev 9, SETA 241, TB-original 36)
+  file: https://github.com/few-sh/terminal-wrench @d8a29613235a0ef56a8b70b3142626a533da28c2 tasks/*/<model>/original_task + hack_summary.md
+  rules:
+  - all: true
+    category: forgeable_grader|weak_tests (read hack_summary.md)
+    expected_rules:
+    - RG110
+    - RG111
+    - RG215
+    note: positives only; a task not in the set is not proven clean
+  source:
+    org: Fewshot / Stanford / CMU
+    url: https://github.com/few-sh/terminal-wrench
+  count: 331 tasks, 3,632 rewarded hack trajectories
+  url: https://github.com/few-sh/terminal-wrench/tree/d8a29613235a0ef56a8b70b3142626a533da28c2/tasks

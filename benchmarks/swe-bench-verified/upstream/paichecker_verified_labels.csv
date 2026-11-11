@@ -1,0 +1,504 @@
+instance_id,label
+astropy__astropy-13033,"UL-1,IS-1"
+astropy__astropy-13977,No Misalignment
+django__django-10097,No Misalignment
+django__django-10554,No Misalignment
+django__django-10880,No Misalignment
+django__django-10914,No Misalignment
+django__django-10973,No Misalignment
+astropy__astropy-13398,IS-2
+django__django-11066,No Misalignment
+astropy__astropy-14508,SC-1
+django__django-11095,No Misalignment
+django__django-11099,No Misalignment
+django__django-11119,No Misalignment
+django__django-11133,No Misalignment
+django__django-11138,No Misalignment
+django__django-11141,No Misalignment
+django__django-11149,No Misalignment
+matplotlib__matplotlib-25479,No Misalignment
+matplotlib__matplotlib-26466,No Misalignment
+pydata__xarray-2905,No Misalignment
+pydata__xarray-3095,No Misalignment
+pylint-dev__pylint-4551,IS-2
+pylint-dev__pylint-4604,No Misalignment
+astropy__astropy-14995,DP-1
+pytest-dev__pytest-10051,No Misalignment
+sphinx-doc__sphinx-10323,No Misalignment
+sphinx-doc__sphinx-10435,No Misalignment
+sphinx-doc__sphinx-10449,No Misalignment
+sphinx-doc__sphinx-10466,No Misalignment
+sympy__sympy-11618,No Misalignment
+sympy__sympy-12096,No Misalignment
+sympy__sympy-12419,No Misalignment
+sympy__sympy-12481,No Misalignment
+sympy__sympy-12489,No Misalignment
+django__django-11163,No Misalignment
+django__django-11179,No Misalignment
+django__django-11206,No Misalignment
+matplotlib__matplotlib-21568,No Misalignment
+django__django-10999,IS-2
+sphinx-doc__sphinx-10673,No Misalignment
+django__django-11087,SC-4
+django__django-11276,DP-2
+sympy__sympy-13372,No Misalignment
+django__django-11555,DP-2
+django__django-11211,No Misalignment
+django__django-11239,No Misalignment
+django__django-11265,No Misalignment
+django__django-11734,SC-1
+django__django-11815,IS-1
+matplotlib__matplotlib-24870,No Misalignment
+matplotlib__matplotlib-26208,No Misalignment
+pytest-dev__pytest-10081,No Misalignment
+sphinx-doc__sphinx-11445,No Misalignment
+sympy__sympy-13480,No Misalignment
+django__django-11292,No Misalignment
+django__django-11299,No Misalignment
+django__django-11333,No Misalignment
+scikit-learn__scikit-learn-10297,No Misalignment
+django__django-11848,No Misalignment
+django__django-11400,No Misalignment
+psf__requests-6028,No Misalignment
+django__django-12125,"FP-1,SC-4, IS-2"
+django__django-11433,No Misalignment
+sympy__sympy-13551,No Misalignment
+sympy__sympy-13615,No Misalignment
+django__django-11451,No Misalignment
+django__django-11477,No Misalignment
+matplotlib__matplotlib-23299,No Misalignment
+mwaskom__seaborn-3187,No Misalignment
+sympy__sympy-13647,No Misalignment
+astropy__astropy-14182,No Misalignment
+astropy__astropy-14598,No Misalignment
+astropy__astropy-7606,No Misalignment
+django__django-11490,No Misalignment
+sphinx-doc__sphinx-7454,No Misalignment
+sympy__sympy-13757,No Misalignment
+django__django-11532,No Misalignment
+matplotlib__matplotlib-25960,No Misalignment
+astropy__astropy-8872,No Misalignment
+django__django-11551,No Misalignment
+matplotlib__matplotlib-24177,No Misalignment
+pylint-dev__pylint-4970,No Misalignment
+astropy__astropy-8707,No Misalignment
+django__django-12155,IS-1
+django__django-11603,No Misalignment
+pydata__xarray-3151,No Misalignment
+django__django-12276,IS-1
+sympy__sympy-13798,No Misalignment
+astropy__astropy-13236,No Misalignment
+astropy__astropy-14365,No Misalignment
+django__django-11728,No Misalignment
+django__django-13297,DP-2
+sphinx-doc__sphinx-7590,No Misalignment
+django__django-13315,SC-1
+django__django-11740,No Misalignment
+django__django-11749,No Misalignment
+scikit-learn__scikit-learn-10844,No Misalignment
+scikit-learn__scikit-learn-10908,No Misalignment
+django__django-13344,SC-1
+django__django-11790,No Misalignment
+django__django-14011,FP-2
+django__django-11820,No Misalignment
+sphinx-doc__sphinx-7757,No Misalignment
+sympy__sympy-13877,No Misalignment
+django__django-12965,No Misalignment
+django__django-11880,No Misalignment
+django__django-11885,No Misalignment
+matplotlib__matplotlib-20676,No Misalignment
+sympy__sympy-13878,No Misalignment
+astropy__astropy-14369,No Misalignment
+django__django-11951,No Misalignment
+pylint-dev__pylint-6386,No Misalignment
+sympy__sympy-13974,No Misalignment
+django__django-14034,DP-2
+django__django-11964,No Misalignment
+django__django-11999,No Misalignment
+pylint-dev__pylint-6528,No Misalignment
+sympy__sympy-14531,No Misalignment
+django__django-12039,No Misalignment
+django__django-12050,No Misalignment
+pytest-dev__pytest-10356,No Misalignment
+sympy__sympy-14711,No Misalignment
+django__django-14631,IS-1
+django__django-12143,No Misalignment
+matplotlib__matplotlib-20488,No Misalignment
+django__django-14999,DP-2
+pydata__xarray-3305,No Misalignment
+pytest-dev__pytest-5262,No Misalignment
+django__django-15022,DP-2
+pylint-dev__pylint-6903,No Misalignment
+sympy__sympy-15017,No Misalignment
+sympy__sympy-15345,No Misalignment
+django__django-12193,No Misalignment
+django__django-12209,No Misalignment
+django__django-12262,No Misalignment
+django__django-12273,No Misalignment
+django__django-15161,DP-2
+django__django-12304,No Misalignment
+django__django-15382,"DP-1, FP-1"
+sphinx-doc__sphinx-7889,No Misalignment
+django__django-12308,No Misalignment
+pytest-dev__pytest-5631,No Misalignment
+django__django-15629,DP-2
+django__django-15732,IS-1
+pytest-dev__pytest-5787,No Misalignment
+scikit-learn__scikit-learn-11310,No Misalignment
+django__django-12325,No Misalignment
+django__django-12406,No Misalignment
+django__django-12419,No Misalignment
+sphinx-doc__sphinx-8035,No Misalignment
+mwaskom__seaborn-3069,No Misalignment
+psf__requests-2931,No Misalignment
+django__django-12663,No Misalignment
+django__django-12708,No Misalignment
+django__django-15930,DP-1
+django__django-16263,DP-2
+django__django-12713,No Misalignment
+django__django-12741,No Misalignment
+sphinx-doc__sphinx-8120,No Misalignment
+sympy__sympy-15349,No Misalignment
+sympy__sympy-15599,No Misalignment
+django__django-12754,No Misalignment
+scikit-learn__scikit-learn-11578,No Misalignment
+matplotlib__matplotlib-22871,No Misalignment
+django__django-12774,No Misalignment
+django__django-12858,No Misalignment
+sympy__sympy-15809,No Misalignment
+django__django-16560,DP-2
+django__django-13012,No Misalignment
+django__django-16801,DP-2
+django__django-13023,No Misalignment
+django__django-13028,No Misalignment
+pydata__xarray-3993,No Misalignment
+django__django-13033,No Misalignment
+django__django-16950,SC-4
+matplotlib__matplotlib-23476,No Misalignment
+sympy__sympy-15875,No Misalignment
+django__django-13089,No Misalignment
+matplotlib__matplotlib-14623,SC-1
+django__django-13109,No Misalignment
+django__django-13112,No Misalignment
+django__django-13121,No Misalignment
+django__django-13128,No Misalignment
+pydata__xarray-4075,No Misalignment
+sphinx-doc__sphinx-8459,No Misalignment
+sympy__sympy-15976,No Misalignment
+django__django-13158,No Misalignment
+django__django-13195,No Misalignment
+django__django-13212,No Misalignment
+sympy__sympy-16450,No Misalignment
+matplotlib__matplotlib-24570,No Misalignment
+django__django-13279,No Misalignment
+matplotlib__matplotlib-24637,No Misalignment
+matplotlib__matplotlib-20826,SC-1
+sympy__sympy-16597,No Misalignment
+matplotlib__matplotlib-22865,DP-2
+django__django-13343,No Misalignment
+matplotlib__matplotlib-23314,IS-1
+scikit-learn__scikit-learn-12585,No Misalignment
+sympy__sympy-16766,No Misalignment
+django__django-13346,No Misalignment
+django__django-13363,No Misalignment
+matplotlib__matplotlib-25775,No Misalignment
+sympy__sympy-16792,No Misalignment
+sympy__sympy-16886,No Misalignment
+django__django-13401,No Misalignment
+django__django-13406,No Misalignment
+pydata__xarray-4094,No Misalignment
+sympy__sympy-17139,No Misalignment
+django__django-13410,No Misalignment
+django__django-13417,No Misalignment
+pydata__xarray-4356,No Misalignment
+pydata__xarray-4629,No Misalignment
+sympy__sympy-17318,No Misalignment
+django__django-13449,No Misalignment
+django__django-13512,No Misalignment
+matplotlib__matplotlib-24970,IS-1
+sympy__sympy-17630,No Misalignment
+django__django-13513,No Misalignment
+django__django-14349,No Misalignment
+psf__requests-1766,No Misalignment
+astropy__astropy-13453,No Misalignment
+matplotlib__matplotlib-25311,DP-1
+sphinx-doc__sphinx-8551,No Misalignment
+django__django-13516,No Misalignment
+matplotlib__matplotlib-25332,DP-2
+matplotlib__matplotlib-26291,No Misalignment
+psf__requests-1921,DP-1
+sphinx-doc__sphinx-8593,No Misalignment
+sympy__sympy-17655,No Misalignment
+psf__requests-1142,No Misalignment
+scikit-learn__scikit-learn-12973,No Misalignment
+sympy__sympy-18189,No Misalignment
+sympy__sympy-18199,No Misalignment
+django__django-13551,No Misalignment
+django__django-13568,No Misalignment
+scikit-learn__scikit-learn-13124,No Misalignment
+sympy__sympy-18211,No Misalignment
+django__django-13569,No Misalignment
+django__django-13590,No Misalignment
+django__django-13658,No Misalignment
+psf__requests-5414,No Misalignment
+sphinx-doc__sphinx-8595,No Misalignment
+django__django-13670,No Misalignment
+django__django-13741,No Misalignment
+sphinx-doc__sphinx-8621,No Misalignment
+pydata__xarray-4695,No Misalignment
+sphinx-doc__sphinx-8638,No Misalignment
+pydata__xarray-3677,DP-1
+django__django-13786,No Misalignment
+django__django-13794,No Misalignment
+django__django-13807,No Misalignment
+matplotlib__matplotlib-24627,No Misalignment
+pydata__xarray-4687,DP-1
+django__django-13809,No Misalignment
+django__django-13810,No Misalignment
+django__django-13820,No Misalignment
+pydata__xarray-6992,SC-1
+django__django-13821,No Misalignment
+pydata__xarray-4966,No Misalignment
+sphinx-doc__sphinx-8721,No Misalignment
+django__django-13837,No Misalignment
+pylint-dev__pylint-4661,"IS-2, DP-1"
+sympy__sympy-18698,No Misalignment
+django__django-13925,No Misalignment
+django__django-13933,No Misalignment
+django__django-13964,No Misalignment
+django__django-14007,No Misalignment
+pylint-dev__pylint-7080,IS-1
+django__django-14017,No Misalignment
+psf__requests-2317,No Misalignment
+pytest-dev__pytest-5840,SC-4
+psf__requests-1724,No Misalignment
+sympy__sympy-18763,No Misalignment
+pytest-dev__pytest-5809,No Misalignment
+pytest-dev__pytest-6197,SC-3
+sympy__sympy-19040,No Misalignment
+django__django-14053,No Misalignment
+django__django-14089,No Misalignment
+pytest-dev__pytest-6202,No Misalignment
+sphinx-doc__sphinx-9230,No Misalignment
+sympy__sympy-19346,No Misalignment
+astropy__astropy-12907,No Misalignment
+django__django-14122,No Misalignment
+sympy__sympy-19495,No Misalignment
+django__django-14140,No Misalignment
+django__django-14155,No Misalignment
+django__django-14170,No Misalignment
+django__django-14238,No Misalignment
+sympy__sympy-19637,No Misalignment
+django__django-14311,No Misalignment
+sphinx-doc__sphinx-9258,No Misalignment
+sympy__sympy-19783,No Misalignment
+django__django-14315,No Misalignment
+pytest-dev__pytest-7236,DP-2
+scikit-learn__scikit-learn-13135,No Misalignment
+sphinx-doc__sphinx-9281,No Misalignment
+sphinx-doc__sphinx-9320,No Misalignment
+sympy__sympy-19954,No Misalignment
+astropy__astropy-14096,No Misalignment
+pytest-dev__pytest-7571,DP-1
+django__django-14351,No Misalignment
+django__django-14373,No Misalignment
+pytest-dev__pytest-7205,No Misalignment
+scikit-learn__scikit-learn-13142,No Misalignment
+django__django-14376,No Misalignment
+django__django-14404,No Misalignment
+django__django-14434,No Misalignment
+pytest-dev__pytest-8399,IS-1
+pytest-dev__pytest-7324,No Misalignment
+django__django-14493,No Misalignment
+matplotlib__matplotlib-20859,No Misalignment
+pytest-dev__pytest-7432,No Misalignment
+scikit-learn__scikit-learn-13328,No Misalignment
+scikit-learn__scikit-learn-13439,No Misalignment
+astropy__astropy-13579,No Misalignment
+django__django-14500,No Misalignment
+django__django-14534,No Misalignment
+sympy__sympy-20154,No Misalignment
+django__django-14539,No Misalignment
+django__django-14559,No Misalignment
+django__django-14580,No Misalignment
+django__django-14608,No Misalignment
+scikit-learn__scikit-learn-12682,SC-2
+sphinx-doc__sphinx-9367,No Misalignment
+sympy__sympy-20428,No Misalignment
+astropy__astropy-14539,No Misalignment
+django__django-14672,No Misalignment
+scikit-learn__scikit-learn-14496,No Misalignment
+django__django-9296,No Misalignment
+pydata__xarray-6461,No Misalignment
+sympy__sympy-20438,No Misalignment
+scikit-learn__scikit-learn-13496,No Misalignment
+sympy__sympy-20590,No Misalignment
+django__django-14725,No Misalignment
+django__django-14752,No Misalignment
+django__django-14765,No Misalignment
+django__django-14771,No Misalignment
+pydata__xarray-6599,No Misalignment
+sphinx-doc__sphinx-9461,No Misalignment
+sphinx-doc__sphinx-9591,No Misalignment
+sympy__sympy-20801,No Misalignment
+django__django-14787,No Misalignment
+django__django-14792,No Misalignment
+matplotlib__matplotlib-24149,No Misalignment
+django__django-14855,No Misalignment
+django__django-14915,No Misalignment
+scikit-learn__scikit-learn-25102,DP-2
+scikit-learn__scikit-learn-9288,SC-1
+matplotlib__matplotlib-13989,No Misalignment
+matplotlib__matplotlib-24026,No Misalignment
+pydata__xarray-6721,No Misalignment
+scikit-learn__scikit-learn-13779,No Misalignment
+sphinx-doc__sphinx-10614,SC-1
+django__django-15037,No Misalignment
+django__django-15098,No Misalignment
+matplotlib__matplotlib-26342,No Misalignment
+pylint-dev__pylint-7277,No Misalignment
+scikit-learn__scikit-learn-14053,No Misalignment
+sphinx-doc__sphinx-9602,No Misalignment
+django__django-15103,No Misalignment
+django__django-15104,No Misalignment
+django__django-15127,No Misalignment
+django__django-15128,No Misalignment
+matplotlib__matplotlib-23412,No Misalignment
+sphinx-doc__sphinx-11510,DP-1
+sphinx-doc__sphinx-7440,DP-2
+sympy__sympy-21596,No Misalignment
+astropy__astropy-7166,No Misalignment
+django__django-15252,No Misalignment
+django__django-15268,No Misalignment
+django__django-15277,No Misalignment
+pytest-dev__pytest-7490,No Misalignment
+sphinx-doc__sphinx-9658,No Misalignment
+sympy__sympy-21612,No Misalignment
+sympy__sympy-21847,No Misalignment
+sphinx-doc__sphinx-7462,SC-3
+scikit-learn__scikit-learn-14087,No Misalignment
+scikit-learn__scikit-learn-14141,No Misalignment
+sympy__sympy-21930,No Misalignment
+sympy__sympy-22080,No Misalignment
+django__django-15278,No Misalignment
+sphinx-doc__sphinx-7748,IS-1
+django__django-15280,No Misalignment
+django__django-15315,No Misalignment
+django__django-15368,No Misalignment
+django__django-15375,No Misalignment
+django__django-15380,No Misalignment
+matplotlib__matplotlib-25287,No Misalignment
+sphinx-doc__sphinx-7910,SC-4
+sympy__sympy-22714,No Misalignment
+sphinx-doc__sphinx-7985,DP-1
+sympy__sympy-22914,No Misalignment
+django__django-15467,No Misalignment
+django__django-15499,No Misalignment
+pydata__xarray-6744,No Misalignment
+pydata__xarray-6938,No Misalignment
+sympy__sympy-23262,No Misalignment
+django__django-15503,No Misalignment
+django__django-15525,No Misalignment
+scikit-learn__scikit-learn-14629,No Misalignment
+scikit-learn__scikit-learn-14710,No Misalignment
+astropy__astropy-7671,No Misalignment
+django__django-15554,No Misalignment
+django__django-15561,No Misalignment
+sphinx-doc__sphinx-9673,No Misalignment
+django__django-15563,No Misalignment
+django__django-15569,No Misalignment
+matplotlib__matplotlib-25122,No Misalignment
+matplotlib__matplotlib-26113,No Misalignment
+sphinx-doc__sphinx-9698,No Misalignment
+sympy__sympy-23413,No Misalignment
+sphinx-doc__sphinx-8056,SC-4
+django__django-15572,No Misalignment
+sphinx-doc__sphinx-8265,SC-1
+sphinx-doc__sphinx-8269,No Misalignment
+scikit-learn__scikit-learn-14894,No Misalignment
+sphinx-doc__sphinx-9711,No Misalignment
+sympy__sympy-23534,No Misalignment
+django__django-15695,No Misalignment
+django__django-15731,No Misalignment
+sphinx-doc__sphinx-8475,No Misalignment
+django__django-15741,No Misalignment
+pydata__xarray-7229,No Misalignment
+django__django-15814,No Misalignment
+django__django-15851,No Misalignment
+django__django-15863,No Misalignment
+django__django-15916,No Misalignment
+sphinx-doc__sphinx-8548,"SC-1, DP-1"
+django__django-15957,No Misalignment
+scikit-learn__scikit-learn-14983,No Misalignment
+sympy__sympy-23824,No Misalignment
+django__django-15973,No Misalignment
+pytest-dev__pytest-7521,No Misalignment
+sympy__sympy-23950,No Misalignment
+astropy__astropy-7336,No Misalignment
+django__django-15987,No Misalignment
+django__django-16032,No Misalignment
+sympy__sympy-24066,No Misalignment
+sympy__sympy-24213,No Misalignment
+sympy__sympy-24443,No Misalignment
+django__django-16082,No Misalignment
+django__django-16100,No Misalignment
+django__django-16116,No Misalignment
+django__django-16136,No Misalignment
+matplotlib__matplotlib-22719,No Misalignment
+scikit-learn__scikit-learn-15100,No Misalignment
+sympy__sympy-24539,No Misalignment
+django__django-16139,No Misalignment
+django__django-16145,No Misalignment
+django__django-16255,No Misalignment
+django__django-16256,No Misalignment
+sphinx-doc__sphinx-9229,SC-1
+pallets__flask-5014,No Misalignment
+sympy__sympy-13031,IS-2
+scikit-learn__scikit-learn-25232,No Misalignment
+django__django-16315,No Misalignment
+django__django-16333,No Misalignment
+sympy__sympy-13091,SC-2
+scikit-learn__scikit-learn-25747,No Misalignment
+sympy__sympy-24562,No Misalignment
+django__django-16429,No Misalignment
+django__django-16454,No Misalignment
+django__django-16485,No Misalignment
+django__django-16493,No Misalignment
+django__django-16502,No Misalignment
+django__django-16527,No Misalignment
+sympy__sympy-14976,No Misalignment
+django__django-16569,No Misalignment
+pydata__xarray-7233,No Misalignment
+scikit-learn__scikit-learn-25931,No Misalignment
+sympy__sympy-24661,No Misalignment
+django__django-16595,No Misalignment
+django__django-16612,No Misalignment
+django__django-16631,No Misalignment
+django__django-16642,No Misalignment
+django__django-16661,No Misalignment
+django__django-16662,No Misalignment
+scikit-learn__scikit-learn-25973,No Misalignment
+astropy__astropy-14309,No Misalignment
+django__django-16667,No Misalignment
+sympy__sympy-21379,No Misalignment
+django__django-16819,No Misalignment
+django__django-16877,No Misalignment
+pytest-dev__pytest-7982,No Misalignment
+django__django-16899,No Misalignment
+django__django-16901,No Misalignment
+django__django-16938,No Misalignment
+sympy__sympy-13852,DP-1
+django__django-17029,No Misalignment
+pydata__xarray-7393,No Misalignment
+scikit-learn__scikit-learn-26194,No Misalignment
+django__django-17084,No Misalignment
+django__django-17087,No Misalignment
+sympy__sympy-22456,No Misalignment
+scikit-learn__scikit-learn-26323,No Misalignment
+django__django-7530,No Misalignment
+sympy__sympy-14248,DP-1
+pylint-dev__pylint-8898,No Misalignment
+sympy__sympy-20916,IS-1
+,
+,
+,

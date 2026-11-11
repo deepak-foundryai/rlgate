@@ -1,0 +1,1999 @@
+# swe-bench-verified: published task-level flaw labels. See README.md and ../README.md.
+benchmark: swe-bench-verified
+description: 'SWE-bench Verified (500). Labels: weak tests (UTBoost, PAIChecker), spec/test mismatch (PAIChecker, OpenAI 2024, ABA), git-history
+  leaks in the pre-Sept-2025 `:v1` images (#465). Ten instances that three independent audits call clean are controls.'
+versions:
+- HF SWE-bench/SWE-bench_Verified
+- images swebench/sweb.eval.x86_64.*:v1 (leaky) and :v2 (fixed)
+runnable_by_rlgate: 'yes'
+how_to_run: SWE-style rows in `<out>/swe-bench-verified/<benchmark>.jsonl`; `--layout swebench`; needs the repo checked out per row
+datasets:
+  swe-bench-verified:
+    hf: SWE-bench/SWE-bench_Verified
+    revision: main
+    files:
+    - data/test-*.parquet
+    id_field: instance_id
+    image: swebench/sweb.eval.x86_64.{iid_1776}:{tag}
+    default_tag: v2
+    approx_mb: 3
+    image_gb: 2.5
+    layout: swebench
+vendored:
+- file: upstream/paichecker_verified_labels.csv
+  from: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  attribution: PAIChecker (MIT), labelled_data/ - instance_id + label columns only (the upstream file is 6.8 MB with model outputs)
+  sha256: 9eff20c2399e4b578d512737b9513c96dc7662fd86899b16137d98f0b39c6e61
+  bytes: 19058
+- file: upstream/utboost_changed_ids.txt
+  from: https://github.com/CUHK-Shenzhen-SE/UTBoost
+  attribution: 'derived: instances whose tests UTBoost augmented, by diffing uiuc-kang-lab/SWE-bench-{Verified,Lite}-UTBoost against the originals
+    (UTBoost code: MIT). Not a list the authors published.'
+  sha256: b1ded300f056cbd0363c68c58f55234e211d6ffb8cf5781e78d1a8370e267083
+  bytes: 1359
+tasks:
+- id: swebv-django__django-12125-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned the gold patch from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-12125
+    image_tag: v1
+  layout: swebench
+  control: swebv-django__django-12125-v2
+  tiers:
+  - core
+  - all
+- id: swebv-django__django-12965-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned the gold patch from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-12965
+    image_tag: v1
+  layout: swebench
+  control: swebv-django__django-12965-v2
+  tiers:
+  - core
+  - all
+- id: swebv-django__django-15572-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned the gold patch from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-15572
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-pytest-dev__pytest-6202-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned the gold patch from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pytest-dev__pytest-6202
+    image_tag: v1
+  layout: swebench
+  control: swebv-pytest-dev__pytest-6202-v2
+  tiers:
+  - smoke
+  - core
+  - all
+- id: swebv-pytest-dev__pytest-7521-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned the gold patch from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pytest-dev__pytest-7521
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-sympy__sympy-17318-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned the gold patch from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-17318
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-psf__requests-2931-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned the gold patch from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: psf__requests-2931
+    image_tag: v1
+  layout: swebench
+  control: swebv-psf__requests-2931-v2
+  tiers:
+  - core
+  - all
+- id: swebv-django__django-13513-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned the gold patch from git history in the agent image (git log --all / branches / tags / reflog); ABA also flags it (major)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-13513
+    image_tag: v1
+  layout: swebench
+  control: swebv-django__django-13513-v2
+  tiers:
+  - core
+  - all
+- id: swebv-pytest-dev__pytest-5840-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: 'agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog); caveat: may legitimately
+    need past tags'
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pytest-dev__pytest-5840
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-sphinx-doc__sphinx-8265-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sphinx-doc__sphinx-8265
+    image_tag: v1
+  layout: swebench
+  control: swebv-sphinx-doc__sphinx-8265-v2
+  tiers:
+  - core
+  - all
+- id: swebv-sympy__sympy-13031-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-13031
+    image_tag: v1
+  layout: swebench
+  control: swebv-sympy__sympy-13031-v2
+  tiers:
+  - core
+  - all
+- id: swebv-django__django-11477-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-11477
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-django__django-13121-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-13121
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-django__django-13279-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-13279
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-django__django-13315-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-13315
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-matplotlib__matplotlib-21568-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: matplotlib__matplotlib-21568
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-matplotlib__matplotlib-23412-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: matplotlib__matplotlib-23412
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-matplotlib__matplotlib-24149-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: matplotlib__matplotlib-24149
+    image_tag: v1
+  layout: swebench
+  control: same instance, image tag :v2
+  tiers:
+  - all
+- id: swebv-pydata__xarray-7229-v1
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v1 (2025-01-04, pre-#465 fix)
+  polarity: positive
+  category: answer_leak
+  label: agent learned future commits from git history in the agent image (git log --all / branches / tags / reflog)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pydata__xarray-7229
+    image_tag: v1
+  layout: swebench
+  control: swebv-pydata__xarray-7229-v2
+  tiers:
+  - core
+  - all
+- id: swebv-pytest-dev__pytest-6202-v2
+  benchmark: swe-bench-verified
+  version: 'HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2 (2025-09-10/11, rebuilt by PR #471,
+    swebench v4.1.0)'
+  polarity: negative
+  category: answer_leak
+  label: rebuilt image with future history removed
+  expected_rules: []
+  clean_for:
+  - RG301
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pytest-dev__pytest-6202
+    image_tag: v2
+  layout: swebench
+  control: swebv-pytest-dev__pytest-6202-v1
+  tiers:
+  - smoke
+  - core
+  - all
+- id: swebv-django__django-12965-v2
+  benchmark: swe-bench-verified
+  version: 'HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2 (2025-09-10/11, rebuilt by PR #471,
+    swebench v4.1.0)'
+  polarity: negative
+  category: answer_leak
+  label: rebuilt image with future history removed
+  expected_rules: []
+  clean_for:
+  - RG301
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-12965
+    image_tag: v2
+  layout: swebench
+  control: swebv-django__django-12965-v1
+  tiers:
+  - core
+  - all
+- id: swebv-psf__requests-2931-v2
+  benchmark: swe-bench-verified
+  version: 'HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2 (2025-09-10/11, rebuilt by PR #471,
+    swebench v4.1.0)'
+  polarity: negative
+  category: answer_leak
+  label: rebuilt image with future history removed
+  expected_rules: []
+  clean_for:
+  - RG301
+  confidence: high
+  source:
+  - org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: psf__requests-2931
+    image_tag: v2
+  layout: swebench
+  control: swebv-psf__requests-2931-v1
+  tiers:
+  - core
+  - all
+- id: swebv-django__django-11133
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-11133
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - core
+  - all
+- id: swebv-django__django-12325
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-12325
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-django__django-13401
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-13401
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-django__django-13809
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-13809
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-django__django-14787
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-14787
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-django__django-14915
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-14915
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-django__django-15499
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-15499
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-django__django-16116
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-16116
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-django__django-16139
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-16139
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-django__django-16485
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-16485
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-django__django-16595
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-16595
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - core
+  - all
+- id: swebv-matplotlib__matplotlib-14623
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json); PAIChecker
+    also labels it SC-1'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: matplotlib__matplotlib-14623
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - core
+  - all
+- id: swebv-matplotlib__matplotlib-23314
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json); PAIChecker
+    also labels it IS-1'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: matplotlib__matplotlib-23314
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - core
+  - all
+- id: swebv-pydata__xarray-3305
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pydata__xarray-3305
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - core
+  - all
+- id: swebv-pydata__xarray-4687
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json); PAIChecker
+    also labels it DP-1'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pydata__xarray-4687
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - core
+  - all
+- id: swebv-pydata__xarray-7393
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pydata__xarray-7393
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-pylint-dev__pylint-7080
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json); PAIChecker
+    also labels it IS-1'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pylint-dev__pylint-7080
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - smoke
+  - core
+  - all
+- id: swebv-scikit-learn__scikit-learn-14087
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: scikit-learn__scikit-learn-14087
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - core
+  - all
+- id: swebv-scikit-learn__scikit-learn-14894
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: scikit-learn__scikit-learn-14894
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-sphinx-doc__sphinx-7440
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sphinx-doc__sphinx-7440
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - core
+  - all
+- id: swebv-sympy__sympy-14531
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-14531
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-sympy__sympy-16450
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-16450
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-sympy__sympy-17655
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-17655
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-sympy__sympy-20154
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-20154
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - core
+  - all
+- id: swebv-sympy__sympy-21847
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-21847
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-sympy__sympy-22714
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: 'insufficient tests: wrong leaderboard patches pass the original tests but fail UTBoost''s confirmed augmented test (augTest.json)'
+  expected_rules:
+  - RG101
+  - RG102
+  - RG103
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-22714
+    image_tag: v2
+  layout: swebench
+  control: HF uiuc-kang-lab/SWE-bench-Verified-UTBoost (same id, augmented tests)
+  tiers:
+  - all
+- id: swebv-pylint-dev__pylint-4551
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: underspecified
+  label: tests require details added later in the discussion (PAIChecker IS-2); cited by OpenAI 2026 as tests needing names absent from the prompt
+  expected_rules:
+  - RG402
+  - RG704
+  - RG408
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  - org: 'OpenAI (second-hand: openai.com 403)'
+    url: https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pylint-dev__pylint-4551
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - smoke
+  - core
+  - all
+  other_categories:
+  - too_strict
+- id: swebv-sympy__sympy-18199
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: too_strict
+  label: tests check functionality the issue didn't request (overly wide); OpenAI 2024 false_negative=1
+  expected_rules:
+  - RG405
+  - RG408
+  needs: deep-review
+  confidence: low
+  source:
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  - org: 'OpenAI (second-hand: openai.com 403)'
+    url: https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-18199
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - all
+- id: swebv-sphinx-doc__sphinx-10614
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: too_strict
+  label: PR does more than the issue asks (PAIChecker SC-1); ABA major
+  expected_rules:
+  - RG405
+  - RG408
+  needs: deep-review
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sphinx-doc__sphinx-10614
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - all
+- id: swebv-sphinx-doc__sphinx-7748
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: underspecified
+  label: incomplete specification (PAIChecker IS-1); ABA major
+  expected_rules:
+  - RG704
+  - RG701
+  needs: deep-review
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sphinx-doc__sphinx-7748
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - all
+- id: swebv-sympy__sympy-13852
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: defective gold PR (PAIChecker DP-1); ABA major
+  expected_rules:
+  - RG105
+  - RG110
+  needs: deep-review
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-13852
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - all
+- id: swebv-sympy__sympy-14248
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: defective gold PR (PAIChecker DP-1); ABA major
+  expected_rules:
+  - RG105
+  - RG110
+  needs: deep-review
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-14248
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - all
+- id: swebv-pylint-dev__pylint-4661
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: underspecified
+  label: incomplete spec + defective PR (PAIChecker IS-2, DP-1); ABA major
+  expected_rules:
+  - RG704
+  - RG701
+  needs: deep-review
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pylint-dev__pylint-4661
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - all
+- id: swebv-django__django-10999
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: underspecified
+  label: incomplete specification (PAIChecker IS-2); ABA major
+  expected_rules:
+  - RG704
+  - RG701
+  needs: deep-review
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-10999
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - all
+- id: swebv-django__django-14034
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: weak_tests
+  label: defective gold PR (PAIChecker DP-2); ABA major
+  expected_rules:
+  - RG105
+  - RG110
+  needs: deep-review
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-14034
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - all
+- id: swebv-astropy__astropy-13398
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: underspecified
+  label: incomplete specification (PAIChecker IS-2); ABA major
+  expected_rules:
+  - RG704
+  needs: deep-review
+  confidence: high
+  source:
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: astropy__astropy-13398
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - all
+- id: swebv-django__django-10097
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: positive
+  category: underspecified
+  label: 'ABA major; CONFLICT: PAIChecker ''No Misalignment'''
+  expected_rules:
+  - RG704
+  needs: deep-review
+  confidence: low
+  source:
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-10097
+    image_tag: v2
+  layout: swebench
+  tiers:
+  - all
+- id: swebv-django__django-11099
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: negative
+  category: weak_tests
+  label: 'clean control: OpenAI 2024 underspecified=0, false_negative=0, other=0; PAIChecker ''No Misalignment''; ABA 0 findings; not in UTBoost
+    or #465'
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG402
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG301
+  - RG001
+  - RG002
+  - RG003
+  confidence: high
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-11099
+    image_tag: v2
+  layout: swebench
+  note: three independent clean labels; no published flaw. RDI's conftest exploit applies to all SWE-bench instances, so forgery rules are not
+    part of clean_for
+  tiers:
+  - smoke
+  - core
+  - all
+- id: swebv-django__django-10914
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: negative
+  category: weak_tests
+  label: 'clean control: OpenAI 2024 underspecified=0, false_negative=0, other=0; PAIChecker ''No Misalignment''; ABA 0 findings; not in UTBoost
+    or #465'
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG402
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG301
+  - RG001
+  - RG002
+  - RG003
+  confidence: high
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: django__django-10914
+    image_tag: v2
+  layout: swebench
+  note: three independent clean labels; no published flaw. RDI's conftest exploit applies to all SWE-bench instances, so forgery rules are not
+    part of clean_for
+  tiers:
+  - all
+- id: swebv-sphinx-doc__sphinx-10466
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: negative
+  category: weak_tests
+  label: 'clean control: OpenAI 2024 underspecified=0, false_negative=0, other=0; PAIChecker ''No Misalignment''; ABA 0 findings; not in UTBoost
+    or #465'
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG402
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG301
+  - RG001
+  - RG002
+  - RG003
+  confidence: high
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sphinx-doc__sphinx-10466
+    image_tag: v2
+  layout: swebench
+  note: three independent clean labels; no published flaw. RDI's conftest exploit applies to all SWE-bench instances, so forgery rules are not
+    part of clean_for
+  tiers:
+  - all
+- id: swebv-sympy__sympy-11618
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: negative
+  category: weak_tests
+  label: 'clean control: OpenAI 2024 underspecified=0, false_negative=0, other=0; PAIChecker ''No Misalignment''; ABA 0 findings; not in UTBoost
+    or #465'
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG402
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG301
+  - RG001
+  - RG002
+  - RG003
+  confidence: high
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: sympy__sympy-11618
+    image_tag: v2
+  layout: swebench
+  note: three independent clean labels; no published flaw. RDI's conftest exploit applies to all SWE-bench instances, so forgery rules are not
+    part of clean_for
+  tiers:
+  - all
+- id: swebv-pytest-dev__pytest-10081
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: negative
+  category: weak_tests
+  label: 'clean control: OpenAI 2024 underspecified=0, false_negative=0, other=0; PAIChecker ''No Misalignment''; ABA 0 findings; not in UTBoost
+    or #465'
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG402
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG301
+  - RG001
+  - RG002
+  - RG003
+  confidence: high
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pytest-dev__pytest-10081
+    image_tag: v2
+  layout: swebench
+  note: three independent clean labels; no published flaw. RDI's conftest exploit applies to all SWE-bench instances, so forgery rules are not
+    part of clean_for
+  tiers:
+  - all
+- id: swebv-scikit-learn__scikit-learn-10297
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: negative
+  category: weak_tests
+  label: 'clean control: OpenAI 2024 underspecified=0, false_negative=0, other=0; PAIChecker ''No Misalignment''; ABA 0 findings; not in UTBoost
+    or #465'
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG402
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG301
+  - RG001
+  - RG002
+  - RG003
+  confidence: high
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: scikit-learn__scikit-learn-10297
+    image_tag: v2
+  layout: swebench
+  note: three independent clean labels; no published flaw. RDI's conftest exploit applies to all SWE-bench instances, so forgery rules are not
+    part of clean_for
+  tiers:
+  - all
+- id: swebv-astropy__astropy-14598
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: negative
+  category: weak_tests
+  label: 'clean control: OpenAI 2024 underspecified=0, false_negative=0, other=0; PAIChecker ''No Misalignment''; ABA 0 findings; not in UTBoost
+    or #465'
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG402
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG301
+  - RG001
+  - RG002
+  - RG003
+  confidence: high
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: astropy__astropy-14598
+    image_tag: v2
+  layout: swebench
+  note: three independent clean labels; no published flaw. RDI's conftest exploit applies to all SWE-bench instances, so forgery rules are not
+    part of clean_for
+  tiers:
+  - all
+- id: swebv-matplotlib__matplotlib-24177
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: negative
+  category: weak_tests
+  label: 'clean control: OpenAI 2024 underspecified=0, false_negative=0, other=0; PAIChecker ''No Misalignment''; ABA 0 findings; not in UTBoost
+    or #465'
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG402
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG301
+  - RG001
+  - RG002
+  - RG003
+  confidence: high
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: matplotlib__matplotlib-24177
+    image_tag: v2
+  layout: swebench
+  note: three independent clean labels; no published flaw. RDI's conftest exploit applies to all SWE-bench instances, so forgery rules are not
+    part of clean_for
+  tiers:
+  - all
+- id: swebv-pydata__xarray-3151
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: negative
+  category: weak_tests
+  label: 'clean control: OpenAI 2024 underspecified=0, false_negative=0, other=0; PAIChecker ''No Misalignment''; ABA 0 findings; not in UTBoost
+    or #465'
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG402
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG301
+  - RG001
+  - RG002
+  - RG003
+  confidence: high
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pydata__xarray-3151
+    image_tag: v2
+  layout: swebench
+  note: three independent clean labels; no published flaw. RDI's conftest exploit applies to all SWE-bench instances, so forgery rules are not
+    part of clean_for
+  tiers:
+  - all
+- id: swebv-pylint-dev__pylint-6386
+  benchmark: swe-bench-verified
+  version: HF SWE-bench/SWE-bench_Verified@main (resolved sha recorded in <out>/LOCK.json); image tag :v2
+  polarity: negative
+  category: weak_tests
+  label: 'clean control: OpenAI 2024 underspecified=0, false_negative=0, other=0; PAIChecker ''No Misalignment''; ABA 0 findings; not in UTBoost
+    or #465'
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG402
+  - RG405
+  - RG408
+  - RG701
+  - RG704
+  - RG301
+  - RG001
+  - RG002
+  - RG003
+  confidence: high
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  - org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-verified
+    id: pylint-dev__pylint-6386
+    image_tag: v2
+  layout: swebench
+  note: three independent clean labels; no published flaw. RDI's conftest exploit applies to all SWE-bench instances, so forgery rules are not
+    part of clean_for
+  tiers:
+  - all
+bulk:
+- id: openai-2024-annotations
+  benchmark: swe-bench
+  format: csv
+  id_field: instance_id
+  rules:
+  - where:
+    - - underspecified
+      - '>='
+      - 2
+    category: underspecified
+    expected_rules:
+    - RG701
+    - RG704
+  - where:
+    - - false_negative
+      - '>='
+      - 2
+    category: too_strict
+    expected_rules:
+    - RG405
+    - RG407
+    - RG408
+  - where:
+    - - other_major_issues
+      - ==
+      - 1
+    category: broken_env
+    expected_rules: []
+    note: mixed; read other_notes
+  - where:
+    - - underspecified
+      - ==
+      - 0
+    - - false_negative
+      - ==
+      - 0
+    - - other_major_issues
+      - ==
+      - 0
+    polarity: negative
+  source:
+    org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  count: 1,699 rows; 650 us>=2, 1,039 fn>=2, 135 other, 1,160 filter_out
+  url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  licence: not stated - linked, not copied
+  member: ensembled_annotations_public.csv
+- id: paichecker-verified
+  benchmark: swe-bench-verified
+  file: upstream/paichecker_verified_labels.csv
+  format: csv
+  id_field: instance_id
+  label_field: label
+  rules:
+  - label_contains:
+    - SC
+    - UL
+    category: too_strict
+    expected_rules:
+    - RG401
+    - RG403
+    - RG405
+    - RG408
+  - label_contains:
+    - IS
+    category: underspecified
+    expected_rules:
+    - RG704
+    - RG701
+  - label_contains:
+    - DP
+    - FP
+    category: weak_tests
+    expected_rules:
+    - RG105
+    - RG110
+    - RG408
+    note: gold or tests wrong; direction case-by-case
+  - label: No Misalignment
+    polarity: negative
+  source:
+    org: CUHK-SZ (He lab)
+    url: https://github.com/manyiResearch/PAIChecker/tree/main/labelled_data
+  count: 500 (68 misaligned)
+- id: utboost
+  benchmark: swe-bench-verified + swe-bench-lite
+  file: upstream/utboost_changed_ids.txt
+  format: txt, sections '# Verified (26)' / '# Lite (24)'
+  rules:
+  - all: true
+    category: weak_tests
+    expected_rules:
+    - RG101
+    - RG102
+    - RG103
+    - RG110
+  source:
+    org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  count: 26 Verified + 24 Lite (36 unique)
+- id: swe465-all-v1-images
+  benchmark: swe-bench-verified / swe-bench
+  file: (rule, no file)
+  rules:
+  - all: every Verified instance at image tag :v1, and every non-Verified instance (only :v1/:latest, dated before 2025-09-11)
+    category: answer_leak
+    expected_rules:
+    - RG301
+    confidence: medium (inferred from tag dates; not checked inside images)
+  - all: every Verified instance at :v2 / :latest (2026-08-16)
+    polarity: negative
+    clean_for:
+    - RG301
+  source:
+    org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  count: 500 + 1,794
+  url: https://github.com/SWE-bench/SWE-bench/issues/465
+- id: aba-swe-bench-verified
+  url: https://data.autobenchaudit.com/benchmarks/swe_bench_verified/benchmark.json
+  format: json (.tasks[])
+  id_field: task_id
+  source:
+    org: Wang, Zou et al.
+    url: https://arxiv.org/abs/2605.26079
+  count: 21 majors / 500
+  confidence: low
+  rules:
+  - where:
+    - - static_findings_major
+      - '>'
+      - 0
+    category: by static_findings_by_category (instruction -> underspecified, evaluation -> too_strict or weak_tests, environment -> broken_env)
+  - where:
+    - - static_findings_count
+      - ==
+      - 0
+    polarity: negative
+- id: rdi-all-forgeable
+  benchmark: swe-bench-verified, swe-bench-pro v1, terminal-bench-2.0
+  file: (rule, no file)
+  rules:
+  - all: every instance
+    category: forgeable_grader
+    expected_rules:
+    - RG201
+    - RG004
+    - RG205
+    - RG214
+    note: 'conftest.py hook (Verified, Pro also overwrites parser.py); Django: TestCase.run monkey-patch; TB: curl/pip/python/uvx wrappers fake
+      pytest and write the reward'
+  source:
+    org: UC Berkeley RDI
+    url: https://rdi.berkeley.edu/blog/trustworthy-benchmarks-cont/
+  count: 500 / 731 / 89
+  url: https://rdi.berkeley.edu/blog/trustworthy-benchmarks-cont/

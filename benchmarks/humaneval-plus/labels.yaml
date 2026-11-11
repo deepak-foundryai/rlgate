@@ -1,0 +1,41 @@
+# humaneval-plus: published task-level flaw labels. See README.md and ../README.md.
+benchmark: humaneval-plus
+description: HumanEval/124, whose canonical solution has a precedence bug the original tests miss (HumanEval+).
+versions:
+- HF openai/openai_humaneval
+runnable_by_rlgate: 'yes'
+how_to_run: fetch.py writes `task.rlgate.yaml`
+datasets:
+  humaneval:
+    hf: openai/openai_humaneval
+    revision: main
+    files:
+    - openai_humaneval/*.parquet
+    id_field: task_id
+    image: python:3.12.7-slim
+    approx_mb: 1
+    image_gb: 0.05
+    layout: yaml (fetch.py writes task.rlgate.yaml)
+tasks:
+- id: humaneval-124
+  benchmark: humaneval
+  version: HF openai/openai_humaneval@main
+  polarity: positive
+  category: weak_tests
+  label: canonical solution valid_date has an and/or precedence bug the original tests don't catch
+  expected_rules:
+  - RG110
+  - RG103
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: humaneval
+    id: HumanEval/124
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: HumanEval+ HumanEval/124 (evalplus/humanevalplus_release)
+  tiers:
+  - core
+  - all

@@ -17,6 +17,7 @@ stderr so it never mixes with a report that is piped or saved.
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import threading
@@ -27,6 +28,8 @@ from dataclasses import dataclass
 from rich import box as _box
 from rich.console import Console
 from rich.text import Text
+
+_log = logging.getLogger("rlgate.run")
 
 # statuses used across the product (core/questions.py uses the same words)
 PASSED, PROVEN, JUDGMENT, WARNING, ACCEPTED, SKIPPED, NOT_YET = (
@@ -216,7 +219,21 @@ def _fit(text: str, c: Console) -> Text:
 @contextmanager
 def step(label: str):
     """One check of a full run: a spinner while it runs (terminals only), then a line with
-    its time: ``  ✓ Reference solution passes   41.2s``."""
+    its time: ``  ✓ Reference solution passes   41.2s``. Also logged (the run's rlgate.log)."""
+    t_log = time.monotonic()
+    _log.info("start: %s", label)
+    try:
+        with _step(label):
+            yield
+    except BaseException as e:
+        _log.info("failed after %.1fs: %s (%s: %s)", time.monotonic() - t_log, label,
+                  type(e).__name__, str(e)[:500])
+        raise
+    _log.info("done in %.1fs: %s", time.monotonic() - t_log, label)
+
+
+@contextmanager
+def _step(label: str):
     trow = _task_row()
     if trow is not None and not _S.quiet:        # a bank run: the task board shows it
         with _TASKS_LOCK:

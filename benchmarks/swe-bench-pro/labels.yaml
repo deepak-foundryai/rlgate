@@ -1,0 +1,747 @@
+# swe-bench-pro: published task-level flaw labels. See README.md and ../README.md.
+benchmark: swe-bench-pro
+description: SWE-bench Pro v1 (731) and V2. V2 dropped 89 v1 tasks and rebuilt images without the fix commits; v1 tasks with a V2 twin use it
+  as a control.
+versions:
+- HF ScaleAI/SWE-bench_Pro config v1 (tag v1.0)
+- scaleapi/SWE-bench_Pro-os v2/tasks (V2)
+runnable_by_rlgate: partial
+how_to_run: 'V2: Harbor dirs (`rlgate check`); v1: SWE-style rows in `<out>/swe-bench-pro/<benchmark>.jsonl`; needs a mapping YAML (`--layout
+  file`) and the repo checked out per row'
+datasets:
+  swe-bench-pro-v1:
+    hf: ScaleAI/SWE-bench_Pro
+    revision: v1.0
+    files:
+    - data/v1/*
+    - data/v1-*
+    id_field: instance_id
+    image: jefzda/sweap-images:{dockerhub_tag}
+    approx_mb: 40
+    image_gb: 4.0
+    layout: yaml-needed
+    note: config `v1` (731); image tag from the row's dockerhub_tag; run with swe_bench_pro_eval.py semantics
+vendored:
+- file: upstream/v1_to_v2_dropped_ids.txt
+  from: https://github.com/scaleapi/SWE-bench_Pro-os
+  attribution: 'derived: v1 instance ids absent from V2 (SWE-bench_Pro-os, MIT). Scale did not publish this list.'
+  sha256: 9222d07108ce3166c369292de8790c8cabc63eec0387d89043e944e3edafd175
+  bytes: 8602
+tasks:
+- id: swebpro-instance_NodeBB__NodeBB-51d8f3b195bddb13a13ddc0de110722774d9bb1b-vf2cf3cbd463b7ad942381f1c6d077626485a1e9e
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: weak_tests
+  label: tests don't cover the requirements (OpenCompass 'overly broad'; Gabor lenient+strict, rating 2); dropped in V2
+  expected_rules:
+  - RG101
+  - RG102
+  - RG110
+  confidence: high
+  source:
+  - org: Jonathan Gabor (independent)
+    url: https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  - org: Shanghai AI Lab / OpenCompass
+    url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_NodeBB__NodeBB-51d8f3b195bddb13a13ddc0de110722774d9bb1b-vf2cf3cbd463b7ad942381f1c6d077626485a1e9e
+  layout: yaml-needed
+  control: none (dropped in V2)
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - core
+  - all
+- id: swebpro-instance_NodeBB__NodeBB-a917210c5b2c20637094545401f85783905c074c-vf2cf3cbd463b7ad942381f1c6d077626485a1e9e
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: weak_tests
+  label: core requirement untested (Gabor, discussed in post); dropped in V2
+  expected_rules:
+  - RG101
+  - RG102
+  - RG110
+  confidence: high
+  source:
+  - org: Jonathan Gabor (independent)
+    url: https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_NodeBB__NodeBB-a917210c5b2c20637094545401f85783905c074c-vf2cf3cbd463b7ad942381f1c6d077626485a1e9e
+  layout: yaml-needed
+  control: none (dropped in V2)
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - core
+  - all
+- id: swebpro-instance_flipt-io__flipt-65581fef4aa807540cb933753d085feb0d7e736f
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: underspecified
+  label: misleading prompt (OpenCompass); Gabor lenient+strict rating 2; dropped in V2
+  expected_rules:
+  - RG701
+  - RG704
+  - RG110
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Jonathan Gabor (independent)
+    url: https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  - org: Shanghai AI Lab / OpenCompass
+    url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_flipt-io__flipt-65581fef4aa807540cb933753d085feb0d7e736f
+  layout: yaml-needed
+  control: none (dropped in V2)
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - core
+  - all
+- id: swebpro-instance_tutao__tutanota-09c2776c0fce3db5c6e18da92b5a45dce9f013aa-vbc0d9ba8f0071fbe982809910959a6ff8884dbbf
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: underspecified
+  label: requirements inflation (Gabor, discussed in post); dropped in V2
+  expected_rules:
+  - RG704
+  - RG108
+  - RG110
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Jonathan Gabor (independent)
+    url: https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_tutao__tutanota-09c2776c0fce3db5c6e18da92b5a45dce9f013aa-vbc0d9ba8f0071fbe982809910959a6ff8884dbbf
+  layout: yaml-needed
+  control: none (dropped in V2)
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - core
+  - all
+- id: swebpro-instance_flipt-io__flipt-cd2f3b0a9d4d8b8a6d3d56afab65851ecdc408e8
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: too_strict
+  label: the test expects buggy behaviour (Gabor, discussed in post)
+  expected_rules:
+  - RG408
+  - RG407
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: Jonathan Gabor (independent)
+    url: https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_flipt-io__flipt-cd2f3b0a9d4d8b8a6d3d56afab65851ecdc408e8
+  layout: yaml-needed
+  control: 'V2 twin: https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2/tasks/instance_flipt-io__flipt-cd2f3b0a9d4d8b8a6d3d56afab65851ecdc408e8'
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - all
+- id: swebpro-instance_ansible__ansible-83909bfa22573777e3db5688773bda59721962ad-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: too_strict
+  label: overly narrow tests (OpenCompass); dropped in V2; Datacurve trial ansible-83909b
+  expected_rules:
+  - RG402
+  - RG405
+  - RG408
+  confidence: high
+  source:
+  - org: Shanghai AI Lab / OpenCompass
+    url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  - org: Datacurve
+    url: https://deepswe.datacurve.ai/blog/deepswe
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_ansible__ansible-83909bfa22573777e3db5688773bda59721962ad-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5
+  layout: yaml-needed
+  control: none (dropped in V2)
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - core
+  - all
+- id: swebpro-instance_ansible__ansible-e40889e7112ae00a21a2c74312b330e67a766cc0-v1055803c3a812189a1133297f7f5468579283f86
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: underspecified
+  label: misleading prompt (OpenCompass); ABA major; dropped in V2
+  expected_rules:
+  - RG701
+  - RG704
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Shanghai AI Lab / OpenCompass
+    url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_ansible__ansible-e40889e7112ae00a21a2c74312b330e67a766cc0-v1055803c3a812189a1133297f7f5468579283f86
+  layout: yaml-needed
+  control: none (dropped in V2)
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - core
+  - all
+- id: swebpro-instance_element-hq__element-web-75c2c1a572fa45d1ea1d1a96e9e36e303332ecaa-vnan
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: too_strict
+  label: overly narrow tests (OpenCompass); ABA major; dropped in V2
+  expected_rules:
+  - RG402
+  - RG405
+  - RG408
+  confidence: high
+  source:
+  - org: Shanghai AI Lab / OpenCompass
+    url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  - org: Wang, Zou et al.
+    url: https://data.autobenchaudit.com/benchmarks/<slug>/benchmark.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_element-hq__element-web-75c2c1a572fa45d1ea1d1a96e9e36e303332ecaa-vnan
+  layout: yaml-needed
+  control: none (dropped in V2)
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - core
+  - all
+- id: swebpro-instance_gravitational__teleport-4e1c39639edf1ab494dd7562844c8b277b5cfa18-vee9b09fb20c43af7e520f57e9239bbcf46b7113d
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: too_strict
+  label: overly narrow tests; OpenCompass leak example (reference code readable from the sandbox filesystem); dropped in V2
+  expected_rules:
+  - RG405
+  - RG408
+  - RG306
+  - RG308
+  confidence: high
+  source:
+  - org: Shanghai AI Lab / OpenCompass
+    url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_gravitational__teleport-4e1c39639edf1ab494dd7562844c8b277b5cfa18-vee9b09fb20c43af7e520f57e9239bbcf46b7113d
+  layout: yaml-needed
+  control: none (dropped in V2)
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - core
+  - all
+- id: swebpro-instance_ansible__ansible-d33bedc48fdd933b5abd65a77c081876298e2f07-v0f01c69f1e2528b935359cfe578530722bca2c59
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: answer_leak
+  label: solved via git-history commit 9fff6d433d (Poolside); overly narrow tests (OpenCompass)
+  expected_rules:
+  - RG301
+  - RG308
+  - RG408
+  confidence: high
+  source:
+  - org: Poolside
+    url: https://poolside.ai/blog/through-the-looking-glass
+  - org: Shanghai AI Lab / OpenCompass
+    url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_ansible__ansible-d33bedc48fdd933b5abd65a77c081876298e2f07-v0f01c69f1e2528b935359cfe578530722bca2c59
+  layout: yaml-needed
+  control: swebpro2-instance_ansible__ansible-d33bedc48fdd933b5abd65a77c081876298e2f07-v0f01c69f1e2528b935359cfe578530722bca2c59
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - core
+  - all
+- id: swebpro-instance_ansible__ansible-34db57a47f875d11c4068567b9ec7ace174ec4cf-v1055803c3a812189a1133297f7f5468579283f86
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: answer_leak
+  label: agent ran `git show` on the gold commit (Datacurve trial instance_ansible__ansible-34db57__qyqew5w)
+  expected_rules:
+  - RG301
+  - RG308
+  confidence: low
+  source:
+  - org: Datacurve
+    url: https://deepswe.datacurve.ai/blog/deepswe
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_ansible__ansible-34db57a47f875d11c4068567b9ec7ace174ec4cf-v1055803c3a812189a1133297f7f5468579283f86
+  layout: yaml-needed
+  control: 'V2 twin: https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2/tasks/instance_ansible__ansible-34db57a47f875d11c4068567b9ec7ace174ec4cf-v1055803c3a812189a1133297f7f5468579283f86'
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - all
+- id: swebpro-instance_internetarchive__openlibrary-1894cb48d6e7fb498295a5d3ed0596f6f603b784-v0f01c69f1e2528b935359cfe578530722bca2c59
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: flaky
+  label: time bomb (#72)
+  expected_rules:
+  - RG003
+  - RG001
+  confidence: medium
+  source:
+  - org: scaleapi/SWE-bench_Pro-os issue tracker
+    url: https://github.com/scaleapi/SWE-bench_Pro-os/issues
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_internetarchive__openlibrary-1894cb48d6e7fb498295a5d3ed0596f6f603b784-v0f01c69f1e2528b935359cfe578530722bca2c59
+  layout: yaml-needed
+  control: 'V2 twin: https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2/tasks/instance_internetarchive__openlibrary-1894cb48d6e7fb498295a5d3ed0596f6f603b784-v0f01c69f1e2528b935359cfe578530722bca2c59'
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - all
+- id: swebpro-instance_navidrome__navidrome-97434c1789a6444b30aae5ff5aa124a96a88f504
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: too_strict
+  label: invalid test (#115)
+  expected_rules:
+  - RG408
+  - RG001
+  confidence: medium
+  source:
+  - org: scaleapi/SWE-bench_Pro-os issue tracker
+    url: https://github.com/scaleapi/SWE-bench_Pro-os/issues
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_navidrome__navidrome-97434c1789a6444b30aae5ff5aa124a96a88f504
+  layout: yaml-needed
+  control: 'V2 twin: https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2/tasks/instance_navidrome__navidrome-97434c1789a6444b30aae5ff5aa124a96a88f504'
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - all
+- id: swebpro-instance_flipt-io__flipt-518ec324b66a07fdd95464a5e9ca5fe7681ad8f9
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: too_strict
+  label: 'gold patch contains test data the tests need (#45, ~40 flipt tasks); Datacurve: fixture YAMLs exist only in the gold commit'
+  expected_rules:
+  - RG703
+  - RG704
+  - RG105
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: scaleapi/SWE-bench_Pro-os issue tracker
+    url: https://github.com/scaleapi/SWE-bench_Pro-os/issues
+  - org: Datacurve
+    url: https://deepswe.datacurve.ai/blog/deepswe
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_flipt-io__flipt-518ec324b66a07fdd95464a5e9ca5fe7681ad8f9
+  layout: yaml-needed
+  control: 'V2 twin: https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2/tasks/instance_flipt-io__flipt-518ec324b66a07fdd95464a5e9ca5fe7681ad8f9'
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - all
+- id: swebpro-instance_NodeBB__NodeBB-00c70ce7b0541cfc94afe567921d7668cdc8f4ac-vnan
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: positive
+  category: broken_env
+  label: 'other issues: corrupt data or paths (OpenCompass); Gabor lenient'
+  expected_rules:
+  - RG001
+  - RG608
+  confidence: medium
+  source:
+  - org: Shanghai AI Lab / OpenCompass
+    url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified
+  - org: Jonathan Gabor (independent)
+    url: https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_NodeBB__NodeBB-00c70ce7b0541cfc94afe567921d7668cdc8f4ac-vnan
+  layout: yaml-needed
+  control: 'V2 twin: https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2/tasks/instance_NodeBB__NodeBB-00c70ce7b0541cfc94afe567921d7668cdc8f4ac-vnan'
+  note: 'v1 images also keep the fix in git (Scale rebuilt V2 from sanitised bundles): RG301 is expected on every v1 image (see bulk)'
+  tiers:
+  - all
+- id: swebpro2-instance_ansible__ansible-d33bedc48fdd933b5abd65a77c081876298e2f07-v0f01c69f1e2528b935359cfe578530722bca2c59
+  benchmark: swe-bench-pro-v2
+  version: scaleapi/SWE-bench_Pro-os v2/tasks/<id> (V2 release 2026-09-22, ref main pinned at fetch); image ghcr.io/scaleapi/swe-bench_pro-v2:<id>
+  polarity: negative
+  category: answer_leak
+  label: V2 image rebuilt from a sanitised bundle (no fixing commit, refs, stashes or hooks)
+  expected_rules: []
+  clean_for:
+  - RG301
+  confidence: medium
+  source:
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  fetch:
+    kind: git
+    repo: https://github.com/scaleapi/SWE-bench_Pro-os
+    ref: main
+    path: v2/tasks/instance_ansible__ansible-d33bedc48fdd933b5abd65a77c081876298e2f07-v0f01c69f1e2528b935359cfe578530722bca2c59
+    approx_mb: 5
+    image: ghcr.io/scaleapi/swe-bench_pro-v2:instance_ansible__ansible-d33bedc48fdd933b5abd65a77c081876298e2f07-v0f01c69f1e2528b935359cfe578530722bca2c59
+  layout: harbor
+  control: swebpro-instance_ansible__ansible-d33bedc48fdd933b5abd65a77c081876298e2f07-v0f01c69f1e2528b935359cfe578530722bca2c59
+  tiers:
+  - core
+  - all
+- id: swebpro2-instance_element-hq__element-web-fe14847bb9bb07cab1b9c6c54335ff22ca5e516a-vnan
+  benchmark: swe-bench-pro-v2
+  version: scaleapi/SWE-bench_Pro-os v2/tasks/<id> (V2 release 2026-09-22, ref main pinned at fetch); image ghcr.io/scaleapi/swe-bench_pro-v2:<id>
+  polarity: negative
+  category: underspecified
+  label: 'V2: statement rewritten so every graded assertion traces to the text; image sanitised'
+  expected_rules: []
+  clean_for:
+  - RG701
+  - RG704
+  - RG301
+  confidence: medium
+  source:
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  - org: Shanghai AI Lab / OpenCompass
+    url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified
+  fetch:
+    kind: git
+    repo: https://github.com/scaleapi/SWE-bench_Pro-os
+    ref: main
+    path: v2/tasks/instance_element-hq__element-web-fe14847bb9bb07cab1b9c6c54335ff22ca5e516a-vnan
+    approx_mb: 5
+    image: ghcr.io/scaleapi/swe-bench_pro-v2:instance_element-hq__element-web-fe14847bb9bb07cab1b9c6c54335ff22ca5e516a-vnan
+  layout: harbor
+  control: OpenCompass 'misleading prompt' v1 (not expanded)
+  tiers:
+  - core
+  - all
+- id: swebpro2-instance_internetarchive__openlibrary-03095f2680f7516fca35a58e665bf2a41f006273-v8717e18970bcdc4e0d2cea3b1527752b21e74866
+  benchmark: swe-bench-pro-v2
+  version: scaleapi/SWE-bench_Pro-os v2/tasks/<id> (V2 release 2026-09-22, ref main pinned at fetch); image ghcr.io/scaleapi/swe-bench_pro-v2:<id>
+  polarity: positive
+  category: flaky
+  label: named infra-flaky task in V2 GATE.md
+  expected_rules:
+  - RG003
+  confidence: medium
+  source:
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  fetch:
+    kind: git
+    repo: https://github.com/scaleapi/SWE-bench_Pro-os
+    ref: main
+    path: v2/tasks/instance_internetarchive__openlibrary-03095f2680f7516fca35a58e665bf2a41f006273-v8717e18970bcdc4e0d2cea3b1527752b21e74866
+    approx_mb: 5
+    image: ghcr.io/scaleapi/swe-bench_pro-v2:instance_internetarchive__openlibrary-03095f2680f7516fca35a58e665bf2a41f006273-v8717e18970bcdc4e0d2cea3b1527752b21e74866
+  layout: harbor
+  tiers:
+  - smoke
+  - core
+  - all
+- id: swebpro2-instance_internetarchive__openlibrary-c4eebe6677acc4629cb541a98d5e91311444f5d4-v13642507b4fc1f8d234172bf8129942da2c2ca26
+  benchmark: swe-bench-pro-v2
+  version: scaleapi/SWE-bench_Pro-os v2/tasks/<id> (V2 release 2026-09-22, ref main pinned at fetch); image ghcr.io/scaleapi/swe-bench_pro-v2:<id>
+  polarity: positive
+  category: flaky
+  label: named infra-flaky task in V2 GATE.md
+  expected_rules:
+  - RG003
+  confidence: medium
+  source:
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  fetch:
+    kind: git
+    repo: https://github.com/scaleapi/SWE-bench_Pro-os
+    ref: main
+    path: v2/tasks/instance_internetarchive__openlibrary-c4eebe6677acc4629cb541a98d5e91311444f5d4-v13642507b4fc1f8d234172bf8129942da2c2ca26
+    approx_mb: 5
+    image: ghcr.io/scaleapi/swe-bench_pro-v2:instance_internetarchive__openlibrary-c4eebe6677acc4629cb541a98d5e91311444f5d4-v13642507b4fc1f8d234172bf8129942da2c2ca26
+  layout: harbor
+  tiers:
+  - core
+  - all
+- id: swebpro2-instance_navidrome__navidrome-8383527aaba1ae8fa9765e995a71a86c129ef626
+  benchmark: swe-bench-pro-v2
+  version: scaleapi/SWE-bench_Pro-os v2/tasks/<id> (V2 release 2026-09-22, ref main pinned at fetch); image ghcr.io/scaleapi/swe-bench_pro-v2:<id>
+  polarity: positive
+  category: flaky
+  label: named infra-flaky task in V2 GATE.md
+  expected_rules:
+  - RG003
+  confidence: medium
+  source:
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  fetch:
+    kind: git
+    repo: https://github.com/scaleapi/SWE-bench_Pro-os
+    ref: main
+    path: v2/tasks/instance_navidrome__navidrome-8383527aaba1ae8fa9765e995a71a86c129ef626
+    approx_mb: 5
+    image: ghcr.io/scaleapi/swe-bench_pro-v2:instance_navidrome__navidrome-8383527aaba1ae8fa9765e995a71a86c129ef626
+  layout: harbor
+  tiers:
+  - core
+  - all
+- id: swebpro2-instance_qutebrowser__qutebrowser-0fc6d1109d041c69a68a896db87cf1b8c194cef7-v2ef375ac784985212b1805e1d0431dc8f1b3c171
+  benchmark: swe-bench-pro-v2
+  version: scaleapi/SWE-bench_Pro-os v2/tasks/<id> (V2 release 2026-09-22, ref main pinned at fetch); image ghcr.io/scaleapi/swe-bench_pro-v2:<id>
+  polarity: positive
+  category: flaky
+  label: named infra-flaky task in V2 GATE.md
+  expected_rules:
+  - RG003
+  confidence: medium
+  source:
+  - org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os (v2/README.md, v2/GATE.md)
+  fetch:
+    kind: git
+    repo: https://github.com/scaleapi/SWE-bench_Pro-os
+    ref: main
+    path: v2/tasks/instance_qutebrowser__qutebrowser-0fc6d1109d041c69a68a896db87cf1b8c194cef7-v2ef375ac784985212b1805e1d0431dc8f1b3c171
+    approx_mb: 5
+    image: ghcr.io/scaleapi/swe-bench_pro-v2:instance_qutebrowser__qutebrowser-0fc6d1109d041c69a68a896db87cf1b8c194cef7-v2ef375ac784985212b1805e1d0431dc8f1b3c171
+  layout: harbor
+  tiers:
+  - all
+- id: swebpro2-instance_internetarchive__openlibrary-630221ab686c64e75a2ce253c893c033e4814b2e-v93c53c13d5f9b383ebb411ee7750b49dcd1a34c6
+  benchmark: swe-bench-pro-v2
+  version: scaleapi/SWE-bench_Pro-os v2/tasks/<id> (V2 release 2026-09-22, ref main pinned at fetch); image ghcr.io/scaleapi/swe-bench_pro-v2:<id>
+  polarity: positive
+  category: broken_env
+  label: broken V2 task (#120)
+  expected_rules:
+  - RG001
+  - RG608
+  confidence: medium
+  source:
+  - org: scaleapi/SWE-bench_Pro-os issue tracker
+    url: https://github.com/scaleapi/SWE-bench_Pro-os/issues
+  fetch:
+    kind: git
+    repo: https://github.com/scaleapi/SWE-bench_Pro-os
+    ref: main
+    path: v2/tasks/instance_internetarchive__openlibrary-630221ab686c64e75a2ce253c893c033e4814b2e-v93c53c13d5f9b383ebb411ee7750b49dcd1a34c6
+    approx_mb: 5
+    image: ghcr.io/scaleapi/swe-bench_pro-v2:instance_internetarchive__openlibrary-630221ab686c64e75a2ce253c893c033e4814b2e-v93c53c13d5f9b383ebb411ee7750b49dcd1a34c6
+  layout: harbor
+  tiers:
+  - core
+  - all
+- id: swebpro2-instance_future-architect__vuls-457a3a9627fb9a0800d0aecf1d4713fb634a9011
+  benchmark: swe-bench-pro-v2
+  version: scaleapi/SWE-bench_Pro-os v2/tasks/<id> (V2 release 2026-09-22, ref main pinned at fetch); image ghcr.io/scaleapi/swe-bench_pro-v2:<id>
+  polarity: positive
+  category: underspecified
+  label: underspecified V2 task (#121)
+  expected_rules:
+  - RG701
+  - RG704
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: scaleapi/SWE-bench_Pro-os issue tracker
+    url: https://github.com/scaleapi/SWE-bench_Pro-os/issues
+  fetch:
+    kind: git
+    repo: https://github.com/scaleapi/SWE-bench_Pro-os
+    ref: main
+    path: v2/tasks/instance_future-architect__vuls-457a3a9627fb9a0800d0aecf1d4713fb634a9011
+    approx_mb: 5
+    image: ghcr.io/scaleapi/swe-bench_pro-v2:instance_future-architect__vuls-457a3a9627fb9a0800d0aecf1d4713fb634a9011
+  layout: harbor
+  tiers:
+  - all
+- id: swebpro-instance_element-hq__element-web-ec0f940ef0e8e3b61078f145f34dc40d1938e6c5-vnan
+  benchmark: swe-bench-pro
+  version: HF ScaleAI/SWE-bench_Pro config v1 (git tag v1.0, 731 tasks); image jefzda/sweap-images:<dockerhub_tag>
+  polarity: negative
+  category: weak_tests
+  label: Gabor rating 5, test strictness ok (weak negative for test-quality rules only; the v1 image is still git-leaky)
+  expected_rules: []
+  clean_for:
+  - RG101
+  - RG102
+  - RG110
+  - RG405
+  - RG408
+  confidence: low
+  source:
+  - org: Jonathan Gabor (independent)
+    url: https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-pro-v1
+    id: instance_element-hq__element-web-ec0f940ef0e8e3b61078f145f34dc40d1938e6c5-vnan
+  layout: yaml-needed
+  tiers:
+  - all
+bulk:
+- id: scale-pro-v2-dropped
+  benchmark: swe-bench-pro
+  file: upstream/v1_to_v2_dropped_ids.txt
+  format: txt
+  rules:
+  - all: true
+    category: too_strict
+    expected_rules:
+    - RG001
+    - RG408
+    - RG110
+    note: '''invalid or unrepairable tests''; direction unknown - use OpenCompass/Gabor category when the id overlaps (17 overlap OpenCompass)'
+    confidence: medium
+  source:
+    org: Scale AI / SEAL
+    url: https://github.com/scaleapi/SWE-bench_Pro-os
+  count: 89 (derived by diff, not published)
+- id: opencompass-pro-102
+  benchmark: swe-bench-pro
+  format: markdown code blocks under 'Misleading prompts' / 'Overly narrow tests' / 'Overly borad tests' / 'Other issues'
+  rules:
+  - section: Misleading prompts
+    category: underspecified
+    expected_rules:
+    - RG701
+    - RG704
+  - section: Overly narrow tests
+    category: too_strict
+    expected_rules:
+    - RG402
+    - RG405
+    - RG408
+  - section: Overly borad tests
+    category: weak_tests
+    expected_rules:
+    - RG101
+    - RG110
+  - section: Other issues
+    category: broken_env
+    expected_rules:
+    - RG001
+  source:
+    org: Shanghai AI Lab / OpenCompass
+    url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified
+  count: 22 / 75 / 3 / 2
+  url: https://huggingface.co/datasets/opencompass/SWEBench-Pro-Verified/blob/main/README.md
+  licence: see dataset card - linked, not copied
+- id: gabor-pro-100
+  benchmark: swe-bench-pro
+  format: 'text blocks ''Instance: / Rating: / Test strictness: / Lenient source:'''
+  rules:
+  - where:
+    - - Test strictness
+      - in
+      - - lenient
+        - both
+    - - Rating
+      - <=
+      - 3
+    category: weak_tests
+    expected_rules:
+    - RG101
+    - RG110
+  - where:
+    - - Test strictness
+      - in
+      - - strict
+        - both
+    category: too_strict
+    expected_rules:
+    - RG408
+  - where:
+    - - Rating
+      - '>='
+      - 4
+    - - Test strictness
+      - ==
+      - ok
+    polarity: negative
+  source:
+    org: Jonathan Gabor (independent)
+    url: https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse
+  count: 100 (rating 2-5)
+  confidence: low
+  url: https://github.com/JonathanGabor/swe-bench-pro-audit
+  licence: no licence file - linked, not copied
+- id: aba-swe-bench-pro
+  url: https://data.autobenchaudit.com/benchmarks/swe_bench_pro/benchmark.json
+  source:
+    org: Wang, Zou et al.
+    url: https://arxiv.org/abs/2605.26079
+  count: 85 majors / 731
+  confidence: low
+  rules: as swe-bench-verified aba
+- id: rdi-all-forgeable
+  benchmark: swe-bench-verified, swe-bench-pro v1, terminal-bench-2.0
+  file: (rule, no file)
+  rules:
+  - all: every instance
+    category: forgeable_grader
+    expected_rules:
+    - RG201
+    - RG004
+    - RG205
+    - RG214
+    note: 'conftest.py hook (Verified, Pro also overwrites parser.py); Django: TestCase.run monkey-patch; TB: curl/pip/python/uvx wrappers fake
+      pytest and write the reward'
+  source:
+    org: UC Berkeley RDI
+    url: https://rdi.berkeley.edu/blog/trustworthy-benchmarks-cont/
+  count: 500 / 731 / 89
+  url: https://rdi.berkeley.edu/blog/trustworthy-benchmarks-cont/

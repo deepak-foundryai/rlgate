@@ -1,0 +1,390 @@
+# swe-bench: published task-level flaw labels. See README.md and ../README.md.
+benchmark: swe-bench
+description: 'SWE-bench full test split and Lite: instances OpenAI''s 2024 annotators filtered out of Verified, and UTBoost''s Lite-only weak
+  tests.'
+versions:
+- HF princeton-nlp/SWE-bench, SWE-bench_Lite (images :v1 only)
+runnable_by_rlgate: 'yes'
+how_to_run: SWE-style rows in `<out>/swe-bench/<benchmark>.jsonl`; `--layout swebench`; needs the repo checked out per row
+datasets:
+  swe-bench:
+    hf: princeton-nlp/SWE-bench
+    revision: main
+    files:
+    - data/test-*.parquet
+    id_field: instance_id
+    image: swebench/sweb.eval.x86_64.{iid_1776}:{tag}
+    default_tag: v1
+    approx_mb: 15
+    image_gb: 2.5
+    layout: swebench
+    note: full test split; non-Verified images only have tags v1/latest (pre-#465 fix)
+  swe-bench-lite:
+    hf: princeton-nlp/SWE-bench_Lite
+    revision: main
+    files:
+    - data/test-*.parquet
+    id_field: instance_id
+    image: swebench/sweb.eval.x86_64.{iid_1776}:{tag}
+    default_tag: v1
+    approx_mb: 2
+    image_gb: 2.5
+    layout: swebench
+tasks:
+- id: swebfull-astropy__astropy-11693
+  benchmark: swe-bench
+  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  polarity: positive
+  category: too_strict
+  label: 'OpenAI 2024 annotators: tests check a NoConvergence error and a UserWarning the issue never asks for (false_negative=3); non-Verified
+    image predates the #465 history fix'
+  expected_rules:
+  - RG405
+  - RG408
+  - RG301
+  confidence: medium
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  fetch:
+    kind: hf_row
+    dataset: swe-bench
+    id: astropy__astropy-11693
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - core
+  - all
+  other_categories:
+  - answer_leak
+- id: swebfull-astropy__astropy-12544
+  benchmark: swe-bench
+  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  polarity: positive
+  category: too_strict
+  label: 'OpenAI 2024 annotators: parameter introduced is `mask_invalid`, not what the issue asked for (false_negative=3)'
+  expected_rules:
+  - RG402
+  - RG408
+  confidence: medium
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  fetch:
+    kind: hf_row
+    dataset: swe-bench
+    id: astropy__astropy-12544
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - core
+  - all
+- id: swebfull-astropy__astropy-12880
+  benchmark: swe-bench
+  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  polarity: positive
+  category: too_strict
+  label: 'OpenAI 2024 annotators: test assumes one specific backward-compat design (false_negative=3)'
+  expected_rules:
+  - RG408
+  - RG407
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  fetch:
+    kind: hf_row
+    dataset: swe-bench
+    id: astropy__astropy-12880
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - all
+- id: swebfull-astropy__astropy-13032
+  benchmark: swe-bench
+  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  polarity: positive
+  category: too_strict
+  label: 'OpenAI 2024 annotators: test checks behaviour beyond the issue (false_negative=3)'
+  expected_rules:
+  - RG405
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  fetch:
+    kind: hf_row
+    dataset: swe-bench
+    id: astropy__astropy-13032
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - all
+- id: swebfull-astropy__astropy-14590
+  benchmark: swe-bench
+  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  polarity: positive
+  category: underspecified
+  label: 'OpenAI 2024 annotators: issue fails to state expected behaviour (underspecified=3)'
+  expected_rules:
+  - RG701
+  - RG704
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  fetch:
+    kind: hf_row
+    dataset: swe-bench
+    id: astropy__astropy-14590
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - core
+  - all
+- id: swebfull-django__django-10426
+  benchmark: swe-bench
+  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  polarity: positive
+  category: underspecified
+  label: 'OpenAI 2024 annotators: refers to earlier tickets for ''app label validation'' (underspecified=3)'
+  expected_rules:
+  - RG703
+  - RG701
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  fetch:
+    kind: hf_row
+    dataset: swe-bench
+    id: django__django-10426
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - core
+  - all
+- id: swebfull-django__django-11592
+  benchmark: swe-bench
+  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  polarity: positive
+  category: underspecified
+  label: 'OpenAI 2024 annotators: not possible to understand what is requested (underspecified=3, false_negative=3, other=1)'
+  expected_rules:
+  - RG701
+  - RG408
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  fetch:
+    kind: hf_row
+    dataset: swe-bench
+    id: django__django-11592
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - all
+  other_categories:
+  - too_strict
+- id: swebfull-astropy__astropy-8519
+  benchmark: swe-bench
+  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  polarity: positive
+  category: underspecified
+  label: 'OpenAI 2024 annotators: issue describes expected behaviour, not a bug (underspecified=3, false_negative=3, other=1)'
+  expected_rules:
+  - RG701
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  fetch:
+    kind: hf_row
+    dataset: swe-bench
+    id: astropy__astropy-8519
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - all
+- id: swebfull-astropy__astropy-13132
+  benchmark: swe-bench
+  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  polarity: positive
+  category: nop_passes
+  label: 'OpenAI 2024 annotators: issue raises no problem; all code updates are in test files (other=1)'
+  expected_rules:
+  - RG006
+  - RG106
+  confidence: medium
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  fetch:
+    kind: hf_row
+    dataset: swe-bench
+    id: astropy__astropy-13132
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - core
+  - all
+- id: swebfull-astropy__astropy-13462
+  benchmark: swe-bench
+  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  polarity: positive
+  category: weak_tests
+  label: 'OpenAI 2024 annotators: fixed by updating tests to avoid overflow (other=1)'
+  expected_rules:
+  - RG106
+  - RG006
+  confidence: medium
+  source:
+  - org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  fetch:
+    kind: hf_row
+    dataset: swe-bench
+    id: astropy__astropy-13462
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - all
+- id: swelite-psf__requests-863
+  benchmark: swe-bench-lite
+  version: HF princeton-nlp/SWE-bench_Lite@main; image tag :v1
+  polarity: positive
+  category: weak_tests
+  label: insufficient tests (UTBoost augTest.json, Lite/full only)
+  expected_rules:
+  - RG101
+  - RG102
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-lite
+    id: psf__requests-863
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - all
+- id: swelite-mwaskom__seaborn-3010
+  benchmark: swe-bench-lite
+  version: HF princeton-nlp/SWE-bench_Lite@main; image tag :v1
+  polarity: positive
+  category: weak_tests
+  label: insufficient tests (UTBoost augTest.json, Lite/full only)
+  expected_rules:
+  - RG101
+  - RG102
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-lite
+    id: mwaskom__seaborn-3010
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - all
+- id: swelite-pylint-dev__pylint-5859
+  benchmark: swe-bench-lite
+  version: HF princeton-nlp/SWE-bench_Lite@main; image tag :v1
+  polarity: positive
+  category: weak_tests
+  label: insufficient tests (UTBoost augTest.json, Lite/full only)
+  expected_rules:
+  - RG101
+  - RG102
+  - RG110
+  confidence: high
+  source:
+  - org: CUHK-SZ / UIUC (Kang lab)
+    url: https://github.com/CUHK-Shenzhen-SE/UTBoost/blob/main/assets/useful_scripts/augTest.json
+  fetch:
+    kind: hf_row
+    dataset: swe-bench-lite
+    id: pylint-dev__pylint-5859
+    image_tag: v1
+  layout: swebench
+  tiers:
+  - all
+bulk:
+- id: openai-2024-annotations
+  benchmark: swe-bench
+  format: csv
+  id_field: instance_id
+  rules:
+  - where:
+    - - underspecified
+      - '>='
+      - 2
+    category: underspecified
+    expected_rules:
+    - RG701
+    - RG704
+  - where:
+    - - false_negative
+      - '>='
+      - 2
+    category: too_strict
+    expected_rules:
+    - RG405
+    - RG407
+    - RG408
+  - where:
+    - - other_major_issues
+      - ==
+      - 1
+    category: broken_env
+    expected_rules: []
+    note: mixed; read other_notes
+  - where:
+    - - underspecified
+      - ==
+      - 0
+    - - false_negative
+      - ==
+      - 0
+    - - other_major_issues
+      - ==
+      - 0
+    polarity: negative
+  source:
+    org: OpenAI Preparedness + SWE-bench authors
+    url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  count: 1,699 rows; 650 us>=2, 1,039 fn>=2, 135 other, 1,160 filter_out
+  url: https://cdn.openai.com/introducing-swe-bench-verified/swe-bench-annotation-results.zip
+  licence: not stated - linked, not copied
+  note: rows with filter_out=True are not in Verified; this folder's entries are drawn from them
+- id: swe465-all-v1-images
+  benchmark: swe-bench-verified / swe-bench
+  file: (rule, no file)
+  rules:
+  - all: every Verified instance at image tag :v1, and every non-Verified instance (only :v1/:latest, dated before 2025-09-11)
+    category: answer_leak
+    expected_rules:
+    - RG301
+    confidence: medium (inferred from tag dates; not checked inside images)
+  - all: every Verified instance at :v2 / :latest (2026-08-16)
+    polarity: negative
+    clean_for:
+    - RG301
+  source:
+    org: SWE-bench maintainers / Meta FAIR (jacobkahn, jlko)
+    url: https://github.com/SWE-bench/SWE-bench/issues/465
+  count: 500 + 1,794
+  url: https://github.com/SWE-bench/SWE-bench/issues/465

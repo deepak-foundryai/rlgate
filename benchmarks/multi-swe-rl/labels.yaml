@@ -1,0 +1,403 @@
+# multi-swe-rl: published task-level flaw labels. See README.md and ../README.md.
+benchmark: multi-swe-rl
+description: 'Multi-SWE-RL (ByteDance): rows that pass with no edit or whose gold patch fails to apply, from Prime Intellect''s validation.'
+versions:
+- HF ByteDance-Seed/Multi-SWE-RL data_20240601_20250331
+- HF PrimeIntellect/Multi-SWE-RL-Verified
+runnable_by_rlgate: partial
+how_to_run: SWE-style rows in `<out>/multi-swe-rl/<benchmark>.jsonl`; needs a mapping YAML (`--layout file`) and the repo checked out per row
+datasets:
+  multi-swe-rl:
+    hf: ByteDance-Seed/Multi-SWE-RL
+    revision: main
+    files:
+    - data_20240601_20250331/{lang}/{org}__{repo}_dataset.jsonl
+    id_field: instance_id
+    image: mswebench/{org}_m_{repo}:pr-{number}
+    approx_mb: 30
+    image_gb: 3.0
+    layout: yaml-needed
+    note: image naming pattern is second-hand [2H]; Prime serves copies from its registry
+tasks:
+- id: mswerl-colinhacks__zod-2656
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl)
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: colinhacks__zod-2656
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - smoke
+  - core
+  - all
+- id: mswerl-trpc__trpc-5532
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl)
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-5532
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - core
+  - all
+- id: mswerl-trpc__trpc-5442
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl); gold patch also fails to apply (validation.jsonl gold_apply_failed)
+  expected_rules:
+  - RG002
+  - RG006
+  - RG001
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-5442
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - core
+  - all
+  other_categories:
+  - gold_fails
+- id: mswerl-trpc__trpc-5253
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl)
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-5253
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - all
+- id: mswerl-trpc__trpc-4793
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl); gold patch also fails to apply (validation.jsonl gold_apply_failed)
+  expected_rules:
+  - RG002
+  - RG006
+  - RG001
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-4793
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - all
+  other_categories:
+  - gold_fails
+- id: mswerl-trpc__trpc-4708
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl)
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-4708
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - core
+  - all
+- id: mswerl-trpc__trpc-4538
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl)
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-4538
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - all
+- id: mswerl-trpc__trpc-4494
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl)
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-4494
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - all
+- id: mswerl-trpc__trpc-4464
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl); gold patch also fails to apply (validation.jsonl gold_apply_failed)
+  expected_rules:
+  - RG002
+  - RG006
+  - RG001
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-4464
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - all
+  other_categories:
+  - gold_fails
+- id: mswerl-trpc__trpc-4239
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl)
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-4239
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - all
+- id: mswerl-trpc__trpc-4187
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: nop_passes
+  label: scores reward 1.0 with no edit (no-edit-pass-exclusions.jsonl)
+  expected_rules:
+  - RG002
+  - RG006
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-4187
+    lang: ts
+  layout: yaml-needed
+  note: 'Vals reports Multi-SWE-RL images keep fix commits on leftover branches; Multi-SWE #70 confirms future commits in images'
+  tiers:
+  - all
+- id: mswerl-trpc__trpc-5713
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: gold_fails
+  label: gold patch fails to apply (validation.jsonl reason gold_apply_failed)
+  expected_rules:
+  - RG001
+  - RG009
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-5713
+    lang: ts
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: mswerl-trpc__trpc-4573
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: gold_fails
+  label: gold patch fails to apply (validation.jsonl reason gold_apply_failed)
+  expected_rules:
+  - RG001
+  - RG009
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: trpc__trpc-4573
+    lang: ts
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: mswerl-caddyserver__caddy-6345
+  benchmark: multi-swe-rl
+  version: 'HF ByteDance-Seed/Multi-SWE-RL@main data_20240601_20250331 (Prime validation: PrimeIntellect/Multi-SWE-RL-Verified, modified 2026-10-02)'
+  polarity: positive
+  category: flaky
+  label: gold patch fails at modest concurrency (goldpatch-retest-exclusions.jsonl)
+  expected_rules:
+  - RG003
+  - RG001
+  confidence: medium
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: multi-swe-rl
+    id: caddyserver__caddy-6345
+    lang: go
+  layout: yaml-needed
+  tiers:
+  - all
+bulk:
+- id: prime-multi-swe-rl
+  benchmark: multi-swe-rl
+  file: 'HF PrimeIntellect/Multi-SWE-RL-Verified: no-edit-pass-exclusions.jsonl, goldpatch-retest-exclusions.jsonl, validation.jsonl, validation-pass2.jsonl'
+  rules:
+  - file: no-edit-pass-exclusions.jsonl
+    category: nop_passes
+    expected_rules:
+    - RG002
+  - file: validation.jsonl
+    where:
+    - - reason
+      - ==
+      - gold_apply_failed
+    category: gold_fails
+    expected_rules:
+    - RG001
+    - RG009
+  - file: goldpatch-retest-exclusions.jsonl
+    category: flaky
+    expected_rules:
+    - RG003
+    confidence: medium
+  - file: validation-pass2.jsonl
+    where:
+    - - reward
+      - <
+      - 1
+    category: flaky
+    expected_rules:
+    - RG003
+    confidence: medium
+  - file: validation.jsonl
+    where:
+    - - lang
+      - ==
+      - cpp
+    category: broken_env
+    expected_rules:
+    - RG001
+    - RG608
+  - note: rows passing both gold passes and absent from every exclusion list are weak negatives
+  source:
+    org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  count: 11 / 5 / 172 / 79 / 449
+  url: https://huggingface.co/datasets/PrimeIntellect/Multi-SWE-RL-Verified
+- id: mswe-70-future-commits
+  benchmark: multi-swe-bench, multi-swe-rl
+  file: (rule, no file)
+  rules:
+  - all: every image built before a rebuild (none announced)
+    category: answer_leak
+    expected_rules:
+    - RG301
+    confidence: medium
+  source:
+    org: multi-swe-bench/multi-swe-bench issue tracker
+    url: https://github.com/multi-swe-bench/multi-swe-bench/issues
+  count: all
+  url: https://github.com/multi-swe-bench/multi-swe-bench/issues/70

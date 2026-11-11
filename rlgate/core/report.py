@@ -64,6 +64,7 @@ class TaskView:
     standalone: bool = True         # `rlgate check <target>` works on this task by itself
     limit: str | None = None        # why rlgate can't do a full run of this task
     infra: bool = False             # could not run because of the backend, not the task
+    seconds: float = 0.0            # time spent when it could not run (no result to carry it)
 
     @property
     def verdict(self) -> str:

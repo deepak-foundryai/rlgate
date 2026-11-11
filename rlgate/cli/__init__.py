@@ -320,7 +320,8 @@ def check(
     # -- scope
     only: Annotated[list[str] | None, typer.Option(
         "--only", help="Run only these steps, comma-separated: build, baseline, leaks, "
-        "grader, cheating, fairness (or 1-6). Also takes a rule ID, such as RG704.",
+        "grader, cheating, fairness (or 1-6). Also takes a rule ID, such as RG704, or "
+        "'questions' for the three LLM questions (with --deep-review).",
         rich_help_panel=SCOPE)] = None,
     start: Annotated[str | None, typer.Option(
         "--from", help="Start at this step (a name or 1-6); earlier steps come from the "

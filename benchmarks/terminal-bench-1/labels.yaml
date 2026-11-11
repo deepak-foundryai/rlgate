@@ -1,0 +1,368 @@
+# terminal-bench-1: published task-level flaw labels. See README.md and ../README.md.
+benchmark: terminal-bench-1
+description: Terminal-Bench 1.0 tasks named in its issue tracker (legacy task.yaml format).
+versions:
+- terminal-bench-1 (refs per entry; several 'main' to be pinned at fetch)
+runnable_by_rlgate: partial
+how_to_run: legacy TB1 format; use the Terminal Wrench `original_task/` copy where one exists
+tasks:
+- id: tb1-cross-entropy-method
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: answer_leak
+  label: '`COPY . /app` ships solution.sh and tests/ into the agent image (#1474)'
+  expected_rules:
+  - RG601
+  - RG306
+  - RG212
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: original-tasks/cross-entropy-method
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - core
+  - all
+- id: tb1-multistep-definite-integral
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: answer_leak
+  label: '`COPY . /app` ships solution.sh and tests/ into the agent image (#1474)'
+  expected_rules:
+  - RG601
+  - RG306
+  - RG212
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: original-tasks/multistep-definite-integral
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - all
+- id: tb1-play-lord
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: answer_leak
+  label: '`COPY . /app` ships solution.sh and tests/ into the agent image (#1474)'
+  expected_rules:
+  - RG601
+  - RG306
+  - RG212
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: original-tasks/play-lord
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - all
+- id: tb1-tree-directory-parser
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: forgeable_grader
+  label: hidden reference /app/.hidden_ref.txt can be manipulated by root (#1015); oracle fails 48/48 (#812-#820)
+  expected_rules:
+  - RG213
+  - RG001
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: tasks/tree-directory-parser
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - core
+  - all
+- id: tb1-super-benchmark-upet
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@454d32ba6ffb
+  polarity: positive
+  category: weak_tests
+  label: the only test compares to a fixed accuracy number, so writing the file without training passes (#1019)
+  expected_rules:
+  - RG104
+  - RG110
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: 454d32ba6ffbdcb239b4b539a6a3734864fa12fa
+    path: tasks/super-benchmark-upet
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists
+  tiers:
+  - core
+  - all
+- id: tb1-reshard-c4-data
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@d41d1e57c6e8
+  polarity: positive
+  category: weak_tests
+  label: an empty folder passes the compression test; revert.py can copy the originals (#1044)
+  expected_rules:
+  - RG110
+  - RG109
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: d41d1e57c6e835e6b4f30a7c1cd0fae948740a31
+    path: tasks/reshard-c4-data
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists
+  tiers:
+  - all
+- id: tb1-git-workflow-hack
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: weak_tests
+  label: oracle ignores most of the instruction, so the tests are weak (#1002)
+  expected_rules:
+  - RG108
+  - RG110
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: tasks/git-workflow-hack
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - all
+- id: tb1-get-bitcoin-nodes
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: impossible
+  label: infeasible (needs a full node); the oracle cheats (#1114)
+  expected_rules:
+  - RG106
+  - RG001
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: tasks/get-bitcoin-nodes
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - all
+- id: tb1-build-linux-kernel-qemu
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: gold_fails
+  label: oracle failing 48/48 runs (#812-#820)
+  expected_rules:
+  - RG001
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: tasks/build-linux-kernel-qemu
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - all
+- id: tb1-chem-rf
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: gold_fails
+  label: oracle failing 48/48 runs (#812-#820)
+  expected_rules:
+  - RG001
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: tasks/chem-rf
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - all
+- id: tb1-protocol-analysis-rs
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: gold_fails
+  label: oracle failing 48/48 runs (#812-#820)
+  expected_rules:
+  - RG001
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: tasks/protocol-analysis-rs
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - all
+- id: tb1-hf-lora-adapter
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: flaky
+  label: oracle passes 45/48 (#812-#820)
+  expected_rules:
+  - RG003
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: tasks/hf-lora-adapter
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - all
+- id: tb1-predicate-pushdown-bench
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: flaky
+  label: oracle passes 47/48 (#812-#820)
+  expected_rules:
+  - RG003
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: tasks/predicate-pushdown-bench
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - all
+- id: tb1-download-youtube
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-1@main
+  polarity: positive
+  category: broken_env
+  label: 'unreproducible: YouTube anti-bot changes (dropped in 2.0)'
+  expected_rules:
+  - RG608
+  - RG001
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: main
+    path: tasks/download-youtube
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
+    'main' is unpinned in the notes - pin at fetch
+  tiers:
+  - all
+- id: tb1-polyglot-c-py
+  benchmark: terminal-bench-1.0
+  version: terminal-bench-core v0.1.1 @91e1045 [2H]
+  polarity: positive
+  category: impossible
+  label: instruction says main.c.py but tests check main.py.c, so the task is unpassable (#1457)
+  expected_rules:
+  - RG001
+  - RG704
+  confidence: medium
+  source:
+  - org: harbor-framework/terminal-bench-1 issue tracker
+    url: https://github.com/harbor-framework/terminal-bench-1/issues
+  fetch:
+    kind: git
+    repo: https://github.com/harbor-framework/terminal-bench-1
+    ref: 91e1045
+    path: tasks/polyglot-c-py
+    approx_mb: 5
+  layout: tb1-legacy
+  note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists
+  tiers:
+  - all

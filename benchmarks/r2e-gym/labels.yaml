@@ -1,0 +1,60 @@
+# r2e-gym: published task-level flaw labels. See README.md and ../README.md.
+benchmark: r2e-gym
+description: 'R2E-Gym Subset: rows Prime Intellect dropped because the gold patch fails.'
+versions:
+- HF PrimeIntellect/R2E-Gym-Subset-Verified (split dropped)
+runnable_by_rlgate: partial
+how_to_run: SWE-style rows in `<out>/r2e-gym/<benchmark>.jsonl`; needs a mapping YAML (`--layout file`) and the repo checked out per row
+datasets:
+  r2e-gym-verified:
+    hf: PrimeIntellect/R2E-Gym-Subset-Verified
+    revision: main
+    files:
+    - data/dropped-*.parquet
+    - data/train-*.parquet
+    id_field: commit_hash
+    image: '{docker_image}'
+    approx_mb: 300
+    image_gb: 2.0
+    layout: yaml-needed
+tasks:
+- id: r2egym-006fbe03fede4eaa1eeba7b8393cbf4d63cb44b6
+  benchmark: r2e-gym
+  version: HF PrimeIntellect/R2E-Gym-Subset-Verified@main split dropped (filtered_drops.json)
+  polarity: positive
+  category: gold_fails
+  label: gold patch 0/10 passes on retry (test_failed; mostly network/timing-sensitive tornado/aiohttp)
+  expected_rules:
+  - RG001
+  - RG003
+  confidence: high
+  source:
+  - org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  fetch:
+    kind: hf_row
+    dataset: r2e-gym-verified
+    id: 006fbe03fede4eaa1eeba7b8393cbf4d63cb44b6
+    split: dropped
+  layout: yaml-needed
+  note: the only R2E drop id quoted in the notes; the other 55 are in bulk
+  tiers:
+  - core
+  - all
+  other_categories:
+  - flaky
+bulk:
+- id: prime-r2e-drops
+  benchmark: r2e-gym
+  file: HF PrimeIntellect/R2E-Gym-Subset-Verified metadata/filtered_drops.json (+ split dropped)
+  rules:
+  - all: true
+    category: gold_fails
+    expected_rules:
+    - RG001
+    - RG003
+  source:
+    org: Prime Intellect
+    url: https://huggingface.co/collections/PrimeIntellect/swe-rl-6a4d7a3ada4336936bc08915
+  count: 56 of 4,578
+  url: https://huggingface.co/datasets/PrimeIntellect/R2E-Gym-Subset-Verified

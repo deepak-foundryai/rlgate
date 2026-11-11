@@ -1,0 +1,127 @@
+# swe-smith: published task-level flaw labels. See README.md and ../README.md.
+benchmark: swe-smith
+description: 'SWE-smith synthetic bugs: harness defects reported in its issue tracker.'
+versions:
+- HF SWE-bench/SWE-smith, -py, -rs
+runnable_by_rlgate: partial
+how_to_run: SWE-style rows in `<out>/swe-smith/<benchmark>.jsonl`; needs a mapping YAML (`--layout file`) and the repo checked out per row
+datasets:
+  swe-smith:
+    hf: SWE-bench/SWE-smith
+    revision: main
+    files:
+    - data/*.parquet
+    id_field: instance_id
+    image: '{image_name}'
+    approx_mb: 250
+    image_gb: 2.0
+    layout: yaml-needed
+  swe-smith-py:
+    hf: SWE-bench/SWE-smith-py
+    revision: main
+    files:
+    - data/*.parquet
+    id_field: instance_id
+    image: '{image_name}'
+    approx_mb: 200
+    image_gb: 2.0
+    layout: yaml-needed
+    note: task = branch <instance_id> in github.com/swesmith/<repo mirror>; eval checks out HEAD~1 (#252)
+  swe-smith-rs:
+    hf: SWE-bench/SWE-smith-rs
+    revision: main
+    files:
+    - data/*.parquet
+    id_field: instance_id
+    image: '{image_name}'
+    approx_mb: 40
+    image_gb: 1.5
+    layout: yaml-needed
+tasks:
+- id: swesmith-conan-io__conan.86f29e13.combine_module__njgb7obz
+  benchmark: swe-smith
+  version: HF SWE-bench/SWE-smith@main (legacy, no longer updated)
+  polarity: positive
+  category: forgeable_grader
+  label: a syntax error makes pytest fail at collection and the harness treats missing tests as passing (#24)
+  expected_rules:
+  - RG207
+  - RG208
+  - RG110
+  confidence: medium
+  source:
+  - org: SWE-bench/SWE-smith issue tracker
+    url: https://github.com/SWE-bench/SWE-smith/issues
+  fetch:
+    kind: hf_row
+    dataset: swe-smith
+    id: conan-io__conan.86f29e13.combine_module__njgb7obz
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+  other_categories:
+  - weak_tests
+- id: swesmith-r1chardj0n3s__parse.30da9e4f.func_basic__j0z3z0co
+  benchmark: swe-smith
+  version: HF SWE-bench/SWE-smith-py@main (fallback SWE-bench/SWE-smith)
+  polarity: positive
+  category: gold_fails
+  label: 'gold resolves 0/1: parse.py doctests are in PASS_TO_PASS, so the anti-cheat test-file restore reverts the fix (#245)'
+  expected_rules:
+  - RG009
+  - RG001
+  confidence: medium
+  source:
+  - org: SWE-bench/SWE-smith issue tracker
+    url: https://github.com/SWE-bench/SWE-smith/issues
+  fetch:
+    kind: hf_row
+    dataset: swe-smith-py
+    id: r1chardj0n3s__parse.30da9e4f.func_basic__j0z3z0co
+    alt: swe-smith
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+- id: swesmith-marshallpierce__rust-base64.cac5ff84.func_pm_flip_operators__cedm6sek
+  benchmark: swe-smith
+  version: HF SWE-bench/SWE-smith-rs@main
+  polarity: positive
+  category: nop_passes
+  label: 'eval checks out HEAD~1; the branch tip is ''Bug Patch'' (no ''Remove F2P Tests''), so HEAD~1 is bug-free: an empty patch resolves and
+    a correct fix fails (#252)'
+  expected_rules:
+  - RG002
+  - RG001
+  - RG006
+  confidence: medium
+  source:
+  - org: SWE-bench/SWE-smith issue tracker
+    url: https://github.com/SWE-bench/SWE-smith/issues
+  fetch:
+    kind: hf_row
+    dataset: swe-smith-rs
+    id: marshallpierce__rust-base64.cac5ff84.func_pm_flip_operators__cedm6sek
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+  other_categories:
+  - gold_fails
+bulk:
+- id: swesmith-252-bug-patch-tip
+  benchmark: swe-smith
+  file: HF SWE-bench/SWE-smith-ts (5,032/5,032), -cpp (5,123/5,123), -rs (619), -java (578), -js (166), -go (45)
+  rules:
+  - all: rows whose swesmith branch tip is 'Bug Patch'
+    category: nop_passes
+    expected_rules:
+    - RG002
+    - RG001
+    confidence: medium (one reporter, row-matched)
+  source:
+    org: SWE-bench/SWE-smith issue tracker
+    url: https://github.com/SWE-bench/SWE-smith/issues
+  count: ~11,500 rows
+  url: https://github.com/SWE-bench/SWE-smith/issues/252

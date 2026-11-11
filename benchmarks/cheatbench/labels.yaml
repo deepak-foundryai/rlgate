@@ -1,0 +1,25 @@
+# cheatbench: published task-level flaw labels. See README.md and ../README.md.
+benchmark: cheatbench
+description: 'CheatBench (CAIS) software-engineering split: 20 SWE-bench Pro tasks that are leaky by construction (git history and network on).
+  Referenced as a bulk set.'
+versions:
+- github.com/centerforaisafety/cheatbench tasks/software_engineering/instances.json
+runnable_by_rlgate: partial
+how_to_run: Harbor registry `scale-ai/swe-bench-pro`
+tasks: []
+bulk:
+- id: cheatbench-swe
+  benchmark: swe-bench-pro (CheatBench software_engineering)
+  file: https://github.com/centerforaisafety/cheatbench tasks/software_engineering/instances.json (Harbor registry scale-ai/swe-bench-pro)
+  rules:
+  - all: true
+    category: answer_leak
+    expected_rules:
+    - RG301
+    - RG307
+    note: repo starts at the fix's parent with git history and network on, by construction
+  source:
+    org: CAIS (Hendrycks et al.)
+    url: https://github.com/centerforaisafety/cheatbench
+  count: '20'
+  url: https://github.com/centerforaisafety/cheatbench

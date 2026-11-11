@@ -1,0 +1,264 @@
+# mbpp-plus: published task-level flaw labels. See README.md and ../README.md.
+benchmark: mbpp-plus
+description: MBPP (original tests) tasks that EvalPlus lists as wrong, ambiguous or with multiple valid answers; MBPP+ is the fixed twin.
+versions:
+- HF google-research-datasets/mbpp (full)
+- MBPP+ v0.2.0 (twins)
+runnable_by_rlgate: 'yes'
+how_to_run: 'fetch.py writes `task.rlgate.yaml` per task: `rlgate check <out>/mbpp-plus -j 8`'
+datasets:
+  mbpp:
+    hf: google-research-datasets/mbpp
+    revision: main
+    files:
+    - full/*.parquet
+    id_field: task_id
+    image: python:3.12.7-slim
+    approx_mb: 1
+    image_gb: 0.05
+    layout: yaml (fetch.py writes task.rlgate.yaml)
+tasks:
+- id: mbpp-020
+  benchmark: mbpp
+  version: HF google-research-datasets/mbpp@main (full split; original tests)
+  polarity: positive
+  category: too_strict
+  label: 'EvalPlus ground-truth notes: wrong implementation or wrong testcase'
+  expected_rules:
+  - RG001
+  - RG408
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: mbpp
+    id: 20
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: MBPP+ v0.2.0 task Mbpp/20 (evalplus/mbppplus_release)
+  tiers:
+  - core
+  - all
+- id: mbpp-115
+  benchmark: mbpp
+  version: HF google-research-datasets/mbpp@main (full split; original tests)
+  polarity: positive
+  category: too_strict
+  label: 'EvalPlus ground-truth notes: wrong implementation or wrong testcase'
+  expected_rules:
+  - RG001
+  - RG408
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: mbpp
+    id: 115
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: MBPP+ v0.2.0 task Mbpp/115 (evalplus/mbppplus_release)
+  tiers:
+  - core
+  - all
+- id: mbpp-143
+  benchmark: mbpp
+  version: HF google-research-datasets/mbpp@main (full split; original tests)
+  polarity: positive
+  category: too_strict
+  label: 'EvalPlus ground-truth notes: wrong implementation or wrong testcase'
+  expected_rules:
+  - RG001
+  - RG408
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: mbpp
+    id: 143
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: MBPP+ v0.2.0 task Mbpp/143 (evalplus/mbppplus_release)
+  tiers:
+  - all
+- id: mbpp-406
+  benchmark: mbpp
+  version: HF google-research-datasets/mbpp@main (full split; original tests)
+  polarity: positive
+  category: too_strict
+  label: 'EvalPlus ground-truth notes: wrong implementation or wrong testcase'
+  expected_rules:
+  - RG001
+  - RG408
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: mbpp
+    id: 406
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: MBPP+ v0.2.0 task Mbpp/406 (evalplus/mbppplus_release)
+  tiers:
+  - all
+- id: mbpp-119
+  benchmark: mbpp
+  version: HF google-research-datasets/mbpp@main (full split; original tests)
+  polarity: positive
+  category: too_strict
+  label: 'EvalPlus ground-truth notes: multiple valid answers but the test uses =='
+  expected_rules:
+  - RG407
+  - RG408
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: mbpp
+    id: 119
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: MBPP+ v0.2.0 task Mbpp/119 (evalplus/mbppplus_release)
+  tiers:
+  - core
+  - all
+- id: mbpp-130
+  benchmark: mbpp
+  version: HF google-research-datasets/mbpp@main (full split; original tests)
+  polarity: positive
+  category: too_strict
+  label: 'EvalPlus ground-truth notes: multiple valid answers but the test uses =='
+  expected_rules:
+  - RG407
+  - RG408
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: mbpp
+    id: 130
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: MBPP+ v0.2.0 task Mbpp/130 (evalplus/mbppplus_release)
+  tiers:
+  - all
+- id: mbpp-089
+  benchmark: mbpp
+  version: HF google-research-datasets/mbpp@main (full split; original tests)
+  polarity: positive
+  category: underspecified
+  label: 'EvalPlus ground-truth notes: ambiguous or imprecise description'
+  expected_rules:
+  - RG701
+  - RG704
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: mbpp
+    id: 89
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: MBPP+ v0.2.0 task Mbpp/89 (evalplus/mbppplus_release)
+  tiers:
+  - core
+  - all
+- id: mbpp-170
+  benchmark: mbpp
+  version: HF google-research-datasets/mbpp@main (full split; original tests)
+  polarity: positive
+  category: underspecified
+  label: 'EvalPlus ground-truth notes: ambiguous or imprecise description'
+  expected_rules:
+  - RG701
+  - RG704
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: mbpp
+    id: 170
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: MBPP+ v0.2.0 task Mbpp/170 (evalplus/mbppplus_release)
+  tiers:
+  - all
+- id: mbpp-417
+  benchmark: mbpp
+  version: HF google-research-datasets/mbpp@main (full split; original tests)
+  polarity: positive
+  category: underspecified
+  label: 'EvalPlus ground-truth notes: broken or confusing problem'
+  expected_rules:
+  - RG701
+  - RG001
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: mbpp
+    id: 417
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: MBPP+ v0.2.0 task Mbpp/417 (evalplus/mbppplus_release)
+  tiers:
+  - core
+  - all
+- id: mbpp-789
+  benchmark: mbpp
+  version: HF google-research-datasets/mbpp@main (full split; original tests)
+  polarity: positive
+  category: flaky
+  label: 'EvalPlus ground-truth notes: float comparison'
+  expected_rules:
+  - RG003
+  - RG407
+  confidence: medium
+  source:
+  - org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  fetch:
+    kind: hf_row
+    dataset: mbpp
+    id: 789
+  layout: yaml (fetch.py writes task.rlgate.yaml)
+  control: MBPP+ v0.2.0 task Mbpp/789 (evalplus/mbppplus_release)
+  tiers:
+  - all
+bulk:
+- id: mbpp-evalplus-list
+  benchmark: mbpp
+  file: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  rules:
+  - group: wrong implementation / wrong testcase
+    ids: 020 083 101 115 143 406 582 723 733 793 117 128 229 452 464 617 640 747
+    category: too_strict
+  - group: ambiguous
+    ids: 083 089 170 310 391 443 444 465 603 627 738 745
+    category: underspecified
+  - group: broken/confusing
+    ids: 307 417 802 612
+    category: underspecified
+  - group: multiple valid answers, ==
+    ids: 119 130 462 630
+    category: too_strict
+  - group: duplicates
+    ids: 393=290 411=102 584=440 625=591 756=434 779=758
+    category: (RG9xx dedup, not checked yet)
+  source:
+    org: EvalPlus (UIUC)
+    url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md
+  count: ~60
+  url: https://github.com/evalplus/evalplus/blob/mbpp/groundtruth/mbpp/README.md

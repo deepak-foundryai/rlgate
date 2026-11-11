@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.1 (2026-11-11)
+
+### Fixed
+
+- **Compose tasks on Daytona** (a task with its own `docker-compose.yaml`, such as main +
+  a service + a database): the gradings of one task ran their stacks at the same time on
+  one sandbox sized for a single stack, so containers ran out of memory and grading failed
+  with "Could not find the file /tmp in container". On Daytona these stacks now run one at
+  a time, as the harness runs them. Local Docker is unchanged.
+- When a container of a stack stops, the error names it with its exit code and whether it
+  ran out of memory, and suggests `--backend-opt memory_gb=N` when it did.
+- **`rlgate.log` records the run:** each step's start, end and duration, each grading with
+  its exit code and time (the grader's output when it fails), and the full traceback of a
+  task that could not be checked.
+- A model behind an OpenAI-compatible endpoint (`openai/deepseek-ai/DeepSeek-V4.1-Flash` on
+  Tinker, for example) is counted as its own family, not OpenAI.
+- A task that could not be checked shows how long it ran instead of `0.0s`.
+
+### Added
+
+- `benchmarks/`: published independent audits of public benchmarks and RL environments,
+  one folder per benchmark with the reports behind every labelled task, and `fetch.py`
+  to download them for `rlgate check`.
+- `--only questions` is listed in `rlgate check --help`: the three LLM questions on their own
+  (with `--deep-review`).
+
 ## 0.1.0 (2026-11-11)
 
 ### Changed: what an existing command line does

@@ -1,0 +1,72 @@
+# openswe: published task-level flaw labels. See README.md and ../README.md.
+benchmark: openswe
+description: 'OpenSWE (GAIR, gated): eval scripts that paste the gold fix before running tests.'
+versions:
+- HF GAIR/OpenSWE (gated)
+runnable_by_rlgate: partial
+how_to_run: SWE-style rows in `<out>/openswe/<benchmark>.jsonl`; needs a mapping YAML (`--layout file`) and the repo checked out per row
+datasets:
+  openswe:
+    hf: GAIR/OpenSWE
+    revision: main
+    files:
+    - openswe_other.jsonl
+    - filtered_ids.csv
+    id_field: instance_id
+    image: (per-env Dockerfile in the row)
+    approx_mb: 8360
+    image_gb: 2.0
+    layout: yaml-needed
+    gated: true
+    note: gated (accept terms); 8.36 GB
+tasks:
+- id: openswe-DataDog__guarddog-156
+  benchmark: openswe
+  version: HF GAIR/OpenSWE@main (gated; in filtered_ids.csv)
+  polarity: positive
+  category: nop_passes
+  label: 'eval script pastes the gold source fix before running tests, so the verifier passes whatever the agent does (dual run: `git checkout
+    -- .` then a gold-source apply in the test+fix phase)'
+  expected_rules:
+  - RG002
+  - RG006
+  - RG306
+  confidence: medium
+  source:
+  - org: 'ritvik-sarvam (HF discussion #4)'
+    url: https://huggingface.co/datasets/GAIR/OpenSWE/discussions/4
+  fetch:
+    kind: hf_row
+    dataset: openswe
+    id: DataDog__guarddog-156
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+  other_categories:
+  - answer_leak
+- id: openswe-pandas-dev__pandas-17888
+  benchmark: openswe
+  version: HF GAIR/OpenSWE@main (gated; in filtered_ids.csv)
+  polarity: positive
+  category: nop_passes
+  label: eval script pastes the gold source fix before running tests, so the verifier passes whatever the agent does (single-run shape (reporter
+    believes the more common one))
+  expected_rules:
+  - RG002
+  - RG006
+  - RG306
+  confidence: medium
+  source:
+  - org: 'ritvik-sarvam (HF discussion #4)'
+    url: https://huggingface.co/datasets/GAIR/OpenSWE/discussions/4
+  fetch:
+    kind: hf_row
+    dataset: openswe
+    id: pandas-dev__pandas-17888
+  layout: yaml-needed
+  tiers:
+  - core
+  - all
+  other_categories:
+  - answer_leak

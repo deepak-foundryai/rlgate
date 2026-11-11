@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import concurrent.futures as cf
+import logging
 import re
 import time
 from dataclasses import dataclass, replace
@@ -306,6 +307,7 @@ def check_task(task: Task, target: str, *, mode: Mode, runs: int, sel: Selection
                   " (these checks only look at the environment, so nothing is graded)")
         ui.err().print(f"Full run on {_backend_name(mode.backend)}: builds every image{grades}. "
                        "--quick skips all of that.", style="dim", highlight=False)
+    t0 = time.monotonic()
     try:
         result = audit(task, k=runs, only=only, backend=mode.backend,
                        static_only=mode.name == "quick", include_review=True,
@@ -313,10 +315,11 @@ def check_task(task: Task, target: str, *, mode: Mode, runs: int, sel: Selection
                        prior=prior, reuse=reuse, fingerprints=fps,
                        on_findings=lambda fs: _waive(fs, root), workers=sel.workers,
                        depth=sel.depth, parallel=sel.parallel, review=sel.review)
-    except Exception as e:  # noqa: BLE001 - one task's failure is reported, never a crash
+    except Exception as e:  # one task's failure is reported, never a crash
+        logging.getLogger("rlgate.run").exception("%s could not be checked", task.id)
         return TaskView(target, task.id, root, None, None, mode=mode.name,
                         task_type=task.source, error=_explain_error(e),
-                        infra=is_infrastructure(e))
+                        infra=is_infrastructure(e), seconds=time.monotonic() - t0)
 
     if prev is not None:
         result = _merge(prev, result, only or set())

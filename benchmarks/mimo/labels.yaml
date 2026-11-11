@@ -1,0 +1,34 @@
+# mimo: published task-level flaw labels. See README.md and ../README.md.
+benchmark: mimo
+description: MiMo-V2.6-RL-oss code tasks (Xiaomi). Vals AI reported two-thirds leaked the answer before the 2026-10-16 image re-push; no id list
+  was published. Referenced as a bulk set.
+versions:
+- HF XiaomiMiMo/MiMo-V2.6-RL-oss code config
+- images xiaomimimo/mimo-v2.6-rl-oss:<instance_id>
+runnable_by_rlgate: 'yes'
+how_to_run: '`rlgate check <dir> --layout mimo`'
+tasks: []
+bulk:
+- id: mimo-v2.6-code
+  benchmark: mimo (XiaomiMiMo/MiMo-V2.6-RL-oss code config)
+  file: HF XiaomiMiMo/MiMo-V2.6-RL-oss code.parquet (pre-drop rev 639865fd3374018d6cb29b9fb82dd531406fcf5f; now 2,602 rows)
+  rules:
+  - all: pre-2026-10-16 images
+    category: answer_leak
+    expected_rules:
+    - RG301
+    - RG305
+    confidence: 'medium (Vals: 1,795/2,698, no id list)'
+  - all: current images (re-pushed 2026-10-16 with anti-hack preprocessing)
+    polarity: negative (presumed)
+    clean_for:
+    - RG301
+    confidence: low
+  source:
+    org: Vals AI
+    url: https://www.vals.ai/blogs/mimo-reward-hacking
+  count: 2,602 tasks
+  note: the current code-task images are public (docker.io/xiaomimimo/mimo-v2.6-rl-oss:<instance_id>) and runnable with `--layout mimo`. The leaky
+    pre-re-push digests are not documented, so the leaky versions can't be pulled; treat rlgate's RG301 output on current images as unlabelled,
+    not as a scored positive.
+  url: https://huggingface.co/datasets/XiaomiMiMo/MiMo-V2.6-RL-oss

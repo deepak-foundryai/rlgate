@@ -286,3 +286,10 @@ def test_progress_lines_fit_the_terminal_and_unfinished_is_not_failed(capsys):
     assert "! Agent writes wrong implementations" in err
     assert "didn't finish: the agent stopped at its limit" in err
     assert "✗" not in err and "[fail]" not in err
+
+
+def test_family_looks_past_an_openai_compatible_prefix():
+    from rlgate.llm import family
+    assert family("openai/deepseek-ai/DeepSeek-V4.1-Flash") == "deepseek"   # Tinker, vLLM...
+    assert family("openai/gpt-4o") == "openai"
+    assert family("openrouter/google/gemini-2.5-pro") == "google"

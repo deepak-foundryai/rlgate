@@ -1,0 +1,1052 @@
+# deepswe: published task-level flaw labels. See README.md and ../README.md.
+benchmark: deepswe
+description: DeepSWE (Datacurve) Harbor tasks with execution-confirmed grader defects (Tokenless) and reviewed false negatives (Epoch AI).
+versions:
+- deep-swe@0b9fabbb63b9
+runnable_by_rlgate: 'yes'
+how_to_run: '`rlgate check <out>/deepswe --layout deepswe -j 8`'
+tasks:
+- id: deepswe-aiomonitor-task-snapshots-diff
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: forgeable_grader
+  label: a submitted pytest hook rewrites failing tests as passed for full reward; default capacity, stack frames, eviction and first snapshot
+    id unchecked
+  expected_rules:
+  - RG201
+  - RG211
+  - RG110
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/aiomonitor-task-snapshots-diff
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - smoke
+  - core
+  - all
+  other_categories:
+  - weak_tests
+- id: deepswe-adaptix-name-mapping-aliases
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: forgeable_grader
+  label: a submitted pytest hook rewrites failing tests as passed for full reward
+  expected_rules:
+  - RG201
+  - RG211
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/adaptix-name-mapping-aliases
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - core
+  - all
+- id: deepswe-fastapi-implicit-head-options
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: forgeable_grader
+  label: submitted pytest hook forges passes; method order, multi-method routes and middleware unchecked
+  expected_rules:
+  - RG201
+  - RG211
+  - RG110
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/fastapi-implicit-head-options
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - core
+  - all
+  other_categories:
+  - weak_tests
+- id: deepswe-langchain-request-coalescing
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: forgeable_grader
+  label: submission-controlled test infrastructure turns failing tests into full reward (grader restores only shipped test files)
+  expected_rules:
+  - RG211
+  - RG201
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/langchain-request-coalescing
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - core
+  - all
+- id: deepswe-pwntools-tube-multiplexing
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: forgeable_grader
+  label: submission-controlled test infrastructure turns failing tests into full reward
+  expected_rules:
+  - RG211
+  - RG201
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/pwntools-tube-multiplexing
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - core
+  - all
+- id: deepswe-scriggo-method-declarations
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: forgeable_grader
+  label: submission-controlled test infrastructure turns failing tests into full reward
+  expected_rules:
+  - RG211
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/scriggo-method-declarations
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - core
+  - all
+- id: deepswe-obsidian-linter-link-format-conversion
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: forgeable_grader
+  label: submission-controlled test infrastructure turns failing tests into full reward
+  expected_rules:
+  - RG211
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/obsidian-linter-link-format-conversion
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-anko-default-function-arguments
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: forgeable_grader
+  label: a no-op shared test helper plus a fixture-specific loader get full reward
+  expected_rules:
+  - RG211
+  - RG213
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/anko-default-function-arguments
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - core
+  - all
+- id: deepswe-dasel-html-document-format
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: forgeable_grader
+  label: a feature test can be credited from the base run, so empty tests satisfy the whitelist
+  expected_rules:
+  - RG207
+  - RG006
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/dasel-html-document-format
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - core
+  - all
+- id: deepswe-yjs-map-conflict-detection
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: forgeable_grader
+  label: a failing regression test escapes the whitelist when the submission renames it
+  expected_rules:
+  - RG207
+  - RG214
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/yjs-map-conflict-detection
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - core
+  - all
+- id: deepswe-httpx-deterministic-cookie-store
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: five required behaviours unchecked; only whitelisted tests can lower the reward; submission-controlled test infra
+  expected_rules:
+  - RG101
+  - RG110
+  - RG211
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/httpx-deterministic-cookie-store
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - core
+  - all
+  other_categories:
+  - forgeable_grader
+- id: deepswe-httpx-streaming-json-iteration
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: tests never check that values arrive before the stream ends
+  expected_rules:
+  - RG110
+  - RG101
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/httpx-streaming-json-iteration
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-sqlite-utils-safe-import-checkpoints
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: safe-mode CLI tests accept commands that insert/change nothing; documentation update never scored
+  expected_rules:
+  - RG110
+  - RG101
+  - RG108
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/sqlite-utils-safe-import-checkpoints
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-textual-kitty-key-phases
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: super/hyper/meta never checked; new-branch requirement can't affect reward; a passing test counted as failed when the reporter names
+    it differently
+  expected_rules:
+  - RG110
+  - RG108
+  - RG408
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/textual-kitty-key-phases
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - too_strict
+- id: deepswe-kea-atomic-signal-selectors
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: scoring observes behaviour only under NODE_ENV=test
+  expected_rules:
+  - RG110
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/kea-atomic-signal-selectors
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-numba-stencil-boundary-modes
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: boundary-mode tests check standard_indexing, out= and mode-tuple length only
+  expected_rules:
+  - RG110
+  - RG101
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/numba-stencil-boundary-modes
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-narwhals-rolling-window-suite
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: validation, DuckDB quantile and Dask behaviour unscored
+  expected_rules:
+  - RG110
+  - RG101
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/narwhals-rolling-window-suite
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-fd-deterministic-multi-key-sorting
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: NUL output, other file types, unseeded random order and seed bounds unchecked
+  expected_rules:
+  - RG110
+  - RG101
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/fd-deterministic-multi-key-sorting
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-sql-formatter-bigquery-pipe-formatting
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: default keyword case, JOIN variants and the pipe token unchecked; submission-controlled test infra
+  expected_rules:
+  - RG110
+  - RG211
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/sql-formatter-bigquery-pipe-formatting
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - forgeable_grader
+- id: deepswe-ytt-jsonpath-query-api
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: syntax-error position never checked; recursive union accepts duplicates (Tokenless); harness discards agent test edits then adds hidden
+    tests -> build breaks (Epoch FN)
+  expected_rules:
+  - RG110
+  - RG408
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/ytt-jsonpath-query-api
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - too_strict
+- id: deepswe-participle-grammar-conflict-analysis
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: weak_tests
+  label: meaningless diagnostics accepted, StrictMode never run (Tokenless); harness-wide test-merge collision (Epoch FN)
+  expected_rules:
+  - RG110
+  - RG408
+  needs: deep-review
+  confidence: high
+  source:
+  - org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/participle-grammar-conflict-analysis
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - too_strict
+- id: deepswe-ink-grid-box-layout
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: underspecified
+  label: placement algorithm never specified; hidden tests require 'dense', many models chose CSS default 'sparse'
+  expected_rules:
+  - RG704
+  - RG408
+  needs: deep-review
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/ink-grid-box-layout
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-testem-bail-on-test-failure
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: hidden test requires a word in the warning text the instruction never mentions
+  expected_rules:
+  - RG401
+  - RG403
+  - RG704
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/testem-bail-on-test-failure
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - underspecified
+- id: deepswe-sqlfmt-create-table-ddl-formatting
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: hidden fixtures require a space before the parenthesis
+  expected_rules:
+  - RG401
+  - RG403
+  - RG408
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/sqlfmt-create-table-ddl-formatting
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-obsidian-linter-auto-table-of-contents
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: test ids derived from the plugin name; verifier expects a different name than models chose
+  expected_rules:
+  - RG402
+  - RG408
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/obsidian-linter-auto-table-of-contents
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-eicrud-keyset-pagination-cursor
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: broken_env
+  label: generated JS is stale (not rebuilt from TS), so new constants are undefined
+  expected_rules:
+  - RG001
+  - RG009
+  - RG408
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/eicrud-keyset-pagination-cursor
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+- id: deepswe-actionlint-action-pinning-lint
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/actionlint-action-pinning-lint
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-anko-typed-variable-bindings
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/anko-typed-variable-bindings
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-etree-xml-diff-patch
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/etree-xml-diff-patch
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-geo-shapeindex-serialization
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/geo-shapeindex-serialization
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-go-critic-doc-link-checker
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/go-critic-doc-link-checker
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-kcp-go-multiplexed-kcp-streams
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/kcp-go-multiplexed-kcp-streams
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-onedump-dump-encryption-pipeline
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/onedump-dump-encryption-pipeline
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-opa-template-string-reconstruction
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/opa-template-string-reconstruction
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-prometheus-transactional-reload-status
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/prometheus-transactional-reload-status
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-returns-validated-error-accumulation
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/returns-validated-error-accumulation
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-skrub-duration-encoding
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/skrub-duration-encoding
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-task-task-graph-export
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/task-task-graph-export
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-tengo-destructuring-bindings
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/tengo-destructuring-bindings
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-updo-policy-alerting
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/updo-policy-alerting
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-vulture-persistent-analysis-cache
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/vulture-persistent-analysis-cache
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+- id: deepswe-yaegi-go-embed-directives
+  benchmark: deepswe
+  version: deep-swe@0b9fabbb63b9 (blog calls it v1.1; repo tags v1.0.0/v2.0.0)
+  polarity: positive
+  category: too_strict
+  label: 'harness-wide: verifier discards the agent''s edits to existing test files then adds hidden tests -> duplicate helpers / deleted helpers
+    / shifted pytest ids break correct solutions'
+  expected_rules:
+  - RG408
+  - RG211
+  confidence: medium
+  source:
+  - org: Epoch AI
+    url: https://epoch.ai/benchmarks/deepswe/review
+  fetch:
+    kind: git
+    repo: https://github.com/datacurve-ai/deep-swe
+    ref: 0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea
+    path: tasks/yaegi-go-embed-directives
+    approx_mb: 5
+  layout: deepswe
+  tiers:
+  - all
+  other_categories:
+  - broken_env
+bulk:
+- id: tokenless-findings
+  benchmark: terminal-bench-4.0, deepswe (BFCL rows -> review_only)
+  format: jsonl, cases[] with task/shows/sweep
+  rules:
+  - case_shows: incorrect submission, accepted
+    category: weak_tests (defect.class verifier-state-writable-by-candidate / candidate-code-in-verifier-trust-domain -> forgeable_grader; answer-material-readable-by-candidate
+      -> answer_leak)
+    expected_rules:
+    - RG110
+    - RG111
+    - RG210
+    - RG212
+  - case_shows: correct submission, rejected
+    category: too_strict
+    expected_rules:
+    - RG408
+  - case_shows: as intended
+    polarity: negative (per case, not per task)
+  - sweep_contains: bfcl
+    skip: review_only.yaml
+  source:
+    org: Tokenless
+    url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  count: 82 rows / 163 cases; 13 TB4 + 21 DeepSWE tasks
+  url: https://github.com/tokenless-ai/envcheck-findings/tree/post/2026-10-grader-defects
+  member: findings.jsonl
+  licence: see repo - linked, not copied
