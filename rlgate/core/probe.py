@@ -37,6 +37,10 @@ class ProbeMeta:
     severity: Severity
     needs_live: bool = False                   # requires a live run (e.g. race probes)
     needs_llm: bool = False                    # an LLM layer: runs only with --deep-review
+    needs_baseline: bool = True                # live: reads the step-2 baseline / grades
+                                               # variants. False: only inspects the
+                                               # environment, so a run of just these checks
+                                               # skips the reference and do-nothing gradings
     languages: frozenset[str] | None = None    # None = language-agnostic
     requires: frozenset[Capability] = field(default_factory=frozenset)  # task must provide ALL
     doc: str = ""                              # one-line summary → probe-catalog.md

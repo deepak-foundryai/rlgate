@@ -126,5 +126,6 @@ def test_subset_command_runs_only_gold_passing_tests():
     eng, sb = _engine(junit({"t1": "pass", "t2": "pass", "t3": "pass"}),
                       select="run {tests}")
     eng._score(_variant())
-    assert "run m.T.t1 m.T.t2 m.T.t3" in sb.record       # subset, sorted
-    assert "grade" not in sb.record                        # full suite was skipped
+    ran = [c for c in sb.record if c.startswith("( ")]    # the grading commands
+    assert any(c.startswith("( run m.T.t1 m.T.t2 m.T.t3\n)") for c in ran)  # subset, sorted
+    assert not any(c.startswith("( grade\n)") for c in ran)  # full suite was skipped

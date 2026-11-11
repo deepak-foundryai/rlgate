@@ -214,13 +214,17 @@ def test_full_audit_runs_on_the_staged_backend(tmp_path):
     assert result.baseline_sane, [f.title for f in result.findings]
 
 
-def test_unpatched_oracle_failure_is_reported_with_its_output(tmp_path):
+def test_a_failing_solution_is_graded_not_called_unchecked(tmp_path):
+    # the harness grades whatever a failing solution left behind; that is the task's RG001,
+    # not an infrastructure error, and a half-run solution yields no reference fix
     task, envs = _task(tmp_path)
     (Path(task.oracle[0]) / "solve.sh").write_text("#!/bin/bash\necho boom; exit 3\n")
     with _sandbox(task, envs) as sb:
         sb.build()
-        with pytest.raises(Exception, match="(?s)exited 3.*boom"):
-            sb.oracle_overlay()
+        with sb.oracle_overlay():
+            pass
+        assert sb.oracle_exit == 3 and "boom" in sb.oracle_log
+        assert sb.derive_gold() is None
 
 
 def test_local_backend_is_refused_with_a_reason(tmp_path):

@@ -122,6 +122,7 @@ class CheckSettings:
     depth: str = "fast"                              # fast | full (variants graded)
     parallel: bool | None = None                     # None: one task on a terminal
     layout: str | None = None                        # bank layout (as --layout)
+    jobs_dir: str | None = None                      # where run folders go (--jobs-dir)
 
 
 @dataclass
@@ -315,6 +316,12 @@ def _apply_checks(c: CheckSettings, data: dict, path: Path) -> None:
         lay = checks["layout"].strip()
         rel = path.parent / lay
         c.layout = str(rel) if not Path(lay).is_absolute() and rel.is_file() else lay
+    if "jobs_dir" in checks:
+        jd = checks["jobs_dir"]
+        if not isinstance(jd, str) or not jd.strip():
+            raise SettingsError(f'{path}: [checks] jobs_dir must be a folder, e.g. "jobs"')
+        jd = str(Path(jd).expanduser())
+        c.jobs_dir = jd if Path(jd).is_absolute() else str(path.parent / jd)
     runs = (data.get("thresholds") or {}).get("runs")
     if runs is not None:
         if not isinstance(runs, int) or runs < 1:

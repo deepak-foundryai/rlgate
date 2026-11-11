@@ -22,11 +22,14 @@ How a pass is decided follows ``GraderSpec.verdict`` (what the real grader trust
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import math
+import secrets
 import shlex
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from rlgate.sandbox.parsers import TestReport, collect
 
@@ -66,17 +69,79 @@ def run_grader(overlay: Overlay, task: Task, cmd: str | None = None) -> GradeRes
     if g.verdict not in VERDICT_MODES:
         raise ValueError(f"grader.verdict must be one of {VERDICT_MODES}, got {g.verdict!r}")
     overlay.before_grade()
-    if g.reward_files:
-        overlay.exec("rm -f -- " + " ".join(shlex.quote(f) for f in g.reward_files), timeout=60)
-    res = overlay.exec(_with_env(cmd, g.env_vars), timeout=g.timeout_s)
-    report = collect(overlay, g.report) if g.report else None
+    files = (g.reward_files if g.verdict == "reward_file" else ()) + (
+        (g.report.path,) if g.report else ())
+    res, reader = _grade_once(overlay, _with_env(cmd, g.env_vars), g.reward_files, files,
+                              g.timeout_s)
+    read = cast("Overlay", reader)       # only its exec() is used
+    report = collect(read, g.report) if g.report else None
     if g.verdict == "reward_file":
-        reward, metrics, err = read_reward(overlay, g.reward_files, g.reward_key)
+        reward, metrics, err = read_reward(read, g.reward_files, g.reward_key)
         return GradeResult(reward, res.exit_code, report, res.stdout, res.stderr, cmd,
                            g.pass_reward, metrics, err)
     reward = g.pass_reward if _passes(g.verdict, res.exit_code, report) else 0.0
     return GradeResult(reward, res.exit_code, report, res.stdout, res.stderr, cmd,
                        g.pass_reward)
+
+
+class _Read:
+    """Answers ``exec("cat <path>")`` for the files the grading command already sent back
+    (missing ones: exit 1), so the report and reward readers need no further round trip.
+    Anything else, or any file when nothing came back, goes to the overlay."""
+
+    def __init__(self, overlay: Overlay, files: dict[str, str] | None = None,
+                 asked: tuple[str, ...] = ()) -> None:
+        self.overlay, self.files, self.asked = overlay, files, set(asked)
+
+    def exec(self, cmd: str, timeout: int = 60):
+        from rlgate.sandbox.base import ExecResult
+        if self.files is not None and cmd.startswith("cat "):
+            path = shlex.split(cmd[4:])[0]
+            if path in self.asked:
+                text = self.files.get(path)
+                return ExecResult(exit_code=0 if text is not None else 1,
+                                  stdout=text or "", stderr="")
+        return self.overlay.exec(cmd, timeout=timeout)
+
+
+def _grade_once(overlay: Overlay, cmd: str, stale: tuple[str, ...], files: tuple[str, ...],
+                timeout: int):
+    """Clear stale reward files, run the grader, and send back its exit code and the
+    reward/report files in ONE command (each command to a remote sandbox is a round trip).
+    The files come back base64-framed after a random per-grade marker, and only the LAST
+    marker counts, so grader output can't spoof them. Without the frame (no base64 in the
+    image, a timeout, garbled output) the files are read one by one, as before."""
+    from rlgate.sandbox.base import ExecResult
+    mark = f"@@rlgate-{secrets.token_hex(8)}@@"
+    parts = []
+    if stale:
+        parts.append("rm -f -- " + " ".join(shlex.quote(f) for f in stale) + "; ")
+    parts.append(f"( {cmd}\n); __rl=$?; ")
+    if files:
+        q = " ".join(shlex.quote(f) for f in files)
+        parts.append(
+            "if command -v base64 >/dev/null 2>&1; then "
+            f"printf '\\n%s RC %s\\n' {mark} \"$__rl\"; "
+            f"__i=0; for __f in {q}; do if [ -f \"$__f\" ]; then "
+            f"printf '%s F %s\\n' {mark} \"$__i\"; "
+            "base64 < \"$__f\" | tr -d '\\n'; printf '\\n'; fi; __i=$((__i+1)); done; fi; ")
+    parts.append("exit $__rl")
+    res = overlay.exec("".join(parts), timeout=timeout)
+    i = res.stdout.rfind(f"\n{mark} RC ") if files else -1
+    if i < 0:
+        return res, _Read(overlay)
+    got: dict[str, str] = {}
+    lines = res.stdout[i + 1:].split("\n")
+    try:
+        for n, ln in enumerate(lines):
+            if ln.startswith(f"{mark} F "):
+                name = files[int(ln.split(" ", 2)[2])]   # by position: paths never echo
+                got[name] = base64.b64decode(lines[n + 1]).decode(errors="replace")
+    except (binascii.Error, IndexError, ValueError):
+        got = {}                            # garbled frame: read the files the slow way
+    out = ExecResult(exit_code=res.exit_code, stdout=res.stdout[:i], stderr=res.stderr)
+    # none came back (a remapped path, a garbled frame): read them one by one, as before
+    return out, (_Read(overlay, got, files) if got else _Read(overlay))
 
 
 def _with_env(cmd: str, env_vars: tuple[tuple[str, str], ...]) -> str:

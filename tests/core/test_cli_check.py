@@ -474,3 +474,30 @@ def test_jobs_and_output_are_check_options(tmp_path, capsys):
     out = tmp_path / "bank.json"
     code, _, _ = run(capsys, "check", BANK, "--quick", "-j", "2", "-o", str(out))
     assert code in (0, 1, 2) and json.loads(out.read_text())["tasks"] >= 2
+
+
+def test_a_leak_only_run_skips_the_reference_and_do_nothing_gradings(capsys, monkeypatch):
+    import rlgate.pipeline as P
+
+    def no(*a, **k):
+        raise AssertionError("graded the baseline for a leak-only run")
+    monkeypatch.setattr(P, "establish", no)
+    code, out, _ = run(capsys, "check", CLEAN, "--only", "leaks", "--fresh")
+    assert code in (0, 1) and "Step 3 Leaks ✓ passed" in _flat(out)
+
+
+def test_each_run_gets_a_named_folder_with_results_reports_and_a_log(capsys, tmp_path):
+    jobs = tmp_path / "my-jobs"
+    _, _, err = run(capsys, "check", CLEAN, "--quick", "--jobs-dir", str(jobs),
+                    "--job-name", "first try")
+    [d] = list(jobs.iterdir())
+    assert re.fullmatch(r"\d{4}-\d\d-\d\d__\d\d-\d\d-\d\d__first-try", d.name)
+    names = {p.name for p in d.iterdir()}
+    assert {"config.json", "result.json", "report.md", "report.html", "rlgate.log",
+            "tasks"} <= names
+    assert (d / "tasks" / "clean" / "result.json").is_file()
+    assert "--job-name" in json.loads((d / "config.json").read_text())["command"]
+    assert d.name in err.replace("\n", "")
+    run(capsys, "check", "examples/taskbank", "--quick", "--jobs-dir", str(jobs))
+    bank = max(jobs.iterdir(), key=lambda p: p.stat().st_mtime)
+    assert bank.name.endswith("__taskbank") and len(list((bank / "tasks").iterdir())) > 1

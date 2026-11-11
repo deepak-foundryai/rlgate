@@ -13,6 +13,22 @@
 
 ### Added
 
+- **A folder per run** (`./rlgate-jobs/<date>__<time>__<target>/`): `config.json`,
+  `result.json`, `report.md`, `report.html`, `rlgate.log`, and `tasks/<id>/` per task.
+  `--jobs-dir`, `--job-name`, or `jobs_dir` under `[checks]`.
+- **Faster full runs, same findings:**
+  - the baseline stops once two agreeing runs prove a task broken (3 gradings, not 10);
+  - checks that only inspect the environment (step 3) no longer need the baseline, so
+    `--only leaks` / `--only RG301` skip the reference and do-nothing gradings;
+  - one grading is one command (the reward and report files come back with it);
+  - Daytona: long commands run in the background and are polled, so a dropped
+    connection no longer loses a task; one shared API client; a cap on live sandboxes
+    across all tasks (`max_sandboxes`, default 32); sandboxes are deleted in the background.
+- **A failing reference solution is graded** like the harness does, giving RG001 (Broken)
+  instead of "Not checked".
+- **RG301 finds the change itself in git:** with the reference fix or the hidden test patch
+  applied, a changed file that is byte-identical to an object already in git is proven.
+
 - **RG301 also reports refs outside the starting commit's history** (an upstream branch or
   tag behind a fresh "task base" commit, a side branch) and leftover file contents or trees
   in the object store. These need your judgment: the fix may be there, but rlgate can't

@@ -30,9 +30,11 @@ def establish(task: Task, sandbox: Sandbox, k: int = 5, workers: int = 1) -> Bas
     from rlgate.variants.engine import pmap
 
     # k reference runs and k do-nothing runs, ``workers`` at a time; each is independent
-    # (every reference run after the first re-runs the solution script from scratch)
+    # (every reference run after the first re-runs the solution script from scratch).
+    # Early stop: the verdict uses the reference's WORST run and do-nothing's BEST, so once
+    # two runs agree that the reference fails (or doing nothing passes), more runs can't
+    # make the task sane: the rest are skipped. A disagreement means flaky: run all k.
     ref = has_reference(task, sandbox)
-    jobs = ([(True, i) for i in range(k)] if ref else []) + [(False, i) for i in range(k)]
     done = [0]
     lock = threading.Lock()
 
@@ -48,7 +50,25 @@ def establish(task: Task, sandbox: Sandbox, k: int = 5, workers: int = 1) -> Bas
             ui.progress(f"reference and do-nothing runs: {done[0]} of {2 * k} done")
         return r
 
+    def bad(gold: bool, reward: float) -> bool:
+        return reward < task.grader.pass_reward if gold else reward > 0.0
+
+    jobs = ([(True, 0)] if ref else []) + [(False, 0)]
     results = pmap(one, jobs, workers)
+    first = {g: r[0] for (g, _), r in zip(jobs, results, strict=True)}
+    failing = [g for g, reward in first.items() if bad(g, reward)]
+    early = False
+    if failing and k > 2:
+        again = [(g, 1) for g in failing]
+        more = pmap(one, again, workers)
+        jobs, results = jobs + again, results + more
+        early = all(bad(g, r[0]) and r[0] == first[g]
+                    for (g, _), r in zip(again, more, strict=True))
+    if not early:
+        rest = [(g, i) for g in ([True, False] if ref else [False]) for i in range(k)
+                if (g, i) not in set(jobs)]
+        jobs, results = jobs + rest, results + pmap(one, rest, workers)
+
     grade_secs: list[float] = []
     oracle_runs: list[float] = []
     oracle_reports: list[TestReport | None] = []
@@ -74,7 +94,8 @@ def establish(task: Task, sandbox: Sandbox, k: int = 5, workers: int = 1) -> Bas
         # worst-case; a single miss is a flaky/unfair signal. No reference: a placeholder
         oracle=min(oracle_runs) if ref else task.grader.pass_reward,
         reference=ref,
-        nop=max(nop_runs), k=k, flaky_checks=frozenset(flaky), per_test=per_test,
+        nop=max(nop_runs), k=max(len(oracle_runs), len(nop_runs)), early=early,
+        flaky_checks=frozenset(flaky), per_test=per_test,
         pass_reward=task.grader.pass_reward,
         oracle_runs=tuple(oracle_runs), nop_runs=tuple(nop_runs),
         nop_per_test=nop_per_test,
@@ -140,13 +161,15 @@ def findings(task: Task, baseline: Baseline) -> list[Finding]:
                               note=("run the reference solution script and grade" if script
                                     else "apply the reference fix and grade"))
         out.append(_f("RG001", f"the reference solution scored {baseline.oracle} "
-                               f"(want {pass_reward}) on its worst of {baseline.k} runs",
+                               f"(want {pass_reward}) on its worst of {baseline.k} runs"
+                               + _early(baseline),
                       replay, "reproduced_exploit"))
     if baseline.nop > 0.0:
         replay = repro.record(task, "RG002", patch=None, expect="pass",
                               note="grade the unchanged workspace")
         out.append(_f("RG002", f"the unchanged workspace scored {baseline.nop} "
-                               f"(want 0.0) on its best of {baseline.k} runs",
+                               f"(want 0.0) on its best of {baseline.k} runs"
+                               + _early(baseline),
                       replay, "reproduced_exploit"))
     if baseline.flaky_checks:
         flaky = sorted(baseline.flaky_checks)
@@ -188,6 +211,11 @@ def findings(task: Task, baseline: Baseline) -> list[Finding]:
             out.append(_f("RG011", f"{label} took {secs:.0f}s of its {limit:.0f}s limit "
                                    f"({secs / limit:.0%})", None, "variant"))
     return out
+
+
+def _early(b: Baseline) -> str:
+    return (" (the other runs were skipped: two agreeing runs settle it, more can't change "
+            "the verdict)" if b.early else "")
 
 
 def _some(items: list[str], n: int = 5) -> str:

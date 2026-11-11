@@ -1,10 +1,16 @@
-"""§3.3 — the reference fix survives in git: an unreachable object (the MiMo/SQLGlot leak), or
-a branch / tag / stash that still points past the task's starting commit.
+"""§3.3 — the reference fix survives in git: an unreachable object (the MiMo/SQLGlot leak), a
+branch / tag / stash that still points past the task's starting commit, or — whatever the
+history's shape — the exact post-change version of a file the fix or the hidden tests touch,
+already in the object store (e.g. upstream history above a "task base" commit that removed
+the feature).
 
 We read the object store directly as the auditor, so an agent-side "git commands blocked"
 guard is irrelevant — if the object is on disk, the answer is on disk."""
 
 from __future__ import annotations
+
+import base64
+import shlex
 
 from rlgate.core.context import ProbeContext
 from rlgate.core.finding import Evidence, Finding, Severity, VerdictTier
@@ -22,6 +28,7 @@ class GitUnreachableObjects(Probe):
         severity=Severity.HIGH,
         needs_live=True,   # reads the object store inside a live overlay
         requires=frozenset({Capability.GIT_REPO}),
+        needs_baseline=False,      # inspects the environment only
         doc="Unreachable git objects (deleted-but-unpruned branches) may hold the fix.",
     )
 
@@ -35,7 +42,21 @@ class GitUnreachableObjects(Probe):
             res = env.exec("git fsck --unreachable --no-reflogs 2>/dev/null | head -n 2000",
                            timeout=300)
             refs = env.exec(_REFS, timeout=300)
+            known = [(label, hit) for label, text in _changes(task)
+                     for hit in _known_versions(env, text)]
         out: list[Finding] = []
+        if known:
+            label, (sha, path, commit) = known[0]
+            where = (f"commit {commit}" if commit else
+                     "an object no branch points to")
+            more = f" (+{len(known) - 1} more file(s))" if len(known) > 1 else ""
+            out.append(self._f(
+                f"The changed version of {path} is already in git ({where}){more}",
+                f"with {label} applied, {path} is byte-identical to object {sha[:12]}, which "
+                "is already in the repository's object store: the change the task asks for "
+                "is in git, readable with `git log -p` or `git cat-file`",
+                f"git log --all --oneline --find-object={sha}; git cat-file -p {sha}",
+                _FIX_HISTORY))
         kinds: dict[str, int] = {}
         sample = ""
         for ln in res.stdout.splitlines():
@@ -103,6 +124,9 @@ class GitUnreachableObjects(Probe):
         )
 
 
+_FIX_HISTORY = ("ship the repository without the history that holds the change: a fresh "
+                "single-commit snapshot of the starting tree (no other refs, no packs from the "
+                "upstream clone), then expire the reflog and gc.")
 _FIX = ("git reflog expire --expire=now --all && git gc --prune=now; or vendor a clean "
         "snapshot at the task base commit.")
 _FIX_REFS = ("delete every ref outside the starting commit's history (branches, tags, "
@@ -128,3 +152,70 @@ _REFS = (
     "t=$(git log -1 --format=%ct $(git rev-list \"$c\" --not \"$h\" | head -n 1)); "
     "if git merge-base --is-ancestor \"$h\" \"$c\" 2>/dev/null; then k=later; else k=other; fi; "
     "echo \"$k $r $n $t\"; done")
+
+
+_MAX_PATCH = 200_000      # bytes; larger patches are skipped (command-line size)
+
+
+def _changes(task: Task) -> list[tuple[str, str]]:
+    """(label, unified diff) for each post-change view rlgate knows: the reference fix, and
+    any patch file among the held-out tests (the graded tests usually come from the same
+    upstream commit as the fix)."""
+    out: list[tuple[str, str]] = []
+    if task.gold_patch is not None:
+        out.append(("the reference fix", task.gold_patch.text))
+    for root, prefix in task.test_roots[1:]:
+        for f in sorted([*root.rglob("*.diff"), *root.rglob("*.patch")])[:5]:
+            try:
+                text = f.read_text(errors="replace")
+            except OSError:
+                continue
+            if "\n+++ " in text and ("\n--- " in text or text.startswith("--- ")):
+                out.append((f"the hidden test patch ({prefix}{f.relative_to(root)})", text))
+    return [(label, t) for label, t in out if 0 < len(t.encode()) <= _MAX_PATCH]
+
+
+def _post_paths(text: str) -> list[str]:
+    from unidiff.patch import PatchSet
+    try:
+        ps = PatchSet(text)
+    except Exception:  # noqa: BLE001 - an unparsable patch has nothing to check
+        return []
+    paths = []
+    for pf in ps:
+        if pf.is_removed_file:
+            continue
+        p = pf.target_file.removeprefix("b/")
+        if p and p != "/dev/null":
+            paths.append(p)
+    return paths
+
+
+def _known_versions(env, text: str) -> list[tuple[str, str, str]]:
+    """(blob id, path, commit or "") for each file whose post-change version is already in
+    the object store. Applies the patch to the work tree only (``git apply`` and
+    ``git hash-object`` without -w write no objects) and reverts it afterwards."""
+    paths = _post_paths(text)
+    if not paths:
+        return []
+    b64 = base64.b64encode(text.encode()).decode()
+    quoted = " ".join(shlex.quote(p) for p in paths[:50])
+    script = (
+        "git rev-parse -q --verify HEAD >/dev/null 2>&1 || exit 0; "
+        "f=$(mktemp); echo " + b64 + " | base64 -d > \"$f\"; "
+        "git apply --whitespace=nowarn \"$f\" 2>/dev/null || { rm -f \"$f\"; exit 0; }; "
+        "T=; command -v timeout >/dev/null && T='timeout 120'; "
+        "for p in " + quoted + "; do [ -f \"$p\" ] || continue; "
+        "s=$(git hash-object -- \"$p\") || continue; "
+        "[ \"$s\" = \"$(git rev-parse -q --verify \"HEAD:$p\" 2>/dev/null)\" ] && continue; "
+        "git cat-file -e \"$s\" 2>/dev/null || continue; "
+        "c=$($T git log --all -1 --format=%h --find-object=\"$s\" 2>/dev/null); "
+        "echo \"have $s $c $p\"; done; "
+        "git apply -R --whitespace=nowarn \"$f\" 2>/dev/null; rm -f \"$f\"")
+    res = env.exec(script, timeout=600)
+    hits = []
+    for ln in res.stdout.splitlines():
+        parts = ln.split(" ", 3)
+        if len(parts) == 4 and parts[0] == "have":
+            hits.append((parts[1], parts[3], parts[2]))   # commit is "" when unreachable
+    return hits

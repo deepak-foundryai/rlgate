@@ -44,6 +44,7 @@ class MtimeClustering(Probe):
         family="leakage",
         kind=ProbeKind.GENERIC,
         severity=Severity.MEDIUM,
+        needs_baseline=False,      # inspects the environment only
         doc="A minority of files share a distinctly later mtime (injected after checkout).",
     )
 

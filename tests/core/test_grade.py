@@ -94,3 +94,32 @@ def test_verdict_mode_decides_a_masked_failure(tmp_path, verdict, want):
     assert g.exit_code == 0
     assert g.report is not None and g.report.failed
     assert g.passed is want
+
+
+def test_one_command_grades_and_returns_the_reward_file(tmp_path):
+    import subprocess as sp
+    from types import SimpleNamespace
+
+    from rlgate.core.grade import run_grader
+    from rlgate.core.task import GraderSpec, Task
+
+    seen: list[str] = []
+
+    class Ovl:
+        def before_grade(self):
+            pass
+
+        def exec(self, cmd, timeout=60):
+            seen.append(cmd)
+            p = sp.run(["sh", "-c", cmd], cwd=tmp_path, capture_output=True, text=True,
+                       check=False)
+            return SimpleNamespace(exit_code=p.returncode, stdout=p.stdout, stderr=p.stderr)
+
+    (tmp_path / "old.txt").write_text("1\n")                       # stale: must be cleared
+    grader = GraderSpec(run="echo '@@rlgate-fake@@ RC 0'; echo 0.5 > r.txt; exit 3",
+                        verdict="reward_file", reward_files=("old.txt", "r.txt"))
+    task = Task(id="t", source="fixture", repo_dir=tmp_path, grader=grader)
+    g = run_grader(Ovl(), task)  # type: ignore[arg-type]
+    assert (g.reward, g.exit_code) == (0.5, 3) and len(seen) == 1   # one round trip
+    assert "@@rlgate-fake@@" in g.stdout and "@@rlgate-" not in g.stdout.replace(
+        "@@rlgate-fake@@", "")                                    # the frame is stripped

@@ -172,6 +172,7 @@ class _Run:
         self.built = False
         self.baseline: Baseline | None = None
         self.ctx: ProbeContext | None = None
+        self.env_ctx: ProbeContext | None = None   # live, without a baseline (leak checks)
         self.result = AuditResult(task.id, baseline_sane=False, findings=[], checks=[])
         self.workers = 1
         self.depth = "fast"
@@ -337,7 +338,7 @@ class _Run:
                                              workers=self.workers)
                 fs += baseline_findings(self._prepared, self.baseline)
                 self._ensure_baseline()           # the context step 2's own probes use
-            elif not self._ensure_baseline():
+            elif not self._ensure_baseline(need=self._needs_baseline(st)):
                 return self._done(fs, st, live_blocked=True)
         fs += self._probes(st)
         return self._done(fs, st)
@@ -373,7 +374,8 @@ class _Run:
     def _probe(self, pid: str, cls: type) -> list[Finding]:
         probe = cls()
         m = probe.meta
-        if not probe.applicable(self.task if self.ctx is None else self._prepared):
+        live = self.ctx if self.ctx is not None else self.env_ctx
+        if not probe.applicable(self.task if live is None else self._prepared):
             self.result.checks.append(CheckRun(pid, m.family, CheckRun.NA, doc=m.doc))
             return []
         if m.needs_llm and self.review is None:
@@ -384,9 +386,11 @@ class _Run:
             self.result.checks.append(CheckRun(pid, m.family, CheckRun.SKIPPED_LIVE,
                                                doc=m.doc))
             return []
-        ctx = self.ctx if self.ctx is not None else _static_ctx()
+        if live is not None and live is self.env_ctx and m.needs_baseline:
+            live = None if not self._ensure_baseline() else self.ctx
+        ctx = live if live is not None else _static_ctx()
         ctx.review = self.review
-        task = self._prepared if self.ctx is not None else self.task
+        task = self._prepared if live is not None else self.task
         t = time.monotonic()
         try:
             if self.quick:
@@ -443,9 +447,20 @@ class _Run:
             return False
         return True
 
-    def _ensure_baseline(self) -> bool:
+    def _needs_baseline(self, st: Step) -> bool:
+        return any(cls.meta.needs_baseline for pid, cls in self.by_step[st]
+                   if not self.only or pid in self.only)
+
+    def _ensure_baseline(self, need: bool = True) -> bool:
         if not self._ensure_built():
             return False
+        if self.baseline is None and not need:     # e.g. --only leaks: skip the gradings
+            if self.env_ctx is None:
+                self.env_ctx = ProbeContext(
+                    sandbox=self._sandbox(), baseline=Baseline(0.0, 0.0, 0, reference=False),
+                    config={"workers": self.workers, "depth": self.depth},
+                    variants=None)  # type: ignore[arg-type]
+            return True
         if self.baseline is None:         # e.g. --only 4 with no saved step 2
             with ui.step("Run the reference solution and a do-nothing submission first, "
                          f"{self.k} times each (later steps need it)"):

@@ -187,6 +187,8 @@ def test_isolated_overlay_gets_its_own_sandbox_and_deletes_it(tmp_path, monkeypa
         pass
     with sb.overlay(None, isolated=True):
         assert len(client.handles) == 2
+    from rlgate.sandbox import daytona as mod
+    mod.settle_deletes()                    # deletion runs in the background
     assert client.deleted == [client.handles[1].id]
     sb.close()
 
@@ -328,6 +330,8 @@ def test_compose_env_gets_a_docker_in_docker_machine_with_task_resources(tmp_pat
     assert (r.cpu, r.memory, r.disk) == (8, 14, 20)
     assert fleet.opts.build_timeout_s == 2700
     m.close()
+    from rlgate.sandbox import daytona as mod
+    mod.settle_deletes()
     assert client.deleted == [h.id]
     fleet.close()
 
@@ -368,3 +372,88 @@ def test_a_create_that_times_out_but_lands_is_deleted(tmp_path, monkeypatch):
         pass
     assert client.deleted[0] == "orphan-0"
     sb.close()
+
+
+class _Proc:
+    """A sandbox process API with background sessions, a flaky network and a slow command."""
+
+    def __init__(self, polls_before_done=2, fail_polls=1, exit_code=0):
+        self.left, self.fail, self.code = polls_before_done, fail_polls, exit_code
+        self.started, self.deleted, self.execs = [], [], []
+
+    def exec(self, cmd, cwd=None, timeout=None):
+        self.execs.append(cmd)
+        return SimpleNamespace(exit_code=0, result="short")
+
+    def create_session(self, sid, request_timeout=None):
+        pass
+
+    def execute_session_command(self, sid, req, timeout=None):
+        self.started.append(req.command)
+        return SimpleNamespace(cmd_id="c1")
+
+    def get_session_command(self, sid, cid, request_timeout=None):
+        from daytona.common.errors import DaytonaConnectionError
+        if self.fail:
+            self.fail -= 1
+            raise DaytonaConnectionError("Connection reset by peer")
+        if self.left:
+            self.left -= 1
+            return SimpleNamespace(exit_code=None)
+        return SimpleNamespace(exit_code=self.code)
+
+    def get_session_command_logs(self, sid, cid, request_timeout=None):
+        return SimpleNamespace(output="long output", stdout=None, stderr=None)
+
+    def delete_session(self, sid, request_timeout=None):
+        self.deleted.append(sid)
+
+
+def test_long_commands_run_in_the_background_and_survive_a_dropped_poll(monkeypatch):
+    pytest.importorskip("daytona")
+    from rlgate.sandbox import daytona as d
+    monkeypatch.setattr(d.time, "sleep", lambda s: None)
+    p = _Proc(exit_code=3)
+    r = d._run(SimpleNamespace(process=p), "make test", cwd="/app", timeout=900)
+    assert (r.exit_code, r.stdout) == (3, "long output")
+    assert len(p.started) == 1 and "cd /app && make test" in p.started[0]   # started once
+    assert "timeout -k 10 900" in p.started[0] and p.deleted and not p.execs
+
+
+def test_short_commands_are_one_request(monkeypatch):
+    pytest.importorskip("daytona")
+    from rlgate.sandbox import daytona as d
+    p = _Proc()
+    assert d._run(SimpleNamespace(process=p), "true", cwd=None, timeout=30).stdout == "short"
+    assert p.execs == ["true"] and not p.started
+
+
+def test_a_command_past_its_deadline_reports_a_timeout(monkeypatch):
+    pytest.importorskip("daytona")
+    from rlgate.sandbox import daytona as d
+    clock = iter(range(0, 10_000, 100))
+    monkeypatch.setattr(d.time, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(d.time, "sleep", lambda s: None)
+    p = _Proc(polls_before_done=10_000, fail_polls=0)
+    r = d._run(SimpleNamespace(process=p), "sleep 9999", cwd=None, timeout=120)
+    assert r.exit_code == 124 and "timed out" in r.stdout and p.deleted
+
+
+def test_the_sandbox_cap_waits_then_goes_over_and_frees_slots_on_delete(tmp_path, monkeypatch):
+    from rlgate.sandbox import daytona as mod
+    monkeypatch.delenv("DAYTONA_SNAPSHOT", raising=False)
+    client = FakeClient()
+    sb = _sandbox(_task(tmp_path), client, max_sandboxes=7001, room_wait_s=0.05)
+    sb.build()
+    sem = mod._slots(7001)
+    held = [sem.acquire(timeout=0) for _ in range(7000)]       # leave one slot free
+    a = sb.machine()
+    b = sb.machine()                       # no slot left: waits 0.05s, then goes over
+    assert len(client.handles) == 2 and sem.acquire(timeout=0) is False
+    a.close()
+    mod.settle_deletes()
+    assert sem.acquire(timeout=0) is True  # a's slot came back; b never held one
+    b.close()
+    sb.close()
+    for _ in range(sum(held) + 1):
+        sem.release()

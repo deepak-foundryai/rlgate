@@ -100,9 +100,32 @@ There are 76 rules in total, listed in [docs/rules.md](docs/rules.md) or by `rlg
 | `--backend-opt k=v` | A backend setting, such as `cpus=2` |
 | `-x` | Stop at the first failing step |
 | `-f FORMAT`, `-o FILE` | Output format, or write to a file (format from the extension) |
+| `--jobs-dir DIR` | Where each run's folder goes (default `./rlgate-jobs`) |
+| `--job-name NAME` | Name this run's folder (default: the target's name) |
 | `--layout NAME or FILE` | Task layout when it isn't detected |
 
 **Exit codes:** 0 ready, 1 needs fixes, 2 broken, not checked, or could not run.
+
+### Run folders
+
+Every `rlgate check` writes one folder, named by date, time and target:
+
+```text
+rlgate-jobs/
+  2026-11-11__19-44-24__mimo-harbor/
+    config.json      the command, target and options
+    result.json      the verdict for every task, with findings
+    report.md        the same, readable
+    report.html      a filterable report to share
+    rlgate.log       everything logged during the run (retries, timings, errors)
+    tasks/
+      format-code-task-000665/
+        result.json  that task's steps and findings, with proofs
+        report.md    that task's QA card
+```
+
+Change the location with `--jobs-dir DIR` or `jobs_dir` under `[checks]` in `rlgate.toml`.
+The cache that makes re-checks instant is separate, in `.rlgate/`.
 
 ## The fix loop
 

@@ -36,6 +36,7 @@ class AgentEnvScan(Probe):
         severity=Severity.CRITICAL,
         needs_live=True,
         requires=frozenset({Capability.CONTAINER}),
+        needs_baseline=False,      # inspects the environment only
         doc="The reference solution or held-out tests are on disk in the agent's environment.",
     )
 

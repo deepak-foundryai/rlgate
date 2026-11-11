@@ -47,6 +47,7 @@ class CacheScan(Probe):
         family="leakage",
         kind=ProbeKind.GENERIC,
         severity=Severity.HIGH,
+        needs_baseline=False,      # inspects the environment only
         doc="Answer recoverable from caches/artifacts (orphan .pyc, .orig/.rej, answer files).",
     )
 

@@ -24,6 +24,7 @@ class OpenInternet(Probe):
         family="leakage",
         kind=ProbeKind.GENERIC,
         severity=Severity.LOW,
+        needs_baseline=False,      # inspects the environment only
         doc="The agent's environment allows unrestricted outbound traffic.",
     )
 

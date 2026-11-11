@@ -72,6 +72,7 @@ _EXT = {".svg": Fmt.badge, ".json": Fmt.json, ".md": Fmt.markdown, ".markdown": 
 class _Globals:
     output: str | None = None
     jobs: int = 1
+    argv: tuple[str, ...] = ()    # this invocation's arguments (recorded in the run folder)
 
 
 G = _Globals()
@@ -367,6 +368,13 @@ def check(
     output: Annotated[str | None, typer.Option("--output", "-o", help="Write the result to "
                                                "this file (format from the extension).",
                                                rich_help_panel=OUTPUT)] = None,
+    jobs_dir: Annotated[str | None, typer.Option(
+        "--jobs-dir", help="Where each run's folder goes (results, reports, log). Default "
+        "./rlgate-jobs; also jobs_dir in rlgate.toml [checks].",
+        rich_help_panel=OUTPUT)] = None,
+    job_name: Annotated[str | None, typer.Option(
+        "--job-name", help="Name this run's folder (default: the target's name).",
+        rich_help_panel=OUTPUT)] = None,
     # -- config
     config: Annotated[str | None, typer.Option("--config", help="Path to an rlgate.toml.",
                                                rich_help_panel=CONFIG)] = None,
@@ -448,8 +456,18 @@ def check(
                      "grader, cheating, fairness (or 1-6)")
             return 2
     review = None
+    job = None
     try:
         kind, tasks = E.load_target(target, source)
+        from rlgate.core.jobs import Job
+        job = Job.open(jobs_dir or cfg.checks.jobs_dir, target=target, name=job_name,
+                       argv=list(G.argv),
+                       options={"only": only, "from": start, "quick": quick,
+                                "deep_review": deep_review, "models": model,
+                                "exhaustive": exhaustive, "runs": runs, "jobs": G.jobs,
+                                "backend": backend, "backend_opt": opts, "fresh": fresh,
+                                "failed": failed, "fail_fast": fail_fast, "limit": limit,
+                                "tasks": len(tasks)})
         # steps 3-6 at the same time: one task on a terminal (the live view shows them);
         # a bank already runs tasks side by side, so it stays one step at a time per task
         par = parallel or cfg.checks.parallel
@@ -467,6 +485,7 @@ def check(
                 fresh=fresh, failed=failed, jobs=max(1, G.jobs), source=source,
                 start=first, keep_going=go_on, review=review, **speed)
             _spent(review)
+            _saved(job, views, kind="bank", target=target, seconds=secs)
             _emit(views, kind="bank", target=target, fmt=_fmt(fmt), seconds=secs, mode=mode)
             return _exit_for(views)
         task = tasks[0]
@@ -487,10 +506,32 @@ def check(
     except E.CheckError as e:
         ui.error(e.message, e.next_step)
         return 2
+    finally:
+        if job is not None:
+            job.close()
     store.set_last("task", target, [{"task": view.task_id, "target": target}])
     _spent(review)
+    _saved(job, [view], kind="task", target=target)
     _emit([view], kind="task", target=target, fmt=_fmt(fmt))
     return view.exit_code
+
+
+def _saved(job, views, *, kind: str, target: str, seconds: float = 0.0) -> None:
+    """Write the run's folder (results, reports) and say where it is."""
+    if job is None:
+        return
+    try:
+        job.save(views, kind=kind, target=target, seconds=seconds)
+    except OSError as e:
+        ui.notice(f"could not write the run folder {job.path}: {e}")
+        return
+    if ui.quiet():
+        return
+    import os
+    where = job.path.resolve()
+    shown = os.path.relpath(where) if where.is_relative_to(Path.cwd()) else str(where)
+    ui.echo(ui.mark(ui.OK, "saved"), f" {shown}/  (report.html, report.md, result.json, "
+            "rlgate.log)", console=ui.err())
 
 
 def _deep_review(cfg: S.Settings, models: list[str]):
@@ -1077,6 +1118,7 @@ def _score(bank: Path) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
+    G.argv = tuple(args)
     args, flags = _take_globals(args)
     ui.configure(no_color=bool(flags.get("no_color")), ascii=bool(flags.get("ascii")),
                  quiet=bool(flags.get("quiet")), verbose=bool(flags.get("verbose")))

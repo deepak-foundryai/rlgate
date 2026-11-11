@@ -11,7 +11,7 @@ import pytest
 
 from rlgate.core.context import Baseline, ProbeContext
 from rlgate.core.finding import VerdictTier
-from rlgate.core.task import GraderSpec, Task
+from rlgate.core.task import GraderSpec, Patch, Task
 from rlgate.probes.leakage.git_unreachable_objects import GitUnreachableObjects
 
 pytestmark = pytest.mark.skipif(not shutil.which("git"), reason="needs git")
@@ -47,8 +47,10 @@ def _commit(root: Path, name: str, text: str, date: str) -> None:
     _git(root, "commit", "-qm", text, date=date)
 
 
-def _run(root: Path):
-    task = Task(id="t", source="fixture", repo_dir=root, grader=GraderSpec(run="grade"))
+def _run(root: Path, gold: str | None = None, tests: Path | None = None):
+    grader = GraderSpec(run="grade", inject=((str(tests), "/tests"),) if tests else ())
+    task = Task(id="t", source="fixture", repo_dir=root, grader=grader,
+                gold_patch=Patch(gold) if gold else None)
     ctx = ProbeContext(sandbox=SimpleNamespace(agent_env=lambda: _Env(root)),
                        baseline=Baseline(1.0, 0.0, 1), variants=None)
     return GitUnreachableObjects().run(task, ctx)
@@ -104,3 +106,46 @@ def test_a_dropped_commit_is_proven(repo):
     _git(repo, "reset", "-q", "--hard", "HEAD~1")
     titles = [f.title for f in _run(repo) if f.verdict is VerdictTier.CONFIRMED]
     assert any("unreachable git commit" in t for t in titles)
+
+
+NL = "\\ No newline at end of file\n"
+FIX = f"--- a/a.py\n+++ b/a.py\n@@ -1 +1 @@\n-v1\n{NL}+the fix\n{NL}"   # _commit writes no newline
+
+
+def test_the_fix_behind_a_task_base_commit_is_proven(repo):
+    # upstream already has the fix; a "task base" commit on top removes it again
+    _commit(repo, "a.py", "the fix", "2024-02-01T00:00:00")
+    _commit(repo, "a.py", "v1", "2024-03-01T00:00:00")
+    [f] = _run(repo, gold=FIX)
+    assert f.verdict is VerdictTier.CONFIRMED
+    assert "a.py is already in git (commit" in f.title and "--find-object=" in f.evidence.replay
+
+
+def test_pre_fix_history_alone_is_not_a_leak(repo):
+    _commit(repo, "b.py", "unrelated", "2024-02-01T00:00:00")
+    assert _run(repo, gold=FIX) == []
+    assert subprocess.run(["git", "status", "--porcelain"], cwd=repo, capture_output=True,
+                          text=True, check=True).stdout == ""      # patch reverted
+
+
+def test_a_hidden_test_patch_finds_the_upstream_commit(repo, tmp_path_factory):
+    (repo / "t_a.py").write_text("old test\n")
+    _git(repo, "add", "t_a.py")
+    _git(repo, "commit", "-qm", "tests", date="2024-01-02T00:00:00")
+    (repo / "t_a.py").write_text("new test\n")
+    _git(repo, "commit", "-qam", "upstream fix with tests", date="2024-02-01T00:00:00")
+    (repo / "t_a.py").write_text("old test\n")
+    _git(repo, "commit", "-qam", "task base", date="2024-03-01T00:00:00")
+    tests = tmp_path_factory.mktemp("tests")
+    (tests / "test_patch.diff").write_text(
+        "--- a/t_a.py\n+++ b/t_a.py\n@@ -1 +1 @@\n-old test\n+new test\n")
+    [f] = _run(repo, tests=tests)
+    assert f.verdict is VerdictTier.CONFIRMED and "t_a.py" in f.title
+    assert "hidden test patch" in f.evidence.detail
+
+
+def test_an_unreachable_copy_of_the_fix_is_proven(repo):
+    subprocess.run(["git", "hash-object", "-w", "--stdin"], cwd=repo, input="the fix",
+                   text=True, check=True, capture_output=True)
+    titles = [f.title for f in _run(repo, gold=FIX)]
+    assert any("no branch points to" in t for t in titles)

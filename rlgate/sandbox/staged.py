@@ -321,6 +321,7 @@ class StagedSandbox(Sandbox):
         self._oracle_capture: Path | None = None     # separate: artifacts after solve.sh
         self._oracle_ws: Path | None = None          # workdir after solve.sh
         self._oracle_log: str = ""
+        self.oracle_exit: int | None = None     # the solution script's last exit code
         self._whole: set[str] = set()                # artifacts pulled with their deps
         self._tmp: list[Path] = []                   # per-run captures, removed at close
         self.solution_seconds: list[float] = []      # every reference-solution run
@@ -483,6 +484,8 @@ class StagedSandbox(Sandbox):
             return None
         self._run_oracle_once()
         assert self.workspace_dir is not None and self._oracle_ws is not None
+        if self.oracle_exit:          # a half-run solution is no reference fix
+            return None
         return tree_patch(self.workspace_dir, self._oracle_ws)
 
     @property
@@ -615,10 +618,14 @@ class StagedSandbox(Sandbox):
         if timed:
             self.solution_seconds.append(time.monotonic() - t)
         out = (r.stdout + r.stderr)[-4000:]
-        if strict and r.exit_code != 0:
-            raise StagedUnavailable(
-                f"{self.task.id}: the reference solution exited {r.exit_code} in the "
-                f"workspace environment:\n{out}")
+        if strict:
+            # The harness grades whatever the solution left behind, whatever its exit code;
+            # a failing solution is the task's defect (RG001 from the grade), not a reason to
+            # call the task unchecked.
+            self.oracle_exit = r.exit_code
+            if r.exit_code != 0:
+                log.warning("%s: the reference solution exited %d:\n%s", self.task.id,
+                            r.exit_code, out[-1500:])
         if timed:
             self._oracle_log = out
         return out

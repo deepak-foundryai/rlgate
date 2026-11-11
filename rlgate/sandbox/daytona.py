@@ -29,6 +29,7 @@ from __future__ import annotations
 import atexit
 import logging
 import os
+import shlex
 import shutil
 import tarfile
 import tempfile
@@ -37,6 +38,8 @@ import time
 import uuid
 from collections import deque
 from collections.abc import Callable
+from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import wait as wait_all
 from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
@@ -83,6 +86,9 @@ class DaytonaOptions:
     snapshot_idle_minutes: float = 10     # rlgate-* snapshots unused this long may be freed
     snapshot_wait_s: float = 1800         # wait this long for a slot, then build per sandbox
     room_wait_s: float = 600              # wait this long for CPU/memory/disk room
+    max_sandboxes: int = 32               # live sandboxes at once across all tasks and
+                                          # workers (-j x workers); waits room_wait_s, then
+                                          # goes over rather than deadlock
     region: str | None = None             # region whose quota to watch (default: largest)
     dind_image: str = "docker:28.3.3-dind"   # compose stacks run in Docker-in-Docker
     dockerd_wait_s: float = 120
@@ -142,6 +148,65 @@ def _close_all() -> None:  # pragma: no cover - exercised at interpreter exit
             log.warning("daytona cleanup at exit failed: %s", e)
 
 
+# -- process-wide: one API client, a cap on live sandboxes, background deletion ----------
+
+_CLIENTS: dict[tuple, Any] = {}
+_CLIENTS_GUARD = threading.Lock()
+
+
+def _shared_client(factory: Callable[[], Any]) -> Any:
+    """One Daytona client per process (per key/URL/target): every task opening its own
+    clients exhausts this machine's network ports at -j 20 (OSError 49)."""
+    key = (factory, os.environ.get("DAYTONA_API_KEY"), os.environ.get("DAYTONA_API_URL"),
+           os.environ.get("DAYTONA_TARGET"))
+    with _CLIENTS_GUARD:
+        if key not in _CLIENTS:
+            _CLIENTS[key] = factory()
+        return _CLIENTS[key]
+
+
+_SLOTS: dict[int, threading.BoundedSemaphore] = {}
+_SLOTS_GUARD = threading.Lock()
+
+
+def _slots(n: int) -> threading.BoundedSemaphore:
+    """The process-wide cap on live sandboxes (one per configured size)."""
+    with _SLOTS_GUARD:
+        return _SLOTS.setdefault(n, threading.BoundedSemaphore(max(1, n)))
+
+
+_REAPER: ThreadPoolExecutor | None = None
+_PENDING: set[Future] = set()
+_REAPER_GUARD = threading.Lock()
+
+
+def _reap_later(fn: Callable[[], None]) -> Future:
+    """Run a sandbox deletion in the background, so a finished grade never waits on it."""
+    global _REAPER
+    with _REAPER_GUARD:
+        if _REAPER is None:
+            _REAPER = ThreadPoolExecutor(max_workers=8, thread_name_prefix="rlgate-delete")
+        fut = _REAPER.submit(fn)
+        _PENDING.add(fut)
+    fut.add_done_callback(lambda f: _discard_pending(f))
+    return fut
+
+
+def _discard_pending(f: Future) -> None:
+    with _REAPER_GUARD:
+        _PENDING.discard(f)
+
+
+def settle_deletes(timeout: float | None = None) -> None:
+    """Wait for every background deletion (used at exit and by tests)."""
+    with _REAPER_GUARD:
+        pending = list(_PENDING)
+    wait_all(pending, timeout=timeout)
+
+
+atexit.register(settle_deletes, 600)
+
+
 # -- snapshot build coordination (one build per name per process) ----------------------
 
 _SNAP_LOCKS: dict[str, threading.Lock] = {}
@@ -160,6 +225,68 @@ def _is_transient(e: Exception) -> bool:
                           de.DaytonaBadGatewayError, de.DaytonaTimeoutError))
 
 
+_SHORT_S = 60          # commands with a timeout up to this run as one request
+_POLL_MAX_S = 5.0      # longest gap between status checks of a background command
+_OUTAGE_S = 300        # how long a background command survives the API being unreachable
+
+
+def _run(handle, cmd: str, *, cwd: str | None, timeout: int) -> ExecResult:
+    """Run ``cmd`` in a sandbox. A short command is one request. A longer one starts in the
+    background and is polled: a single HTTP request held open for minutes gets cut by
+    Daytona's proxy (connection reset / read timeout) and loses a task that was fine.
+    Polls that fail on a network error are retried for up to ``_OUTAGE_S``; the command
+    itself is never started twice. Output is stdout and stderr combined, as ``exec``."""
+    proc = handle.process
+    if timeout <= _SHORT_S or not hasattr(proc, "execute_session_command"):
+        r = proc.exec(cmd, cwd=cwd, timeout=timeout)
+        return ExecResult(exit_code=r.exit_code, stdout=r.result or "", stderr="")
+    from daytona import SessionExecuteRequest
+
+    inner = f"cd {shlex.quote(cwd)} && {cmd}" if cwd else cmd
+    wrapped = (f"if command -v timeout >/dev/null 2>&1; then timeout -k 10 {int(timeout)} "
+               f"sh -c {shlex.quote(inner)}; else sh -c {shlex.quote(inner)}; fi")
+    sid = f"rlgate-{uuid.uuid4().hex[:12]}"
+    _retry(lambda: proc.create_session(sid, request_timeout=60))
+    try:
+        started = proc.execute_session_command(
+            sid, SessionExecuteRequest(command=wrapped, run_async=True), timeout=60)
+        deadline = time.monotonic() + timeout + 30
+        gap, code = 0.5, None
+        while code is None and time.monotonic() < deadline:
+            time.sleep(gap)
+            gap = min(gap * 1.5, _POLL_MAX_S)
+            code = _retry(lambda: proc.get_session_command(
+                sid, started.cmd_id, request_timeout=30)).exit_code
+        logs = _retry(lambda: proc.get_session_command_logs(
+            sid, started.cmd_id, request_timeout=120))
+        out = logs.output if getattr(logs, "output", None) is not None else (
+            (logs.stdout or "") + (logs.stderr or ""))
+        if code is None:                       # still running past its deadline
+            return ExecResult(exit_code=124, stdout=out + f"\n[timed out after {timeout}s]",
+                              stderr="")
+        return ExecResult(exit_code=code, stdout=out, stderr="")
+    finally:
+        try:
+            proc.delete_session(sid, request_timeout=30)   # also stops a command left running
+        except Exception as e:  # noqa: BLE001 - the sandbox is deleted at the end anyway
+            log.debug("delete_session %s: %s", sid, e)
+
+
+def _retry(call):
+    """``call()``, retried on transient API errors (network, 5xx, rate limit) for up to
+    ``_OUTAGE_S``. Only for reads and idempotent calls."""
+    end, delay = time.monotonic() + _OUTAGE_S, 1.0
+    while True:
+        try:
+            return call()
+        except Exception as e:
+            if not _is_transient(e) or time.monotonic() + delay > end:
+                raise
+            log.warning("Daytona call failed (%s); retrying in %.0fs", e, delay)
+            time.sleep(delay)
+            delay = min(delay * 2, 30.0)
+
+
 class _Refused(Exception):
     """Daytona would not build a snapshot, and not because the image is broken."""
 
@@ -176,9 +303,7 @@ class DaytonaOverlay(Overlay):
         self._owned = owned            # True: a dedicated sandbox this overlay deletes
 
     def exec(self, cmd: str, timeout: int = 900) -> ExecResult:
-        # Daytona returns stdout and stderr combined in `result`.
-        r = self._sb.process.exec(cmd, cwd=self._parent.opts.workdir, timeout=timeout)
-        return ExecResult(exit_code=r.exit_code, stdout=r.result or "", stderr="")
+        return _run(self._sb, cmd, cwd=self._parent.opts.workdir, timeout=timeout)
 
     def read_perms(self, path: str) -> Perms:
         target = f"{self._parent.opts.workdir}/{path.lstrip('/')}"
@@ -207,8 +332,7 @@ class DaytonaMachine(Machine):
         self._closed = False
 
     def exec(self, cmd: str, *, cwd: str | None = None, timeout: int = 900) -> ExecResult:
-        r = self.handle.process.exec(cmd, cwd=cwd or self.workdir, timeout=timeout)
-        return ExecResult(exit_code=r.exit_code, stdout=r.result or "", stderr="")
+        return _run(self.handle, cmd, cwd=cwd or self.workdir, timeout=timeout)
 
     def put_file(self, local: Path, remote: str) -> None:
         self.handle.fs.upload_file(str(local), remote)
@@ -234,6 +358,8 @@ class DaytonaSandbox(Sandbox):
         self.opts = options or DaytonaOptions()
         self.dind = False                  # sandboxes run dockerd (compose host)
         self._client_factory = client_factory
+        self._slotted: set[str] = set()                # handles holding a sandbox slot
+        self._deleting: list[Future] = []
         self._client: Any = None
         self._source: tuple[str, Any] | None = None   # ("snapshot", name) | ("image", img)
         self._host_snapshot: Path | None = None
@@ -323,7 +449,9 @@ class DaytonaSandbox(Sandbox):
                 raise DaytonaUnavailable(reason)
             from daytona import Daytona
             self._client_factory = Daytona   # reads DAYTONA_API_KEY / _API_URL / _TARGET
-        self._client = self._client_factory()
+        from daytona import Daytona as _SDK
+        self._client = (_shared_client(_SDK) if self._client_factory is _SDK
+                        else self._client_factory())
         from rlgate.sandbox.daytona_quota import budget_for
         self._budget = budget_for(self._client, max_snapshots=self.opts.max_snapshots,
                                   idle_minutes=self.opts.snapshot_idle_minutes,
@@ -352,6 +480,9 @@ class DaytonaSandbox(Sandbox):
             _OPEN.discard(self)
         for h in handles:
             self._delete(h, tracked=False)
+        with self._lock:
+            deleting, self._deleting = self._deleting, []
+        wait_all(deleting, timeout=600)       # a finished task leaves nothing running
         if self._held_snapshot is not None and self._budget is not None:
             self._budget.done(self._held_snapshot)
             self._held_snapshot = None
@@ -579,15 +710,26 @@ class DaytonaSandbox(Sandbox):
             params = CreateSandboxFromImageParams(image=ref, resources=self.opts.resources(),
                                                   **common)
         need = self._size()
+        slot = _slots(self.opts.max_sandboxes).acquire(timeout=self.opts.room_wait_s)
+        if not slot:
+            log.warning("%d sandboxes are live; creating one more anyway after %.0fs",
+                        self.opts.max_sandboxes, self.opts.room_wait_s)
         if self._budget is not None:
             self._budget.room(*need, wait_s=self.opts.room_wait_s)
         try:
             handle = self._create_with_retry(params)
+        except BaseException:
+            if slot:
+                _slots(self.opts.max_sandboxes).release()
+            raise
         finally:
             if self._budget is not None:
                 self._budget.started(*need)
+        hid = str(getattr(handle, "id", id(handle)))
         with self._lock:
-            self._live[str(getattr(handle, "id", id(handle)))] = handle
+            self._live[hid] = handle
+            if slot:
+                self._slotted.add(hid)
         with _OPEN_GUARD:
             _OPEN.add(self)      # keep alive until close(), so atexit can always clean up
         return handle
@@ -635,15 +777,26 @@ class DaytonaSandbox(Sandbox):
                     log.warning("could not delete %s: %s", getattr(sb, "id", "?"), e)
 
     def _delete(self, handle, tracked: bool = True) -> None:
-        if tracked:
-            with self._lock:
-                self._live.pop(str(getattr(handle, "id", id(handle))), None)
+        """Delete in the background; ``close()`` waits for this fleet's deletions."""
+        hid = str(getattr(handle, "id", id(handle)))
+        with self._lock:
+            if tracked:
+                self._live.pop(hid, None)
                 if handle is self._shared:
                     self._shared, self._shared_busy = None, False
+            slot = hid in self._slotted
+            self._slotted.discard(hid)
+            fut = _reap_later(lambda: self._delete_now(handle, slot))
+            self._deleting = [f for f in self._deleting if not f.done()] + [fut]
+
+    def _delete_now(self, handle, slot: bool) -> None:
         try:
             self._client.delete(handle)
         except Exception as e:  # noqa: BLE001 - auto-stop/TTL clean up what this misses
             log.warning("could not delete sandbox %s: %s", getattr(handle, "id", "?"), e)
+        finally:
+            if slot:
+                _slots(self.opts.max_sandboxes).release()
 
     def _load_workspace(self, handle, host_copy: Path) -> None:
         """Replace the remote workdir with a fresh copy of ``host_copy``."""
@@ -655,8 +808,7 @@ class DaytonaSandbox(Sandbox):
         finally:
             tar_path.unlink(missing_ok=True)
         wd = self.opts.workdir
-        res = handle.process.exec(
-            f"rm -rf {wd} && mkdir -p {wd} && tar xzf {_REMOTE_TAR} -C {wd} "
-            f"&& rm -f {_REMOTE_TAR}", timeout=300)
+        res = _run(handle, f"rm -rf {wd} && mkdir -p {wd} && tar xzf {_REMOTE_TAR} -C {wd} "
+                           f"&& rm -f {_REMOTE_TAR}", cwd=None, timeout=300)
         if res.exit_code != 0:
-            raise DaytonaUnavailable(f"workspace extract failed: {res.result}")
+            raise DaytonaUnavailable(f"workspace extract failed: {res.stdout}")

@@ -37,6 +37,8 @@ class Baseline:
     # False: the task ships no reference solution (RL data often doesn't). Only the
     # do-nothing runs happened; ``oracle`` is a placeholder and the reference checks are off
     reference: bool = True
+    # True: the runs stopped early because two agreeing runs already proved it broken
+    early: bool = False
 
     @property
     def fail_to_pass(self) -> list[str]:
