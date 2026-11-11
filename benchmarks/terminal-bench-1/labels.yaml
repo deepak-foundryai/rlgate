@@ -99,7 +99,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-1
     ref: main
-    path: tasks/tree-directory-parser
+    path: original-tasks/tree-directory-parser
     approx_mb: 5
   layout: tb1-legacy
   note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
@@ -173,7 +173,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-1
     ref: main
-    path: tasks/git-workflow-hack
+    path: original-tasks/git-workflow-hack
     approx_mb: 5
   layout: tb1-legacy
   note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
@@ -197,7 +197,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-1
     ref: main
-    path: tasks/get-bitcoin-nodes
+    path: original-tasks/get-bitcoin-nodes
     approx_mb: 5
   layout: tb1-legacy
   note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
@@ -220,7 +220,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-1
     ref: main
-    path: tasks/build-linux-kernel-qemu
+    path: original-tasks/build-linux-kernel-qemu
     approx_mb: 5
   layout: tb1-legacy
   note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
@@ -243,7 +243,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-1
     ref: main
-    path: tasks/chem-rf
+    path: original-tasks/chem-rf
     approx_mb: 5
   layout: tb1-legacy
   note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
@@ -266,7 +266,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-1
     ref: main
-    path: tasks/protocol-analysis-rs
+    path: original-tasks/protocol-analysis-rs
     approx_mb: 5
   layout: tb1-legacy
   note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
@@ -289,7 +289,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-1
     ref: main
-    path: tasks/hf-lora-adapter
+    path: original-tasks/hf-lora-adapter
     approx_mb: 5
   layout: tb1-legacy
   note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
@@ -312,7 +312,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-1
     ref: main
-    path: tasks/predicate-pushdown-bench
+    path: original-tasks/predicate-pushdown-bench
     approx_mb: 5
   layout: tb1-legacy
   note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref
@@ -336,7 +336,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-1
     ref: main
-    path: tasks/download-youtube
+    path: original-tasks/download-youtube
     approx_mb: 5
   layout: tb1-legacy
   note: TB1 legacy format (task.yaml/run-tests.sh); if rlgate can't read it, use the Terminal Wrench original_task/ copy where one exists; ref

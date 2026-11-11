@@ -251,3 +251,57 @@ def test_a_stack_that_fails_twice_says_which_container_stopped():
     h = hosts.lease()                   # the host was released: a new lease doesn't wait
     assert h.busy == 1
     hosts.release(h)
+
+
+def test_a_command_that_prompts_gets_end_of_input_instead_of_waiting(tmp_path):
+    from rlgate.sandbox.local import LocalOverlay
+    r = LocalOverlay(tmp_path).exec("read -r answer; echo \"got:[$answer] rc=$?\"", timeout=10)
+    assert "got:[] rc=0" in r.stdout or "got:[]" in r.stdout
+
+
+def test_daytona_long_commands_get_no_input(monkeypatch):
+    """A Daytona session keeps its stdin open; the command must still see end-of-input."""
+    import subprocess
+    from types import SimpleNamespace
+
+    from rlgate.sandbox import daytona
+    monkeypatch.setattr(daytona.time, "sleep", lambda s: None)
+    ran = {}
+
+    class Proc:
+        def create_session(self, sid, request_timeout=60):
+            pass
+
+        def execute_session_command(self, sid, req, timeout=60):
+            # run it as a session would: stdin is a pipe that stays open
+            import os
+            rd, wr = os.pipe()                      # the write end stays open: no EOF
+            try:
+                import signal
+                p = subprocess.Popen(["sh", "-c", req.command], stdin=rd,
+                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                     text=True, start_new_session=True)
+                try:
+                    p.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    os.killpg(p.pid, signal.SIGKILL)     # the whole group, so nothing lingers
+                    p.wait()
+                    ran["hung"] = True
+                ran.update(code=p.returncode, out=p.stdout.read() if p.stdout else "")
+            finally:
+                os.close(rd)
+                os.close(wr)
+            return SimpleNamespace(cmd_id="c")
+
+        def get_session_command(self, sid, cmd_id, request_timeout=30):
+            return SimpleNamespace(exit_code=ran["code"])
+
+        def get_session_command_logs(self, sid, cmd_id, request_timeout=120):
+            return SimpleNamespace(output=ran["out"])
+
+        def delete_session(self, sid, request_timeout=30):
+            pass
+
+    r = daytona._run(SimpleNamespace(process=Proc()), 'read -r a; echo "got:[$a]"',
+                     cwd=None, timeout=600)
+    assert "hung" not in ran and "got:[]" in r.stdout

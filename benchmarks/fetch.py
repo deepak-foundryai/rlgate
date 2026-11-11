@@ -267,6 +267,9 @@ def git_cache(repo):
     return d
 
 
+FAILED: list[tuple[str, str]] = []      # (entry id, why), reported at the end
+
+
 def git_export(t, lock):
     f = t["fetch"]
     d = git_cache(f["repo"])
@@ -419,6 +422,7 @@ def fetch_hf(tasks, manifest, lock, pull):
                         row = find_row(hf_rows(ds_alt, ds_alt["files"], f"hf:{f['alt']}", lock), ds_alt, f)
             except Exception as e:  # noqa: BLE001 - keep going; report at the end
                 print(f"  ! {t['id']}: {e}", file=sys.stderr)
+                FAILED.append((t["id"], str(e)))
                 continue
             row = {k: v for k, v in row.items()}
             img = image_for(ds, row, f.get("image_tag"))
@@ -475,13 +479,22 @@ def main():
                 git_export(t, lock)
             except Exception as e:  # noqa: BLE001 - one task's failure never stops the rest
                 print(f"  ! {t['id']}: {e}", file=sys.stderr)
+                FAILED.append((t["id"], str(e)))
+                shutil.rmtree(TASKS / t["folder"] / t["id"], ignore_errors=True)  # no empty dir
             if args.pull_images and t["fetch"].get("image"):
                 subprocess.run(["docker", "pull", t["fetch"]["image"]], check=False)
     fetch_hf([t for t in tasks if t["fetch"]["kind"] == "hf_row"], manifest, lock, args.pull_images)
     lock_p.write_text(json.dumps(lock, indent=1, sort_keys=True))
     if args.tier == "all" and not args.only:
         bulk_write(manifest)
-    print(f"done -> {TASKS}")
+    if FAILED:
+        print(f"\n{len(FAILED)} of {len(tasks)} entries could not be fetched (nothing was "
+              "written for them):", file=sys.stderr)
+        for tid, why in FAILED:
+            print(f"  {tid}: {why.splitlines()[0][:200] if why else 'error'}", file=sys.stderr)
+        print(f"the rest -> {TASKS}")
+        sys.exit(1)
+    print(f"done -> {TASKS} ({len(tasks)} entries)")
 
 
 if __name__ == "__main__":

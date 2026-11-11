@@ -36,8 +36,8 @@ class LocalOverlay(Overlay):
 
     def exec(self, cmd: str, timeout: int = 900) -> ExecResult:
         p = subprocess.run(
-            cmd, shell=True, cwd=self.root, capture_output=True, text=True, encoding="utf-8", errors="replace",
-            timeout=timeout, check=False,
+            cmd, shell=True, cwd=self.root, capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=timeout, check=False, stdin=subprocess.DEVNULL,
             env={**os.environ, "RLGATE_SANDBOX": "local"},
         )
         return ExecResult(p.returncode, p.stdout, p.stderr)

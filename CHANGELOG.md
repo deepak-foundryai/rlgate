@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.4 (2026-11-12)
+
+### Fixed
+
+- **A command that asks a question no longer waits forever.** Every command rlgate runs
+  (on Daytona, in a compose stack, or on this machine) now gets no input, as `docker exec`
+  gives the harness: a prompt such as apt's tzdata "Geographic area:" sees end-of-input and
+  takes its default. On Daytona a long command ran in a session that kept its input open,
+  so a reference solution that installs packages hung until its time limit on every run
+  (Terminal-Bench 2 `adaptive-rejection-sampler`).
+- `benchmarks/`: 28 task paths corrected (the 19 Terminal-Bench 2.1 controls live under
+  `tasks/`, 9 Terminal-Bench 1 tasks under `original-tasks/`). `fetch.py` no longer leaves an
+  empty folder for an entry it couldn't fetch; it lists every failure at the end and exits 1.
+
 ## 0.1.3 (2026-11-11)
 
 ### Fixed

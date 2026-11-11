@@ -186,8 +186,9 @@ class HostMachine(Machine):
 
     def exec(self, cmd: str, *, cwd: str | None = None, timeout: int = 900) -> ExecResult:
         try:
-            p = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                               timeout=timeout, check=False)
+            p = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True,
+                               encoding="utf-8", errors="replace", timeout=timeout,
+                               check=False, stdin=subprocess.DEVNULL)   # no prompts wait
         except subprocess.TimeoutExpired as e:
             return ExecResult(124, _s(e.stdout), _s(e.stderr) + f"\n[timed out after {timeout}s]")
         return ExecResult(p.returncode, p.stdout, p.stderr)

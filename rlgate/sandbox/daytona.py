@@ -245,8 +245,11 @@ def _run(handle, cmd: str, *, cwd: str | None, timeout: int) -> ExecResult:
     from daytona import SessionExecuteRequest
 
     inner = f"cd {shlex.quote(cwd)} && {cmd}" if cwd else cmd
+    # no input, as `docker exec` gives the harness: a prompt (apt's tzdata, a pager) sees
+    # end-of-file and takes its default instead of waiting on the session's open stdin
     wrapped = (f"if command -v timeout >/dev/null 2>&1; then timeout -k 10 {int(timeout)} "
-               f"sh -c {shlex.quote(inner)}; else sh -c {shlex.quote(inner)}; fi")
+               f"sh -c {shlex.quote(inner)} < /dev/null; "
+               f"else sh -c {shlex.quote(inner)} < /dev/null; fi")
     sid = f"rlgate-{uuid.uuid4().hex[:12]}"
     _retry(lambda: proc.create_session(sid, request_timeout=60))
     try:

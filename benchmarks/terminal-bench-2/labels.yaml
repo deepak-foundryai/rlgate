@@ -1706,7 +1706,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: adaptive-rejection-sampler
+    path: tasks/adaptive-rejection-sampler
     approx_mb: 5
   layout: harbor
   control: tb2-adaptive-rejection-sampler
@@ -1733,7 +1733,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: build-pmars
+    path: tasks/build-pmars
     approx_mb: 5
   layout: harbor
   control: tb2-build-pmars
@@ -1760,7 +1760,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: fix-git
+    path: tasks/fix-git
     approx_mb: 5
   layout: harbor
   control: tb2-fix-git
@@ -1787,7 +1787,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: polyglot-c-py
+    path: tasks/polyglot-c-py
     approx_mb: 5
   layout: harbor
   control: tb2-polyglot-c-py
@@ -1814,7 +1814,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: polyglot-rust-c
+    path: tasks/polyglot-rust-c
     approx_mb: 5
   layout: harbor
   control: tb2-polyglot-rust-c
@@ -1840,7 +1840,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: hf-model-inference
+    path: tasks/hf-model-inference
     approx_mb: 5
   layout: harbor
   control: tb2-hf-model-inference
@@ -1866,7 +1866,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: filter-js-from-html
+    path: tasks/filter-js-from-html
     approx_mb: 5
   layout: harbor
   control: tb2-filter-js-from-html
@@ -1892,7 +1892,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: sam-cell-seg
+    path: tasks/sam-cell-seg
     approx_mb: 5
   layout: harbor
   control: tb2-sam-cell-seg
@@ -1918,7 +1918,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: compile-compcert
+    path: tasks/compile-compcert
     approx_mb: 5
   layout: harbor
   control: tb2-compile-compcert
@@ -1944,7 +1944,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: rstan-to-pystan
+    path: tasks/rstan-to-pystan
     approx_mb: 5
   layout: harbor
   control: tb2-rstan-to-pystan
@@ -1969,7 +1969,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: query-optimize
+    path: tasks/query-optimize
     approx_mb: 5
   layout: harbor
   control: tb2-query-optimize
@@ -1994,7 +1994,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: mteb-retrieve
+    path: tasks/mteb-retrieve
     approx_mb: 5
   layout: harbor
   control: tb2-mteb-retrieve
@@ -2020,7 +2020,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: mteb-leaderboard
+    path: tasks/mteb-leaderboard
     approx_mb: 5
   layout: harbor
   control: tb2-mteb-leaderboard
@@ -2047,7 +2047,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: caffe-cifar-10
+    path: tasks/caffe-cifar-10
     approx_mb: 5
   layout: harbor
   control: tb2-caffe-cifar-10
@@ -2072,7 +2072,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: train-fasttext
+    path: tasks/train-fasttext
     approx_mb: 5
   layout: harbor
   control: tb2-train-fasttext
@@ -2097,7 +2097,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: overfull-hbox
+    path: tasks/overfull-hbox
     approx_mb: 5
   layout: harbor
   control: tb2-overfull-hbox
@@ -2122,7 +2122,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: extract-moves-from-video
+    path: tasks/extract-moves-from-video
     approx_mb: 5
   layout: harbor
   control: tb2-extract-moves-from-video
@@ -2147,7 +2147,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: install-windows-3.11
+    path: tasks/install-windows-3.11
     approx_mb: 5
   layout: harbor
   control: tb2-install-windows-3.11
@@ -2171,7 +2171,7 @@ tasks:
     kind: git
     repo: https://github.com/harbor-framework/terminal-bench-2-1
     ref: 12b7565679ce
-    path: crack-7z-hash
+    path: tasks/crack-7z-hash
     approx_mb: 5
   layout: harbor
   control: tb2-crack-7z-hash
