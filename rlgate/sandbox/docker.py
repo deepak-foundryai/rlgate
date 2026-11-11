@@ -39,7 +39,7 @@ def available() -> bool:
 
 
 def _docker(*args: str, **kw) -> subprocess.CompletedProcess:
-    return subprocess.run(["docker", *args], capture_output=True, text=True, check=False, **kw)
+    return subprocess.run(["docker", *args], capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, **kw)
 
 
 class DockerOverlay(Overlay):

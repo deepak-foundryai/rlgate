@@ -657,7 +657,8 @@ class StagedSandbox(Sandbox):
             # call the task unchecked.
             self.oracle_exit = r.exit_code
             if r.exit_code != 0:
-                log.warning("%s: the reference solution exited %d:\n%s", self.task.id,
+                # reported as RG001 with the grade; the output goes to rlgate.log only
+                log.info("%s: the reference solution exited %d:\n%s", self.task.id,
                             r.exit_code, out[-1500:])
         if timed:
             self._oracle_log = out
@@ -708,15 +709,47 @@ def tree_patch(base: Path, new: Path) -> str | None:
                     dst = tmp / side / rel
                     dst.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(src, dst, follow_symlinks=False)
+        # a text file that isn't UTF-8 (Latin-1 source, a .po file...) is diffed as binary,
+        # so the patch stays ASCII (base85) and still applies byte for byte
+        odd = sorted({rel for side, rels in (("a", written + deleted), ("b", written))
+                      for rel in rels if not _utf8(tmp / side / rel)})
+        attrs = tmp / ".attrs"
+        attrs.write_text("".join(f"{_attr_glob(r)} binary\n" for r in odd),
+                         encoding="utf-8")
         proc = subprocess.run(
-            ["git", "diff", "--no-index", "--no-prefix", "--binary", "--no-color",
-             "--no-ext-diff", "--no-renames", "a", "b"],
-            cwd=tmp, capture_output=True, text=True, check=False)
+            ["git", "-c", f"core.attributesFile={attrs}", "diff", "--no-index",
+             "--no-prefix", "--binary", "--no-color", "--no-ext-diff", "--no-renames",
+             "a", "b"],
+            cwd=tmp, capture_output=True, check=False)
         if proc.returncode not in (0, 1):
-            raise RuntimeError(f"git diff failed: {proc.stderr.strip()}")
-        return proc.stdout or None
+            raise RuntimeError("git diff failed: "
+                               + proc.stderr.decode("utf-8", "replace").strip())
+        try:
+            return proc.stdout.decode("utf-8") or None
+        except UnicodeDecodeError as e:
+            raise RuntimeError(
+                "the reference solution's changes can't be turned into a text patch "
+                f"(a file name that isn't UTF-8?): {e}") from None
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def _utf8(p: Path) -> bool:
+    if p.is_symlink() or not p.is_file():
+        return True
+    try:
+        p.read_bytes().decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
+def _attr_glob(rel: str) -> str:
+    """A gitattributes pattern matching exactly ``rel`` (glob characters escaped)."""
+    pat = "**/" + "".join("\\" + c if c in "*?[]\\!#" else c for c in rel)
+    if any(c.isspace() or c == '"' for c in pat):      # C-style quoted pattern
+        pat = '"' + pat.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    return pat
 
 
 def _pull_path(m: Machine, remote: str, local: Path) -> None:

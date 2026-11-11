@@ -105,3 +105,54 @@ def test_a_task_that_could_not_run_still_shows_its_time():
     from rlgate.render import run_label
     v = TaskView("t", "t", Path("."), None, None, error="boom", seconds=272.0)
     assert "0.0s" not in run_label(v)
+
+
+def test_a_reference_change_to_a_non_utf8_file_becomes_an_ascii_patch(tmp_path):
+    import subprocess
+
+    from rlgate.sandbox.staged import tree_patch
+    base, new = tmp_path / "base", tmp_path / "new"
+    for root, word in ((base, b"one"), (new, b"two")):
+        (root / "deep dir").mkdir(parents=True)
+        (root / "deep dir" / "café [1].txt").write_bytes(b"caf\xe9 \x95 " + word + b"\n")
+        (root / "ok.py").write_text("x = 1\n" if word == b"one" else "x = 2\n")
+    patch = tree_patch(base, new)
+    assert patch is not None
+    assert "GIT binary patch" in patch and "-x = 1" in patch
+    work = tmp_path / "work"
+    subprocess.run(["cp", "-R", str(base), str(work)], check=True)
+    (work / "p.diff").write_text(patch, encoding="utf-8")
+    subprocess.run(["git", "apply", "-p1", "p.diff"], cwd=work, check=True)
+    assert (work / "deep dir" / "café [1].txt").read_bytes() == b"caf\xe9 \x95 two\n"
+
+
+def test_the_terminal_gets_one_line_and_the_log_gets_everything(tmp_path):
+    import logging
+
+    from rlgate.core.jobs import Job, _OneLine
+    job = Job.open(tmp_path, target=str(tmp_path), name="t", options={}, argv=[])
+    records = []
+    grab = logging.Handler()
+    grab.emit = records.append                       # type: ignore[method-assign]
+    log = logging.getLogger("rlgate.run")
+    log.addHandler(grab)
+    try:
+        log.warning("task-x: the solution said:\nline two\nline three")
+        try:
+            raise ValueError("boom")
+        except ValueError:
+            log.exception("task-y could not be checked")
+    finally:
+        log.removeHandler(grab)
+        job.close()
+    shown = [_OneLine().format(r) for r in records]
+    assert shown == ["task-x: the solution said: (details in rlgate.log)",
+                     "task-y could not be checked (details in rlgate.log)"]
+    text = (job.path / "rlgate.log").read_text()
+    assert "line three" in text and "Traceback" in text and "ValueError: boom" in text
+
+
+def test_a_command_printing_non_utf8_bytes_does_not_crash(tmp_path):
+    from rlgate.sandbox.local import LocalOverlay
+    r = LocalOverlay(tmp_path).exec("printf 'caf\\351 \\225 ok'; printf '\\377' >&2; exit 3")
+    assert r.exit_code == 3 and "ok" in r.stdout

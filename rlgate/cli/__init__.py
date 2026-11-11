@@ -161,10 +161,10 @@ def _version() -> None:
             return "not installed"
         try:
             r = subprocess.run(["docker", "version", "--format", "{{.Server.Version}}"],
-                               capture_output=True, text=True, timeout=8, check=False)
+                               capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=8, check=False)
             if r.returncode == 0 and r.stdout.strip():
                 return r.stdout.strip()
-            r = subprocess.run(["docker", "--version"], capture_output=True, text=True,
+            r = subprocess.run(["docker", "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace",
                                timeout=8, check=False)
             return (r.stdout.strip() or "installed") + " (daemon not running)"
         except (OSError, subprocess.SubprocessError):

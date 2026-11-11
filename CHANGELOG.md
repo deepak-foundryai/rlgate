@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.2 (2026-11-11)
+
+### Fixed
+
+- **A reference solution that changes a file that isn't UTF-8** (Latin-1 source, a stray
+  byte) no longer crashes the check ("UnicodeDecodeError"): such files are diffed as binary,
+  so the patch still applies byte for byte.
+- **Commands that print bytes that aren't UTF-8** (a grader, a build, git) no longer crash
+  the check on Docker, local, compose or Daytona-compose runs.
+- **The terminal stays readable during a run:** a warning or error shows as one line,
+  ending "(details in rlgate.log)"; tracebacks and command output go only to `rlgate.log`. A
+  failing reference solution's output is no longer printed (it is reported as RG001).
+
+### Added
+
+- `benchmarks/score.py`: scores rlgate runs against the labelled benchmarks and, with
+  `--publish`, writes the score and each task's report into `benchmarks/results/` with
+  local paths removed.
+
 ## 0.1.1 (2026-11-11)
 
 ### Fixed

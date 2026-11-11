@@ -18,13 +18,13 @@ def apply_zero_fuzz(root: Path, patch_text: str) -> None:
     whole patch is rejected (raising PatchConflict)."""
     proc = subprocess.run(
         ["git", "apply", "--unsafe-paths", "-C0", "-p1", "-"],
-        cwd=root, input=patch_text, text=True, capture_output=True, check=False,
+        cwd=root, input=patch_text, text=True, encoding="utf-8", errors="replace", capture_output=True, check=False,
     )
     if proc.returncode == 0:
         return
     proc = subprocess.run(
         ["patch", "-p1", "--no-backup-if-mismatch", "-F0", "-s"],
-        cwd=root, input=patch_text, text=True, capture_output=True, check=False,
+        cwd=root, input=patch_text, text=True, encoding="utf-8", errors="replace", capture_output=True, check=False,
     )
     if proc.returncode != 0:
         raise PatchConflict(proc.stderr or proc.stdout)

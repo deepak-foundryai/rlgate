@@ -75,7 +75,7 @@ class Job:
         if not any(getattr(h, "_rlgate_console", False) for h in log.handlers):
             console = logging.StreamHandler()     # keep warnings on the terminal, as before
             console.setLevel(logging.WARNING)
-            console.setFormatter(logging.Formatter("%(message)s"))
+            console.setFormatter(_OneLine())
             console._rlgate_console = True        # type: ignore[attr-defined]
             log.addHandler(console)
         return cls(path, handler)
@@ -105,6 +105,17 @@ class Job:
         log = logging.getLogger("rlgate")
         log.removeHandler(self._handler)
         self._handler.close()
+
+
+class _OneLine(logging.Formatter):
+    """The terminal gets the first line of a warning, never output or a traceback (they
+    would break the live view); rlgate.log keeps everything."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        lines = record.getMessage().strip().splitlines() or [""]
+        first = lines[0][:200]
+        return first + (" (details in rlgate.log)" if len(lines) > 1 or record.exc_info
+                        else "")
 
 
 def _write(p: Path, data: dict) -> None:

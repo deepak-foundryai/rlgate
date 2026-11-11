@@ -82,6 +82,20 @@ Each folder's README states the layout. Scoring a single-function benchmark (MBP
 - **Controls must stay clean:** a control fails if any rule in its `clean_for` fires. That is the false-positive rate. Findings outside `clean_for` are not scored, because a fixed twin can still carry other, unrelated flaws.
 - Report confidence tiers separately; low-confidence labels (LLM-only audits, second-hand reports) are for triage, not for headline numbers.
 
+## Score and publish
+
+```
+uv run --no-project --with pyyaml python benchmarks/score.py ~/rlgate-bench-runs/smoke-nollm --tier smoke
+uv run --no-project --with pyyaml python benchmarks/score.py ~/rlgate-bench-runs/smoke-nollm --tier smoke \
+    --publish benchmarks/results/0.1.1/smoke-no-llm
+```
+
+The first prints the score. The second writes `SCORE.md`, `score.json` and each task's report
+into [results/](results/), with local paths removed (it refuses if any are left). Outcomes:
+**found**, **warning** (only as a warning), **missed**, **not run** (rlgate couldn't check it;
+the error is kept), **deep-only** (needs `--deep-review`), **absent** (not in these runs); a
+control is **clean** or **failed**.
+
 ## Caveats
 
 - **Labels are what the sources claim.** Medium and low confidence entries rest on one report; some are open issues the maintainers have not confirmed. Conflicts between sources are noted in `note` (e.g. Terminal-Bench 4 `formal-crypto` and `risk-scorer-replay`: Preference Model found no issues, other reports did; SWE-bench Verified `django__django-10097`: ABA major vs PAIChecker clean).

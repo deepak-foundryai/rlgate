@@ -194,7 +194,7 @@ def remove(root: str | Path, rule: str) -> int:
 
 def _author() -> str:
     try:
-        name = subprocess.run(["git", "config", "user.name"], capture_output=True, text=True,
+        name = subprocess.run(["git", "config", "user.name"], capture_output=True, text=True, encoding="utf-8", errors="replace",
                               check=False, timeout=5).stdout.strip()
     except (OSError, subprocess.SubprocessError):
         name = ""
