@@ -677,12 +677,21 @@ def test_a_background_process_outlives_its_command(tmp_path):
 
     from rlgate.sandbox.daytona import _wrap
     pid = tmp_path / "pid"
-    line = _wrap(f"sleep 30 & echo $! > {pid}; exit 7", 20)
-    r = subprocess.run(["bash", "-c", line], check=False, capture_output=True, text=True)
-    assert r.returncode == 7
+    # output redirected, as a real background service's is: one holding the pipe keeps
+    # subprocess.run waiting until it exits, and then there's nothing left to look at
+    line = _wrap(f"sleep 300 > /dev/null 2>&1 & echo $! > {pid}; exit 7", 20)
+    r = subprocess.run(["bash", "-c", line], check=False, capture_output=True, text=True,
+                       timeout=60)
     bg = int(pid.read_text())
-    assert os.getsid(bg) != os.getsid(0)          # not in the caller's session
-    os.kill(bg, 9)
+    try:
+        assert r.returncode == 7
+        os.kill(bg, 0)                                # it outlived the command
+        assert os.getsid(bg) != os.getsid(0)          # in a Unix session of its own
+    finally:
+        try:
+            os.kill(bg, 9)
+        except ProcessLookupError:
+            pass
 
 
 def test_the_command_line_keeps_a_time_limit_no_input_and_its_own_session():
