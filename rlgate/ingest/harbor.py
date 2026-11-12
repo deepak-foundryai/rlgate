@@ -15,7 +15,8 @@ What it maps to (generic ``Task`` fields — nothing downstream knows this is Ha
       shared   — tests uploaded to ``/tests`` just before grading, in the agent's environment;
       separate — a fresh grader environment (``[verifier.environment] docker_image``, else
                  ``tests/`` with its own Dockerfile/compose and tests baked in, else a fresh
-                 copy of the agent environment + uploaded tests); only ``artifacts`` cross over;
+                 copy of the agent environment + uploaded tests); only ``artifacts`` cross over,
+                 after the ``[[verifier.collect]]`` commands have run where the agent worked;
   - the grader is ``/tests/test.sh``; the reward is what it writes to
     ``/logs/verifier/reward.json`` (preferred) or ``reward.txt``;
   - the oracle is ``solution/solve.sh`` run in the workspace; when it just applies a patch
@@ -141,6 +142,7 @@ def load(task_dir: str | Path) -> Task:
         env=grader_env,
         artifacts=artifacts if mode == "separate" else (),
         inject=() if bundled else ((str(tests_dir), "/tests"),),
+        collect=_collect(ver_cfg.get("collect") or []),
         timeout_s=int(float(ver_cfg.get("timeout_sec", 600))),
         report=_report_spec(tests_dir),
         env_vars=tuple(_resolve_env(ver_cfg.get("env") or {}).items()),
@@ -329,6 +331,19 @@ def _artifacts(raw: list, unsupported: list[str]) -> tuple[str, ...]:
             continue
         out.append(p)
     return tuple(dict.fromkeys(out))
+
+
+def _collect(raw: list) -> tuple[tuple[str, int], ...]:
+    """``[[verifier.collect]]``: commands the harness runs in the agent's environment once
+    the agent is done, before artifacts cross to the verifier (e.g. ``git diff`` into
+    ``/logs/artifacts/model.patch``). Without them the verifier sees nothing of the work."""
+    out: list[tuple[str, int]] = []
+    for c in raw if isinstance(raw, list) else [raw]:
+        if isinstance(c, str):
+            out.append((c, 300))
+        elif isinstance(c, dict) and c.get("command"):
+            out.append((str(c["command"]), int(float(c.get("timeout_sec") or 300))))
+    return tuple(out)
 
 
 def _gold_patch(solution: Path, solve: Path | None) -> str | None:

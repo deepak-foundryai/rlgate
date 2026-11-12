@@ -1,7 +1,7 @@
 """One folder per ``rlgate check`` run, named and laid out for people (as Harbor's jobs/).
 
     <jobs dir> (--jobs-dir, [checks] jobs_dir, $RLGATE_JOBS_DIR; default ./rlgate-jobs)/
-      2026-11-11__19-44-24__mimo-harbor/        <date>__<time>__<--job-name or target>
+      mimo-harbor_2026-11-11_19-44/             <--job-name or target>_<date>_<time>
         config.json        the command, target, options and rlgate version
         result.json        the verdict: every task (a bank) or the one task, with findings
         report.md          the same, readable (a bank table, or the task's QA card)
@@ -22,6 +22,7 @@ import logging
 import os
 import re
 import shlex
+from contextvars import ContextVar
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -30,6 +31,18 @@ from rlgate import __version__
 
 if TYPE_CHECKING:
     from rlgate.core.report import TaskView
+
+TASK: ContextVar[str] = ContextVar("rlgate_task", default="")   # the task being checked
+
+
+class _TaskTag(logging.Filter):
+    """Tags each line with the task it belongs to: a bank checks several at once."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        t = TASK.get()
+        record.task = f"[{t}] " if t else ""
+        return True
+
 
 ENV = "RLGATE_JOBS_DIR"
 DEFAULT = "rlgate-jobs"
@@ -50,10 +63,10 @@ class Job:
     def open(cls, jobs_dir: str | Path | None, *, target: str, name: str | None,
              options: dict, argv: list[str]) -> Job:
         root = Path(jobs_dir or os.environ.get(ENV) or DEFAULT).expanduser()
-        stamp = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
-        base = f"{stamp}__{_slug(name or Path(target.rstrip('/')).name)}"
+        stamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        base = f"{_slug(name or Path(target.rstrip('/')).name)}_{stamp}"
         path, n = root / base, 1
-        while path.exists():                   # two runs in the same second
+        while path.exists():                   # two runs in the same minute
             n += 1
             path = root / f"{base}-{n}"
         (path / "tasks").mkdir(parents=True)
@@ -66,8 +79,9 @@ class Job:
         })
         handler = logging.FileHandler(path / "rlgate.log", encoding="utf-8")
         handler.setLevel(logging.DEBUG)
+        handler.addFilter(_TaskTag())
         handler.setFormatter(logging.Formatter(
-            "%(asctime)s %(levelname)-7s %(threadName)s %(name)s: %(message)s"))
+            "%(asctime)s %(levelname)-7s %(task)s%(threadName)s %(name)s: %(message)s"))
         log = logging.getLogger("rlgate")
         log.addHandler(handler)
         if log.level == logging.NOTSET or log.level > logging.DEBUG:

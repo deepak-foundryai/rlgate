@@ -500,7 +500,7 @@ def test_each_run_gets_a_named_folder_with_results_reports_and_a_log(capsys, tmp
     _, _, err = run(capsys, "check", CLEAN, "--quick", "--jobs-dir", str(jobs),
                     "--job-name", "first try")
     [d] = list(jobs.iterdir())
-    assert re.fullmatch(r"\d{4}-\d\d-\d\d__\d\d-\d\d-\d\d__first-try", d.name)
+    assert re.fullmatch(r"first-try_\d{4}-\d\d-\d\d_\d\d-\d\d(-\d+)?", d.name)
     names = {p.name for p in d.iterdir()}
     assert {"config.json", "result.json", "report.md", "report.html", "rlgate.log",
             "tasks"} <= names
@@ -509,4 +509,4 @@ def test_each_run_gets_a_named_folder_with_results_reports_and_a_log(capsys, tmp
     assert d.name in err.replace("\n", "")
     run(capsys, "check", "examples/taskbank", "--quick", "--jobs-dir", str(jobs))
     bank = max(jobs.iterdir(), key=lambda p: p.stat().st_mtime)
-    assert bank.name.endswith("__taskbank") and len(list((bank / "tasks").iterdir())) > 1
+    assert bank.name.startswith("taskbank_") and len(list((bank / "tasks").iterdir())) > 1

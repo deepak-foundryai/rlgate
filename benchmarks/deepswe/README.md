@@ -26,7 +26,7 @@ Each entry's `expected_rules` lists the rlgate rules that should fire (see `docs
 
 ## Running
 
-- `rlgate check <out>/deepswe --layout deepswe -j 8`
+- `rlgate check <out>/deepswe -j 8` (Harbor tasks at this commit: detected automatically, no `--layout`)
 - Fetch: `python benchmarks/fetch.py deepswe --tier core --dry-run`
 - rlgate can run it: yes.
 

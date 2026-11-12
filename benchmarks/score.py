@@ -63,9 +63,18 @@ def deep_only(t: dict) -> bool:
 # -- runs -----------------------------------------------------------------------------------
 
 def run_dirs(arg: Path) -> list[Path]:
+    """One run folder, or every run in a --jobs-dir, oldest first (a later run of the same
+    task replaces an earlier one)."""
     if (arg / "result.json").exists():
         return [arg]
-    return sorted(p.parent for p in arg.glob("*/result.json"))
+
+    def created(d: Path) -> str:
+        try:
+            return json.loads((d / "config.json").read_text()).get("created", "")
+        except (OSError, ValueError):
+            return ""
+    return sorted((p.parent for p in arg.glob("*/result.json")),
+                  key=lambda d: (created(d), d.stat().st_mtime))
 
 
 def task_results(run: Path) -> tuple[dict, list[tuple[dict, Path | None]]]:

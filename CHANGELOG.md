@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.1.5 (2026-11-12)
+
+0.1.4 was tagged but never reached PyPI (its release build never started); 0.1.5 carries
+everything in it.
+
+### Changed
+
+- **Run folders are named target first:** `tb2_2026-11-12_10-09/` (target or `--job-name`,
+  then date and time to the minute; a second run in the same minute gets `-2`), instead of
+  `2026-11-12__10-09-25__tb2/`.
+
+### Fixed
+
+- **Harbor tasks that collect the agent's work are graded correctly.** A task's
+  `[[verifier.collect]]` commands (for example `git diff <base> HEAD >
+  /logs/artifacts/model.patch`, used by DeepSWE) now run where the agent worked, after it
+  finishes and before its artifacts cross to a separate verifier. Before, the verifier never
+  got the patch, graded the untouched repository, and every such task looked broken
+  (RG001). A submitted patch is committed first, as an agent submitting it would;
+  uncommitted work is still not graded, as in the harness.
+- The QA card counted do-nothing runs against the reference's run count ("do-nothing 1/2
+  passes" when one do-nothing run had failed); it now counts the do-nothing runs.
+- In a run of several tasks, every line of `rlgate.log` names its task (`[tb2-regex-log]`),
+  so a failed grading can be traced to the task it belongs to.
+- `benchmarks/deepswe`: the tasks at the pinned commit are Harbor tasks; run them without
+  `--layout deepswe` (which read them wrongly and failed to apply the reference patch).
+
 ## 0.1.4 (2026-11-12)
 
 ### Fixed

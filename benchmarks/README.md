@@ -32,7 +32,7 @@ This folder is a labelled test set for rlgate built from **public audits of RL e
 | [terminal-wrench](terminal-wrench/) | terminal-wrench@d8a29613235a | 3 | 0 | 0 / 3 | 1 | 1 | yes |
 | [review-only](review-only/) | tau2, OSWorld, WebArena, BFCL, KernelBench, HLE, … | reference only | | | | | no |
 
-Runnable: **yes** = rlgate reads the fetched layout directly (Harbor dirs, `--layout deepswe`, `--layout swebench`, or a generated `task.rlgate.yaml`); **partial** = rows are fetched but need a mapping YAML (`--layout file`) for a non-pytest grader or image naming that has not been checked.
+Runnable: **yes** = rlgate reads the fetched layout directly (Harbor dirs including DeepSWE, `--layout swebench`, or a generated `task.rlgate.yaml`); **partial** = rows are fetched but need a mapping YAML (`--layout file`) for a non-pytest grader or image naming that has not been checked.
 
 ## Entry fields (`<benchmark>/labels.yaml`)
 
@@ -69,7 +69,7 @@ Needs Python 3, PyYAML and git; `huggingface_hub` (+ `pyarrow`) for HF rows; `do
 
 ```
 rlgate check rlgate-benchmarks/terminal-bench-2 -j 8
-rlgate check rlgate-benchmarks/deepswe --layout deepswe -j 8
+rlgate check rlgate-benchmarks/deepswe -j 8
 rlgate check rlgate-benchmarks/swe-bench-verified/swe-bench-verified.jsonl --layout swebench -j 8
 ```
 

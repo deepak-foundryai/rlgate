@@ -265,6 +265,17 @@ def check_task(task: Task, target: str, *, mode: Mode, runs: int, sel: Selection
     """Run the six steps on one task. Passed steps whose files didn't change since the last
     run of the same kind come from that run, so a re-check after a fix resumes at the step
     that failed."""
+    from rlgate.core.jobs import TASK
+    token = TASK.set(task.id)
+    try:
+        return _check_task(task, target, mode=mode, runs=runs, sel=sel, fresh=fresh,
+                           failed=failed, steps=steps)
+    finally:
+        TASK.reset(token)
+
+
+def _check_task(task: Task, target: str, *, mode: Mode, runs: int, sel: Selection,
+                fresh: bool = False, failed: bool = False, steps: bool = True) -> TaskView:
     from rlgate.pipeline import CheckRun, audit
 
     root = task_root(task)

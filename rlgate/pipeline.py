@@ -18,6 +18,7 @@ branches on benchmark identity.
 
 from __future__ import annotations
 
+import contextvars
 import threading
 import time
 from collections.abc import Callable
@@ -266,7 +267,9 @@ class _Run:
                     pass
             pmap(one, list(dict.fromkeys(jobs)), 4)
 
-        threading.Thread(target=run, name="rlgate-l2-prefetch", daemon=True).start()
+        ctx = contextvars.copy_context()
+        threading.Thread(target=ctx.run, args=(run,), name="rlgate-l2-prefetch",
+                         daemon=True).start()
 
     def _together(self, later: list[Step]) -> None:
         """Steps 3-6 at the same time (each in its own thread, checks in order inside it),

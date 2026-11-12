@@ -111,11 +111,11 @@ There are 76 rules in total, listed in [docs/rules.md](docs/rules.md) or by `rlg
 
 ### Run folders
 
-Every `rlgate check` writes one folder, named by date, time and target:
+Every `rlgate check` writes one folder, named by target (or `--job-name`), date and time:
 
 ```text
 rlgate-jobs/
-  2026-11-11__19-44-24__mimo-harbor/
+  mimo-harbor_2026-11-11_19-44/
     config.json      the command, target and options
     result.json      the verdict for every task, with findings
     report.md        the same, readable

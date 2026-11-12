@@ -108,6 +108,10 @@ class GraderSpec:
                                      # separate grading env — the only things it ever sees
     inject: tuple[tuple[str, str], ...] = ()   # (host dir, container dir) uploaded just
                                                 # before grading: held-out tests
+    collect: tuple[tuple[str, int], ...] = ()  # (command, timeout s) run where the agent
+                                                # worked, after it finishes and before its
+                                                # artifacts are taken (Harbor
+                                                # [[verifier.collect]], e.g. writing a patch)
     cwd: str | None = None          # where `run` executes; None → the workspace / workdir
     timeout_s: int = 900
     env_vars: tuple[tuple[str, str], ...] = ()

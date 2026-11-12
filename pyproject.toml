@@ -1,6 +1,6 @@
 [project]
 name = "rlgate"
-version = "0.1.4"
+version = "0.1.5"
 description = "A deterministic, third-party auditor that finds reward-hacking vulnerabilities in RL/eval environments."
 readme = "README.md"
 requires-python = ">=3.12"

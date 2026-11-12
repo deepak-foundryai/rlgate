@@ -18,6 +18,7 @@ instead of the whole suite — the cost optimization, with the exploit signal pr
 
 from __future__ import annotations
 
+import contextvars
 import threading
 from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
@@ -198,4 +199,6 @@ def pmap[A, B](fn: Callable[[A], B], items: Iterable[A], workers: int) -> list[B
     if workers <= 1 or len(items) <= 1:
         return [fn(x) for x in items]
     with ThreadPoolExecutor(max_workers=min(workers, len(items))) as ex:
-        return list(ex.map(fn, items))
+        # each item runs in a copy of the caller's context (the task its log lines name)
+        futures = [ex.submit(contextvars.copy_context().run, fn, x) for x in items]
+        return [f.result() for f in futures]

@@ -305,3 +305,39 @@ def test_daytona_long_commands_get_no_input(monkeypatch):
     r = daytona._run(SimpleNamespace(process=Proc()), 'read -r a; echo "got:[$a]"',
                      cwd=None, timeout=600)
     assert "hung" not in ran and "got:[]" in r.stdout
+
+
+def test_log_lines_name_their_task_even_from_worker_threads(tmp_path):
+    import logging
+
+    from rlgate.core.jobs import TASK, Job
+    from rlgate.variants.engine import pmap
+    job = Job.open(tmp_path, target=str(tmp_path), name="t", options={}, argv=[])
+    log = logging.getLogger("rlgate.core.grade")
+    try:
+        for task in ("tb2-regex-log", "tb2-fix-git"):
+            token = TASK.set(task)
+            try:
+                pmap(lambda i: log.info("graded in 1.0s: exit %d", i), [0, 1, 2], 3)
+            finally:
+                TASK.reset(token)
+    finally:
+        job.close()
+    lines = [ln for ln in (job.path / "rlgate.log").read_text().splitlines() if "graded" in ln]
+    assert len(lines) == 6
+    assert sum("[tb2-regex-log]" in ln for ln in lines) == 3
+    assert sum("[tb2-fix-git]" in ln for ln in lines) == 3
+
+
+def test_run_folders_are_named_target_then_date_and_time(tmp_path):
+    import re
+
+    from rlgate.core.jobs import Job
+    a = Job.open(tmp_path, target="/x/terminal-bench-2", name=None, options={}, argv=[])
+    b = Job.open(tmp_path, target="/x/terminal-bench-2", name=None, options={}, argv=[])
+    c = Job.open(tmp_path, target="/x/t", name="tb2", options={}, argv=[])
+    for j in (a, b, c):
+        j.close()
+    assert re.fullmatch(r"terminal-bench-2_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}", a.path.name)
+    assert b.path.name == a.path.name + "-2"            # same minute: numbered, not clobbered
+    assert c.path.name.startswith("tb2_")

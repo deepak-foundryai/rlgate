@@ -315,7 +315,8 @@ def _card_fields(view: TaskView) -> list[tuple[str, str]]:
 
     if b is not None:
         k = len(b.oracle_runs) or b.k
-        gates = (f"Reference {b.gold_passes}/{k}, do-nothing {k - b.nop_fails}/{k} passes"
+        n = len(b.nop_runs) or k                 # do-nothing may stop early on its own
+        gates = (f"Reference {b.gold_passes}/{k}, do-nothing {n - b.nop_fails}/{n} passes"
                  if b.reference else
                  f"No reference solution; do-nothing {len(b.nop_runs) - b.nop_fails}/"
                  f"{len(b.nop_runs)} passes")

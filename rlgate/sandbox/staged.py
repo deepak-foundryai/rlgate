@@ -64,6 +64,13 @@ from rlgate.sandbox.machine import (
 
 log = logging.getLogger(__name__)
 
+# A submitted patch is committed work: tasks that collect `git diff <base> HEAD` grade only
+# what an agent committed. Nothing to commit (or no repo) leaves the tree as it is.
+_COMMIT_WORK = ("g() { git -c safe.directory='*' \"$@\"; }; "
+                "if g rev-parse --is-inside-work-tree >/dev/null 2>&1; then g add -A && "
+                "g -c user.name=rlgate -c user.email=rlgate@localhost commit -q --no-verify "
+                "-m submission >/dev/null 2>&1; fi; true")
+
 
 class StagedUnavailable(BackendUnavailable):
     """The task can't be run on this backend; the message says why and what to do."""
@@ -459,6 +466,7 @@ class StagedSandbox(Sandbox):
         self.separate = g.env is not None
         self.workdir = (self.ws_spec.workdir if self.ws_spec else None) or None
         self.artifacts = tuple(g.artifacts)
+        self.collect = tuple(g.collect)
         self.workspace_dir: Path | None = None       # host copy of the workdir (repo_dir)
         self._outside: Path | None = None            # pristine artifacts outside the workdir
         self._ws_env: EnvProvider | None = None
@@ -540,6 +548,11 @@ class StagedSandbox(Sandbox):
         # every overlay is a fresh environment, so `isolated` always holds
         assert self.workspace_dir is not None and self._grader_env is not None, \
             "call build() first"
+        if self.collect:
+            # the harness collects the work (e.g. `git diff base HEAD`) inside the agent's
+            # environment, so the edits must be made there — and committed, as an agent
+            # submitting them would
+            return self.agent_overlay(_COMMIT_WORK if patch_text else ":", patch=patch_text)
         ws = _copy_tree(self.workspace_dir, "rlgate-sovl-")
         try:
             if patch_text:
@@ -593,6 +606,7 @@ class StagedSandbox(Sandbox):
                 written, deleted = changed_files(self.workspace_dir, edited)
                 push_delta(m, edited, self.workdir, written, deleted)
             self._agent_exec(m, cmd, timed=timed, strict=strict)
+            self._collect(m)
             if not self.separate:
                 assert self.workspace_dir is not None
                 return StagedOverlay(m, _copy_tree(self.workspace_dir, "rlgate-sovl-"),
@@ -739,6 +753,7 @@ class StagedSandbox(Sandbox):
         m = self._ws_env.fresh()
         try:
             self._agent_exec(m, self._solution_cmd(), timed=True, strict=True)
+            self._collect(m)
             self._oracle_ws, self._oracle_capture = self._capture(m)
         finally:
             m.close()
@@ -796,6 +811,14 @@ class StagedSandbox(Sandbox):
         if timed:
             self._oracle_log = out
         return out
+
+    def _collect(self, m: Machine) -> None:
+        """The harness's ``collect`` commands, run where the agent worked once it is done."""
+        for cmd, timeout in self.collect:
+            r = m.exec(cmd, cwd=self.workdir, timeout=timeout)
+            if r.exit_code != 0:
+                log.info("%s: a collect command exited %d: %s\n%s", self.task.id, r.exit_code,
+                         cmd, (r.stdout + r.stderr)[-1500:])
 
     def _grade_cwd(self) -> str | None:
         g = self.task.grader

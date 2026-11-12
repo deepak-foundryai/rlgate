@@ -286,3 +286,71 @@ def test_missing_reward_file_scores_zero_and_says_why(tmp_path):
 
 def test_gold_patch_object(tmp_path):
     assert Patch(GOLD).patchset[0].path == "calc.py"
+
+
+# -- Harbor [[verifier.collect]]: the work reaches the grader only as a collected patch -------
+
+COLLECT = ("mkdir -p /logs/artifacts && cd /app && "
+           "git diff --binary $(git rev-list --max-parents=0 HEAD) HEAD > /logs/artifacts/model.patch")
+PATCH_GRADER = """#!/bin/bash
+mkdir -p $R/logs/verifier; cd $R/app
+[ -s $R/logs/artifacts/model.patch ] && patch -s -p1 < $R/logs/artifacts/model.patch
+if grep -q 'a + b' calc.py; then echo 1; else echo 0; fi > $R/logs/verifier/reward.txt
+"""
+GIT = "git -c user.name=t -c user.email=t@t"
+
+
+class GitEnv(FakeEnv):
+    """The agent's image: /app is a git repo at the base commit."""
+
+    def fresh(self) -> Machine:
+        m = super().fresh()
+        m.exec(f"git init -q . && {GIT} add -A && {GIT} commit -qm base", cwd="/app")
+        return m
+
+
+def _collect_task(tmp_path: Path) -> tuple[Task, dict[str, FakeEnv]]:
+    sol = tmp_path / "solution"
+    sol.mkdir()
+    (sol / "solve.sh").write_text(
+        f"#!/bin/bash\nsed -i.bak 's/a - b/a + b/' calc.py && rm calc.py.bak && {GIT} commit -qam fix\n")
+    ws_spec = EnvSpec(image="agent:1", workdir="/app")
+    g_spec = EnvSpec(image="grader:1", workdir="/app")
+    envs = {"ws": GitEnv(ws_spec, {"/app/calc.py": BUGGY}),
+            "grader": FakeEnv(g_spec, {"/app/calc.py": BUGGY, "/tests/test.sh": PATCH_GRADER})}
+    task = Task(
+        id="collect", source="test", repo_dir=tmp_path, origin=str(tmp_path),
+        grader=GraderSpec(run="/tests/test.sh", verdict="reward_file",
+                          reward_files=("/logs/verifier/reward.txt",), env=g_spec,
+                          artifacts=("/logs/artifacts",), collect=((COLLECT, 60),)),
+        workspace_env=ws_spec, oracle=(str(sol), "solve.sh"))
+    return task, envs
+
+
+@pytest.mark.skipif(not shutil.which("git") or not shutil.which("patch"), reason="needs git")
+def test_collect_commands_turn_the_agents_committed_work_into_what_the_grader_sees(tmp_path):
+    task, envs = _collect_task(tmp_path)
+    with _sandbox(task, envs) as sb:
+        sb.build()
+        with sb.oracle_overlay() as ovl:                 # solve.sh commits its fix
+            assert run_grader(ovl, task).passed
+        with sb.overlay(GOLD) as ovl:                    # a submitted patch is committed work
+            assert run_grader(ovl, task).passed
+        with sb.overlay(None) as ovl:                    # nothing done: an empty patch
+            assert run_grader(ovl, task).reward == 0.0
+        # work left uncommitted is not in `git diff base HEAD`, so the grader never sees it
+        with sb.agent_overlay("sed -i.bak 's/a - b/a + b/' calc.py") as ovl:
+            assert run_grader(ovl, task).reward == 0.0
+
+
+def test_harbor_collect_entries_are_loaded(tmp_path):
+    from rlgate.ingest import harbor
+    d = tmp_path / "t"
+    (d / "tests").mkdir(parents=True)
+    (d / "tests" / "test.sh").write_text("true\n")
+    (d / "instruction.md").write_text("do it\n")
+    (d / "task.toml").write_text(
+        'artifacts = ["/logs/artifacts/model.patch"]\n[verifier]\nenvironment_mode = "separate"\n'
+        '[[verifier.collect]]\ncommand = "git diff > /logs/artifacts/model.patch"\n'
+        'timeout_sec = 120.0\n[environment]\ndocker_image = "x:1"\n')
+    assert harbor.load(d).grader.collect == (("git diff > /logs/artifacts/model.patch", 120),)
