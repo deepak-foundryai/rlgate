@@ -28,6 +28,8 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -41,7 +43,7 @@ class LLMError(RuntimeError):
     """A model call that produced no usable answer. ``kind`` says why."""
 
     KINDS = ("unavailable", "transient", "refused", "truncated", "invalid_output",
-             "context_too_long", "budget", "bad_request")
+             "context_too_long", "budget", "bad_request", "timeout")
 
     def __init__(self, kind: str, message: str) -> None:
         assert kind in self.KINDS, kind
@@ -153,6 +155,9 @@ def _priced(model: str) -> bool:
     return "input_cost_per_token" in v or "output_cost_per_token" in v
 
 
+_ANSWER = threading.local()     # this thread's deadline for the answer being produced
+
+
 # -- the client ----------------------------------------------------------------------
 
 
@@ -163,6 +168,7 @@ class LLM:
     max_retries: int = 3
     max_tokens: int = 16000
     budget_usd: float | None = None
+    answer_deadline_s: float = 900.0   # one answer, every retry and repair included
     extra: dict = field(default_factory=dict)      # forwarded to litellm.completion
     spent_usd: float = 0.0
     calls: int = 0
@@ -172,6 +178,7 @@ class LLM:
                       budget_usd: float | None = None) -> LLM:
         register_models(ms.info)
         return cls(model=model or ms.judge, timeout_s=ms.timeout_s, max_retries=ms.max_retries,
+                   answer_deadline_s=ms.answer_timeout_s,
                    max_tokens=ms.max_tokens, budget_usd=budget_usd, extra=dict(ms.extra))
 
     # -- readiness -----------------------------------------------------------------
@@ -219,6 +226,7 @@ class LLM:
         messages = _messages(prompt, system)
         sampling = {k: v for k, v in (("seed", seed), ("temperature", temperature))
                     if v is not None}
+        _ANSWER.deadline = time.monotonic() + self.answer_deadline_s
         if schema is None:
             return self._call(messages, max_tokens=max_tokens, mode="text", sampling=sampling)
 
@@ -265,7 +273,7 @@ class LLM:
 
         kwargs: dict[str, Any] = dict(
             model=self.model, messages=messages, max_tokens=max_tokens or self.max_tokens,
-            timeout=self.timeout_s, num_retries=self.max_retries, **self.extra,
+            **self.extra,
         )
         if sampling:
             kwargs.update(sampling)
@@ -277,11 +285,11 @@ class LLM:
             kwargs["messages"] = _with_schema_instruction(messages, schema)
 
         retried = False
+        deadline = getattr(_ANSWER, "deadline", None) or (
+            time.monotonic() + self.answer_deadline_s)
         while True:
-            try:
-                resp: Any = litellm.completion(**kwargs)
-            except Exception as e:
-                raise _classify(e, self.model) from e
+            resp: Any = _completion(kwargs, model=self.model, timeout_s=self.timeout_s,
+                                    retries=self.max_retries, deadline=deadline)
             self.calls += 1
 
             choice = resp.choices[0]
@@ -335,12 +343,10 @@ def chat(llm: LLM, messages: list[dict], tools: list[dict], *,
     litellm.suppress_debug_info = True
     kwargs: dict[str, Any] = dict(
         model=llm.model, messages=wire(messages, llm.model), tools=tools, tool_choice="auto",
-        max_tokens=max_tokens or llm.max_tokens, timeout=llm.timeout_s,
-        num_retries=llm.max_retries, **llm.extra)
-    try:
-        resp: Any = litellm.completion(**kwargs)
-    except Exception as e:
-        raise _classify(e, llm.model) from e
+        max_tokens=max_tokens or llm.max_tokens, **llm.extra)
+    resp: Any = _completion(kwargs, model=llm.model, timeout_s=llm.timeout_s,
+                            retries=llm.max_retries,
+                            deadline=time.monotonic() + llm.answer_deadline_s)
     llm.calls += 1
     choice = resp.choices[0]
     msg = choice.message
@@ -410,6 +416,33 @@ def _cost(resp, model: str) -> float | None:
     except Exception:  # noqa: BLE001 - unknown pricing is not an error
         return None
     return None if usd == 0.0 and not _priced(model) else usd
+
+
+def _completion(kwargs: dict, *, model: str, timeout_s: float, retries: int,
+                deadline: float) -> Any:
+    """``litellm.completion`` that never outlives ``deadline``: each attempt gets at most
+    the time left, and transient failures (rate limits, timeouts, 5xx) are retried here,
+    with backoff, only while time remains. Past the deadline it gives up with a reason
+    instead of holding the task (a slow or overloaded endpoint can take hours otherwise)."""
+    import litellm
+    attempt = 0
+    while True:
+        left = deadline - time.monotonic()
+        if left < 5:
+            raise LLMError("timeout", f"{model} gave no answer in time (the endpoint may be "
+                                      "overloaded: run fewer tasks at once with -j, or use "
+                                      "a faster model)")
+        try:
+            return litellm.completion(**kwargs, timeout=min(timeout_s, left), num_retries=0)
+        except Exception as e:
+            err = _classify(e, model)
+            if err.kind != "transient" or attempt >= retries:
+                raise err from e
+            attempt += 1
+            wait = min(2.0 ** attempt, max(0.0, deadline - time.monotonic() - 5))
+            log.info("%s: %s; retry %d of %d in %.0fs", model, type(e).__name__, attempt,
+                     retries, wait)
+            time.sleep(wait)
 
 
 def _classify(e: Exception, model: str) -> LLMError:

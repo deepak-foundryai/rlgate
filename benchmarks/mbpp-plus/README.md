@@ -17,7 +17,7 @@ MBPP (original tests) tasks that EvalPlus lists as wrong, ambiguous or with mult
 
 - 10 labelled positives, 0 controls; tiers: smoke 0, core 5, all 10.
 - Categories: too_strict 6, underspecified 3, flaky 1.
-- Most expected rules: RG408 (6), RG001 (5), RG407 (3), RG701 (3), RG704 (2), RG003 (1).
+- Most expected rules: RG408 (6), RG407 (3), RG701 (3), RG704 (2), RG003 (1). MBPP's tests were written from its own reference, which therefore passes them: these flaws are tests that are too strict or a task that is unclear, and the deep review finds them.
 - Entries that only the deep review can find (`needs: deep-review`): 4.
 
 ## How rlgate maps

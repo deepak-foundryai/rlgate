@@ -17,9 +17,10 @@ from __future__ import annotations
 import difflib
 import shutil
 import sys
+from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, NoReturn
 
 import typer
 
@@ -348,6 +349,10 @@ def check(
         "--agent-model", help="With --deep-review: the model that drives the agents (L3 "
         "audits, L4 hack agent). Default: the first --model.",
         rich_help_panel=DEPTH)] = None,
+    llm_timeout: Annotated[float | None, typer.Option(
+        "--llm-timeout", metavar="MINUTES", help="With --deep-review: the longest one model "
+        "answer may take, retries included (default 15). A slower answer is reported as "
+        "not finished instead of holding the task.", rich_help_panel=DEPTH)] = None,
     yes: Annotated[bool, typer.Option("--yes", "-y", hidden=True)] = False,   # no-op now
     exhaustive: Annotated[bool, typer.Option(
         "--exhaustive", help="Grade every mutation instead of skipping variants that can't "
@@ -444,10 +449,11 @@ def check(
     cfg = _settings(config, backend, opts, near=target)
     lay = layout or cfg.checks.layout
     source = E.Source(*(_layout(lay) if lay else (None, None, None)), limit)
-    if (model or agent_model) and not deep_review:
-        flag = f"--model {model[0]}" if model else f"--agent-model {agent_model}"
-        ui.error("--model and --agent-model choose the LLM review's models, which runs with "
-                 "--deep-review.", f"rlgate check {target} --deep-review {flag}")
+    if (model or agent_model or llm_timeout) and not deep_review:
+        flag = (f"--model {model[0]}" if model else f"--agent-model {agent_model}"
+                if agent_model else f"--llm-timeout {llm_timeout:g}")
+        ui.error("--model, --agent-model and --llm-timeout set up the LLM review, which "
+                 "runs with --deep-review.", f"rlgate check {target} --deep-review {flag}")
         return 2
     if not deep_review and any(n.strip().lower() == "questions" for g in only
                                for n in g.split(",")):
@@ -485,13 +491,16 @@ def check(
                  "depth": "full" if exhaustive else None}
         go_on = not fail_fast
         if deep_review:
+            if llm_timeout:
+                cfg.models.answer_timeout_s = llm_timeout * 60
             review = _deep_review(cfg, model or [], agent_model)
         only_ = only or None
         if kind == "bank":
             views, mode, secs = E.check_bank(
                 tasks, target, quick=quick, cfg=cfg, runs=runs or 0, only_groups=only_,
                 fresh=fresh, failed=failed, jobs=max(1, G.jobs), source=source,
-                start=first, keep_going=go_on, review=review, **speed)
+                start=first, keep_going=go_on, review=review,
+                on_done=job.save_task, **speed)
             _spent(review)
             _saved(job, views, kind="bank", target=target, seconds=secs)
             _emit(views, kind="bank", target=target, fmt=_fmt(fmt), seconds=secs, mode=mode)
@@ -1169,6 +1178,14 @@ def main(argv: list[str] | None = None) -> int:
         ui.error(f"--jobs takes a number, got {flags['jobs']!r}.", "e.g. --jobs 4")
         return 2
     load_dotenv()
+    restore = _term_is_interrupt()
+    try:
+        return _run_app(args)
+    finally:
+        restore()
+
+
+def _run_app(args: list[str]) -> int:
     try:
         rv = app(args=args, prog_name="rlgate", standalone_mode=False)
     except cx.NoSuchOption as e:
@@ -1177,11 +1194,15 @@ def main(argv: list[str] | None = None) -> int:
     except cx.UsageError as e:
         ui.error(e.format_message(), f"rlgate {_cmd(args)}--help")
         return 2
-    except typer.Abort:
+    except (typer.Abort, typer.Exit) as e:
+        # Typer turns Ctrl-C into Exit(130) before we see it; returning would leave the
+        # interpreter waiting on busy worker threads (the run hung instead of stopping)
+        if isinstance(e.__cause__ or e.__context__, KeyboardInterrupt):
+            _interrupted()
+        if isinstance(e, typer.Exit):
+            return e.exit_code
         ui.echo("", console=ui.err())
         return 130
-    except typer.Exit as e:
-        return e.exit_code
     except BrokenPipeError:
         return _quiet_pipe()
     except SystemExit as e:             # Rich exits 1 on a closed pipe (`| head`)
@@ -1189,9 +1210,71 @@ def main(argv: list[str] | None = None) -> int:
             return _quiet_pipe()
         raise
     except KeyboardInterrupt:
-        ui.error("Interrupted.", "run the same command again; finished tasks are cached")
-        return 130
+        _interrupted()
     return rv if isinstance(rv, int) else 0
+
+
+_STOP_SIGNALS: list[int] = []            # the signals _stop handles (to restore Ctrl-C)
+
+
+def _term_is_interrupt() -> Callable[[], None]:
+    """``kill`` (SIGTERM) stops a run the way Ctrl-C does: its sandboxes are deleted. The
+    first signal starts that; repeats (a double Ctrl-C, or ``kill`` arriving twice through
+    ``uv run``) are ignored until the cleanup is underway — one arriving mid-unwind used
+    to skip the cleanup and leave the run waiting on its workers."""
+    import signal
+    import threading
+
+    def _stop(_sig, _frame):
+        # clean up and exit right here: an exception would have to unwind through worker
+        # pools (waiting for in-flight gradings) and Typer, which turns Ctrl-C into a plain
+        # return of 130 — the cleanup never ran
+        for s in _STOP_SIGNALS:
+            signal.signal(s, signal.SIG_IGN)
+        _interrupted()
+    if threading.current_thread() is not threading.main_thread():
+        return lambda: None
+    before = {sg: signal.getsignal(sg) for sg in (signal.SIGTERM, signal.SIGINT)}
+
+    def restore() -> None:
+        for sg, h in before.items():
+            try:
+                signal.signal(sg, h)
+            except (ValueError, OSError, TypeError):
+                pass
+        _STOP_SIGNALS.clear()
+    try:
+        signal.signal(signal.SIGTERM, _stop)
+        _STOP_SIGNALS[:] = [signal.SIGTERM]
+        if signal.getsignal(signal.SIGINT) is signal.default_int_handler:
+            signal.signal(signal.SIGINT, _stop)       # (left alone when ignored: `cmd &`)
+            _STOP_SIGNALS.append(signal.SIGINT)
+    except (ValueError, OSError):        # not allowed here (embedded); Ctrl-C still works
+        pass
+    return restore
+
+
+def _interrupted() -> NoReturn:
+    """Ctrl-C: delete the sandboxes this run holds, keep the log, and exit at once (worker
+    threads may be blocked in network calls; waiting for them is what hung before)."""
+    import logging
+    import os
+    import signal
+    if signal.SIGINT in _STOP_SIGNALS:   # a second Ctrl-C now skips the cleanup (TTLs)
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+    ui.echo("", console=ui.err())
+    ui.error("Interrupted.", "run the same command again; finished tasks are cached")
+    if "rlgate.sandbox.daytona" in sys.modules:
+        from rlgate.sandbox.daytona import release_all
+        try:
+            n = release_all(timeout=90)
+            if n:
+                ui.echo(f"  removed this run's {n} sandbox{'es' if n != 1 else ''}",
+                        console=ui.err())
+        except BaseException:  # noqa: BLE001, S110 - a second Ctrl-C: exit anyway (TTLs)
+            pass
+    logging.shutdown()
+    os._exit(130)
 
 
 def _quiet_pipe() -> int:

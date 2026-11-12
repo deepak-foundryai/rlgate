@@ -354,3 +354,28 @@ def test_a_truncated_answer_is_retried_once_with_twice_the_room(monkeypatch):
     with pytest.raises(llm.LLMError) as e:      # still cut off: once only, then an error
         llm.LLM(model="openai/x", max_tokens=9000).complete("hi")
     assert e.value.kind == "truncated" and budgets == [9000, 18000]
+
+
+def test_one_answer_never_outlives_its_deadline(stub, monkeypatch):
+    from rlgate import llm as L
+    monkeypatch.setattr(L.time, "sleep", lambda s: None)
+    clock = {"t": 0.0}
+    monkeypatch.setattr(L.time, "monotonic", lambda: clock["t"])
+
+    def slow(**kw):                       # every attempt times out after its full allowance
+        stub.calls.append(kw)
+        clock["t"] += kw["timeout"]
+        raise litellm.exceptions.Timeout("slow", model="m", llm_provider="openai")
+    monkeypatch.setattr(litellm, "completion", slow)
+    with pytest.raises(LLMError) as e:
+        _llm(answer_deadline_s=900, timeout_s=600, max_retries=3).complete("judge this")
+    assert e.value.kind == "timeout" and clock["t"] <= 900
+    assert all(kw["num_retries"] == 0 for kw in stub.calls)       # retries are ours, timed
+
+
+def test_transient_errors_are_retried_within_the_deadline(stub, monkeypatch):
+    from rlgate import llm as L
+    monkeypatch.setattr(L.time, "sleep", lambda s: None)
+    stub.replies = [litellm.exceptions.RateLimitError("busy", model="m", llm_provider="openai"),
+                    _resp("ok")]
+    assert _llm().complete("hi").text == "ok" and len(stub.calls) == 2

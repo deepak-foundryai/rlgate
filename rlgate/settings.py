@@ -60,6 +60,7 @@ Example ``rlgate.toml``::
     agent_grades = 6            # implementations an L3 audit may grade
     timeout_s = 600
     max_retries = 3
+    answer_timeout_s = 900      # one answer with every retry; also --llm-timeout MINUTES
 
     [models.info."openrouter/moonshotai/kimi-k2"]   # a model LiteLLM has no entry for:
     input_cost_per_token = 0.0000006                # its price (for the estimate and
@@ -96,6 +97,7 @@ class ModelSettings:
     second_opinion: str | None = None
     timeout_s: float = 600.0
     max_retries: int = 3
+    answer_timeout_s: float = 900.0     # one answer, every retry included (then "didn't finish")
     max_tokens: int = 16000
     review: list[str] = field(default_factory=list)   # --deep-review panel (empty: judge + second)
     votes: int = 3                                    # independent calls per question

@@ -510,3 +510,19 @@ def test_each_run_gets_a_named_folder_with_results_reports_and_a_log(capsys, tmp
     run(capsys, "check", "examples/taskbank", "--quick", "--jobs-dir", str(jobs))
     bank = max(jobs.iterdir(), key=lambda p: p.stat().st_mtime)
     assert bank.name.startswith("taskbank_") and len(list((bank / "tasks").iterdir())) > 1
+
+
+def test_a_bank_saves_each_task_as_it_finishes(tmp_path, capsys, monkeypatch):
+    # a run stopped part-way (Ctrl-C, a time cap) used to leave tasks/ empty: the reports
+    # were written only when the whole bank finished
+    from rlgate.core.jobs import Job
+    saved: list[str] = []
+    real = Job.save_task
+
+    def spy(self, v):
+        saved.append(v.task_id)
+        assert not (self.path / "result.json").exists()     # before the bank summary
+        real(self, v)
+    monkeypatch.setattr(Job, "save_task", spy)
+    run(capsys, "check", "examples/taskbank", "--quick", "--jobs-dir", str(tmp_path))
+    assert len(saved) > 1

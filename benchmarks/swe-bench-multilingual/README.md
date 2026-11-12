@@ -26,7 +26,7 @@ Each entry's `expected_rules` lists the rlgate rules that should fire (see `docs
 
 ## Running
 
-- SWE-style rows in `<out>/swe-bench-multilingual/<benchmark>.jsonl`; needs a mapping YAML (`--layout file`) and the repo checked out per row
+- SWE-style rows in `<out>/swe-bench-multilingual/<benchmark>.jsonl`; `rlgate check <out>/swe-bench-multilingual -j 8` (each row's eval script and log parser, graded as SWE-bench grades)
 - Fetch: `python benchmarks/fetch.py swe-bench-multilingual --tier core --dry-run`
 - rlgate can run it: partial.
 

@@ -10,6 +10,7 @@ from rlgate.sandbox.parsers import (  # noqa: F401 - register
     ctrf,
     go_json,
     junit,
+    swebench,
     trx,
     vitest_json,
 )
@@ -20,6 +21,7 @@ from rlgate.sandbox.parsers.base import (
     TestStatus,
     known_formats,
     parse_report,
+    register_family,
     register_parser,
 )
 from rlgate.sandbox.parsers.collect import collect
@@ -32,5 +34,6 @@ __all__ = [
     "collect",
     "known_formats",
     "parse_report",
+    "register_family",
     "register_parser",
 ]

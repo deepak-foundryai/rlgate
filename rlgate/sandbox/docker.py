@@ -9,6 +9,7 @@ image needs no git/patch tooling.
 
 from __future__ import annotations
 
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -18,6 +19,8 @@ from pathlib import Path
 from rlgate.sandbox._image import resolve_dockerfile
 from rlgate.sandbox._patch import apply_zero_fuzz
 from rlgate.sandbox.base import ExecResult, Overlay, Perms, Sandbox
+from rlgate.sandbox.errors import BackendUnavailable
+from rlgate.sandbox.machine import held_out_dest
 
 
 class DockerUnavailable(RuntimeError):
@@ -52,6 +55,19 @@ class DockerOverlay(Overlay):
         p = _docker("exec", "-w", "/work", self.container_id, "sh", "-c", cmd, timeout=timeout)
         return ExecResult(p.returncode, p.stdout, p.stderr)
 
+    def before_grade(self) -> None:
+        """Held-out tests arrive only now, after the work: each (host dir, dest) replaces
+        ``dest`` (relative = under /work)."""
+        for host, dest in self._sandbox.inject:
+            remote = held_out_dest(dest, "/work")
+            q = shlex.quote(remote)
+            r = _docker("exec", self.container_id, "sh", "-c", f"rm -rf {q} && mkdir -p {q}")
+            if r.returncode == 0:
+                r = _docker("cp", f"{Path(host)}/.", f"{self.container_id}:{remote}")
+            if r.returncode != 0:
+                raise BackendUnavailable(f"could not copy the held-out tests to {remote}: "
+                                         f"{(r.stderr or r.stdout)[-500:]}")
+
     def read_perms(self, path: str) -> Perms:
         p = _docker("exec", self.container_id, "stat", "-c", "%a", f"/work/{path.lstrip('/')}")
         if p.returncode != 0:
@@ -74,15 +90,17 @@ class DockerSandbox(Sandbox):
         self._tag: str | None = None
         self._snapshot: Path | None = None
         self._live: set[str] = set()
+        self.inject: tuple[tuple[str, str], ...] = ()   # held-out (host dir, dest) pairs
 
     @classmethod
     def from_task(cls, task) -> DockerSandbox:
         """grader.image is either a Dockerfile path (build it) or an existing image ref."""
         img = task.grader.image
         dockerfile = resolve_dockerfile(img)
-        if dockerfile:
-            return cls(task.repo_dir, dockerfile=dockerfile, task_id=task.id)
-        return cls(task.repo_dir, image_ref=img, task_id=task.id)
+        sb = (cls(task.repo_dir, dockerfile=dockerfile, task_id=task.id) if dockerfile
+              else cls(task.repo_dir, image_ref=img, task_id=task.id))
+        sb.inject = tuple(task.grader.inject)
+        return sb
 
     def build(self) -> None:
         if not available():

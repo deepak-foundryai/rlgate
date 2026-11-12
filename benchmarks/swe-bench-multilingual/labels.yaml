@@ -3,8 +3,8 @@ benchmark: swe-bench-multilingual
 description: SWE-bench Multilingual (300, 9 languages), human-labelled by PAIChecker and cross-checked against ABA.
 versions:
 - HF SWE-bench/SWE-bench_Multilingual
-runnable_by_rlgate: partial
-how_to_run: SWE-style rows in `<out>/swe-bench-multilingual/<benchmark>.jsonl`; needs a mapping YAML (`--layout file`) and the repo checked out
+runnable_by_rlgate: 'yes'
+how_to_run: SWE-style rows in `<out>/swe-bench-multilingual/<benchmark>.jsonl`; `rlgate check <out>/swe-bench-multilingual -j 8` (each row's eval script and log parser, graded as SWE-bench grades)
   per row
 datasets:
   swe-bench-multilingual:

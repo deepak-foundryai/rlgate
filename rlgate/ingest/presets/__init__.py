@@ -11,7 +11,7 @@ from rlgate.ingest.mapping import BankMapping
 _DIR = Path(__file__).parent
 
 
-NATIVE = ("harbor",)    # presets backed by a native loader, not a mapping file
+NATIVE = ("harbor", "swebench")    # presets backed by a native loader, not a mapping file
 
 
 def preset_names() -> list[str]:

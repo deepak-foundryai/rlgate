@@ -4,7 +4,7 @@ SWE-bench full test split and Lite: instances OpenAI's 2024 annotators filtered 
 
 ## Versions
 
-- HF princeton-nlp/SWE-bench, SWE-bench_Lite (images :v1 only)
+- HF SWE-bench/SWE-bench, SWE-bench_Lite (images :v1 only)
 
 ## Audits
 
@@ -27,7 +27,7 @@ Each entry's `expected_rules` lists the rlgate rules that should fire (see `docs
 
 ## Running
 
-- SWE-style rows in `<out>/swe-bench/<benchmark>.jsonl`; `--layout swebench`; needs the repo checked out per row
+- SWE-style rows in `<out>/swe-bench/<benchmark>.jsonl`; `rlgate check <out>/swe-bench -j 8` (each row's eval script and log parser, graded as SWE-bench grades)
 - Fetch: `python benchmarks/fetch.py swe-bench --tier core --dry-run`
 - rlgate can run it: yes.
 

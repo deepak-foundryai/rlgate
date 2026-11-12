@@ -29,6 +29,7 @@ class TestCase:
     __test__ = False
     name: str
     status: TestStatus
+    raw: str = ""           # the runner's own word for it, when it has finer ones (ERROR)
 
 
 @dataclass
@@ -74,6 +75,8 @@ class TestReport:
 # --- format registry ----------------------------------------------------------------
 
 _PARSERS: dict[str, Callable[[str], TestReport]] = {}
+# formats that take an argument: "<family>:<arg>" (e.g. which SWE-bench log parser to use)
+_FAMILIES: dict[str, Callable[[str, str], TestReport]] = {}
 
 
 def register_parser(name: str) -> Callable[[Callable[[str], TestReport]], Callable[[str], TestReport]]:
@@ -83,11 +86,23 @@ def register_parser(name: str) -> Callable[[Callable[[str], TestReport]], Callab
     return deco
 
 
+def register_family(name: str) -> Callable[[Callable[[str, str], TestReport]],
+                                            Callable[[str, str], TestReport]]:
+    """A parser for ``"<name>:<arg>"`` formats; it is called as ``fn(arg, text)``."""
+    def deco(fn: Callable[[str, str], TestReport]) -> Callable[[str, str], TestReport]:
+        _FAMILIES[name] = fn
+        return fn
+    return deco
+
+
 def known_formats() -> list[str]:
-    return sorted(_PARSERS)
+    return sorted([*_PARSERS, *(f"{f}:..." for f in _FAMILIES)])
 
 
 def parse_report(fmt: str, text: str) -> TestReport:
+    family, sep, arg = fmt.partition(":")
+    if fmt not in _PARSERS and sep and family in _FAMILIES:
+        return _FAMILIES[family](arg, text)
     try:
         parser = _PARSERS[fmt]
     except KeyError:

@@ -326,6 +326,8 @@ def test_compose_env_gets_a_docker_in_docker_machine_with_task_resources(tmp_pat
     assert fleet.dind and h.params.image == "docker:28.3.3-dind"
     assert h.params.network_block_all is False            # dockerd must pull images
     assert any("dockerd" in c for c in h.cmds) and any("docker info" in c for c in h.cmds)
+    # Docker Hub images come through a mirror (anonymous pulls from Daytona hit 429)
+    assert any("--registry-mirror=https://mirror.gcr.io" in c for c in h.cmds)
     r = h.params.resources
     assert (r.cpu, r.memory, r.disk) == (8, 14, 20)
     assert fleet.opts.build_timeout_s == 2700
@@ -457,3 +459,30 @@ def test_the_sandbox_cap_waits_then_goes_over_and_frees_slots_on_delete(tmp_path
     sb.close()
     for _ in range(sum(held) + 1):
         sem.release()
+
+
+def test_held_out_tests_reach_the_grader_and_leave_a_shared_sandbox(tmp_path, monkeypatch):
+    # a task.rlgate.yaml `tests: [{from: ./hidden, to: .graded}]` — they used to never
+    # arrive on Daytona, so every grade was "file or directory not found: .graded"
+    monkeypatch.delenv("DAYTONA_SNAPSHOT", raising=False)
+    import dataclasses
+    hidden = tmp_path / "hidden"
+    hidden.mkdir()
+    (hidden / "test_task.py").write_text("def test_x(): pass\n")
+    task = _task(tmp_path)
+    task = dataclasses.replace(task, grader=dataclasses.replace(
+        task.grader, inject=((str(hidden), ".graded"), (str(hidden), "/abs/tests"))))
+    client = FakeClient()
+    sb = _sandbox(task, client)
+    sb.build()
+    ovl = sb.overlay()
+    assert not any(".graded" in c for c in client.handles[-1].cmds)   # not before grading
+    ovl.before_grade()
+    h = client.handles[-1]
+    wd = sb.opts.workdir
+    assert any(f"mkdir -p {wd}/.graded" in c and "tar xzf" in c for c in h.cmds)
+    assert any("mkdir -p /abs/tests" in c for c in h.cmds)
+    ovl.close()
+    if not ovl._owned:                       # the next overlay on this sandbox can't see them
+        assert any(c.startswith("rm -rf ") and "/abs/tests" in c for c in h.cmds)
+    sb.close()

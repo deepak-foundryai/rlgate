@@ -3,12 +3,12 @@ benchmark: swe-bench
 description: 'SWE-bench full test split and Lite: instances OpenAI''s 2024 annotators filtered out of Verified, and UTBoost''s Lite-only weak
   tests.'
 versions:
-- HF princeton-nlp/SWE-bench, SWE-bench_Lite (images :v1 only)
+- HF SWE-bench/SWE-bench, SWE-bench_Lite (images :v1 only)
 runnable_by_rlgate: 'yes'
-how_to_run: SWE-style rows in `<out>/swe-bench/<benchmark>.jsonl`; `--layout swebench`; needs the repo checked out per row
+how_to_run: SWE-style rows in `<out>/swe-bench/<benchmark>.jsonl`; `rlgate check <out>/swe-bench -j 8` (each row's eval script and log parser, graded as SWE-bench grades)
 datasets:
   swe-bench:
-    hf: princeton-nlp/SWE-bench
+    hf: SWE-bench/SWE-bench
     revision: main
     files:
     - data/test-*.parquet
@@ -20,7 +20,7 @@ datasets:
     layout: swebench
     note: full test split; non-Verified images only have tags v1/latest (pre-#465 fix)
   swe-bench-lite:
-    hf: princeton-nlp/SWE-bench_Lite
+    hf: SWE-bench/SWE-bench_Lite
     revision: main
     files:
     - data/test-*.parquet
@@ -33,7 +33,7 @@ datasets:
 tasks:
 - id: swebfull-astropy__astropy-11693
   benchmark: swe-bench
-  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  version: HF SWE-bench/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
   polarity: positive
   category: too_strict
   label: 'OpenAI 2024 annotators: tests check a NoConvergence error and a UserWarning the issue never asks for (false_negative=3); non-Verified
@@ -59,7 +59,7 @@ tasks:
   - answer_leak
 - id: swebfull-astropy__astropy-12544
   benchmark: swe-bench
-  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  version: HF SWE-bench/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
   polarity: positive
   category: too_strict
   label: 'OpenAI 2024 annotators: parameter introduced is `mask_invalid`, not what the issue asked for (false_negative=3)'
@@ -81,7 +81,7 @@ tasks:
   - all
 - id: swebfull-astropy__astropy-12880
   benchmark: swe-bench
-  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  version: HF SWE-bench/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
   polarity: positive
   category: too_strict
   label: 'OpenAI 2024 annotators: test assumes one specific backward-compat design (false_negative=3)'
@@ -103,7 +103,7 @@ tasks:
   - all
 - id: swebfull-astropy__astropy-13032
   benchmark: swe-bench
-  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  version: HF SWE-bench/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
   polarity: positive
   category: too_strict
   label: 'OpenAI 2024 annotators: test checks behaviour beyond the issue (false_negative=3)'
@@ -124,7 +124,7 @@ tasks:
   - all
 - id: swebfull-astropy__astropy-14590
   benchmark: swe-bench
-  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  version: HF SWE-bench/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
   polarity: positive
   category: underspecified
   label: 'OpenAI 2024 annotators: issue fails to state expected behaviour (underspecified=3)'
@@ -147,7 +147,7 @@ tasks:
   - all
 - id: swebfull-django__django-10426
   benchmark: swe-bench
-  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  version: HF SWE-bench/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
   polarity: positive
   category: underspecified
   label: 'OpenAI 2024 annotators: refers to earlier tickets for ''app label validation'' (underspecified=3)'
@@ -170,7 +170,7 @@ tasks:
   - all
 - id: swebfull-django__django-11592
   benchmark: swe-bench
-  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  version: HF SWE-bench/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
   polarity: positive
   category: underspecified
   label: 'OpenAI 2024 annotators: not possible to understand what is requested (underspecified=3, false_negative=3, other=1)'
@@ -194,7 +194,7 @@ tasks:
   - too_strict
 - id: swebfull-astropy__astropy-8519
   benchmark: swe-bench
-  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  version: HF SWE-bench/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
   polarity: positive
   category: underspecified
   label: 'OpenAI 2024 annotators: issue describes expected behaviour, not a bug (underspecified=3, false_negative=3, other=1)'
@@ -215,7 +215,7 @@ tasks:
   - all
 - id: swebfull-astropy__astropy-13132
   benchmark: swe-bench
-  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  version: HF SWE-bench/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
   polarity: positive
   category: nop_passes
   label: 'OpenAI 2024 annotators: issue raises no problem; all code updates are in test files (other=1)'
@@ -237,7 +237,7 @@ tasks:
   - all
 - id: swebfull-astropy__astropy-13462
   benchmark: swe-bench
-  version: HF princeton-nlp/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
+  version: HF SWE-bench/SWE-bench@main test split; image tag :v1 (only v1/latest exist for non-Verified, dated 2025-02-26)
   polarity: positive
   category: weak_tests
   label: 'OpenAI 2024 annotators: fixed by updating tests to avoid overflow (other=1)'
@@ -258,7 +258,7 @@ tasks:
   - all
 - id: swelite-psf__requests-863
   benchmark: swe-bench-lite
-  version: HF princeton-nlp/SWE-bench_Lite@main; image tag :v1
+  version: HF SWE-bench/SWE-bench_Lite@main; image tag :v1
   polarity: positive
   category: weak_tests
   label: insufficient tests (UTBoost augTest.json, Lite/full only)
@@ -280,7 +280,7 @@ tasks:
   - all
 - id: swelite-mwaskom__seaborn-3010
   benchmark: swe-bench-lite
-  version: HF princeton-nlp/SWE-bench_Lite@main; image tag :v1
+  version: HF SWE-bench/SWE-bench_Lite@main; image tag :v1
   polarity: positive
   category: weak_tests
   label: insufficient tests (UTBoost augTest.json, Lite/full only)
@@ -302,7 +302,7 @@ tasks:
   - all
 - id: swelite-pylint-dev__pylint-5859
   benchmark: swe-bench-lite
-  version: HF princeton-nlp/SWE-bench_Lite@main; image tag :v1
+  version: HF SWE-bench/SWE-bench_Lite@main; image tag :v1
   polarity: positive
   category: weak_tests
   label: insufficient tests (UTBoost augTest.json, Lite/full only)

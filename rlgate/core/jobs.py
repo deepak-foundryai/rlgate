@@ -64,7 +64,7 @@ class Job:
              options: dict, argv: list[str]) -> Job:
         root = Path(jobs_dir or os.environ.get(ENV) or DEFAULT).expanduser()
         stamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
-        base = f"{_slug(name or Path(target.rstrip('/')).name)}_{stamp}"
+        base = f"{_slug(name or Path(target).expanduser().resolve().name)}_{stamp}"
         path, n = root / base, 1
         while path.exists():                   # two runs in the same minute
             n += 1
@@ -94,16 +94,21 @@ class Job:
             log.addHandler(console)
         return cls(path, handler)
 
+    def save_task(self, v: TaskView) -> None:
+        """One task's ``tasks/<id>/`` folder, written as soon as it finishes."""
+        from rlgate.core import report as R
+        d = self.path / "tasks" / _slug(v.task_id)
+        d.mkdir(parents=True, exist_ok=True)
+        _write(d / "result.json", R.task_dict(v))
+        (d / "report.md").write_text(R.qa_card(v), encoding="utf-8")
+
     def save(self, views: list[TaskView], *, kind: str, target: str,
              seconds: float = 0.0) -> None:
         from rlgate.core import report as R
         from rlgate.core.html import bank_html
 
         for v in views:
-            d = self.path / "tasks" / _slug(v.task_id)
-            d.mkdir(parents=True, exist_ok=True)
-            _write(d / "result.json", R.task_dict(v))
-            (d / "report.md").write_text(R.qa_card(v), encoding="utf-8")
+            self.save_task(v)
         if kind == "bank":
             summary = R.bank_dict(views, target)
             md = R.bank_markdown(views, target)

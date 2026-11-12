@@ -36,7 +36,8 @@ def test_mimo_preset_dir_layout(tmp_path):
     assert Capability.CONTAINER in t.capabilities and Capability.GOLD_PATCH not in t.capabilities
 
 
-def test_swebench_preset_record_layout(tmp_path):
+def test_swebench_preset_record_layout(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
     jsonl = tmp_path / "verified.jsonl"
     jsonl.write_text(json.dumps({
         "instance_id": "django__django-1", "problem_statement": "fix the bug",
@@ -48,7 +49,7 @@ def test_swebench_preset_record_layout(tmp_path):
     t = tasks[0]
     assert t.id == "django__django-1"
     assert t.gold_patch is not None and Capability.GOLD_PATCH in t.capabilities
-    assert t.grader.image == "swebench/django:1"
+    assert t.workspace_env is not None and t.workspace_env.image == "swebench/django:1"
     assert t.instruction == "fix the bug"
 
 

@@ -341,3 +341,147 @@ def test_run_folders_are_named_target_then_date_and_time(tmp_path):
     assert re.fullmatch(r"terminal-bench-2_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}", a.path.name)
     assert b.path.name == a.path.name + "-2"            # same minute: numbered, not clobbered
     assert c.path.name.startswith("tb2_")
+
+
+def test_a_run_of_the_current_folder_is_named_after_it(tmp_path, monkeypatch):
+    from rlgate.core.jobs import Job
+    bank = tmp_path / "foundryai-coding-data"
+    bank.mkdir()
+    monkeypatch.chdir(bank)
+    j = Job.open(tmp_path / "jobs", target=".", name=None, options={}, argv=[])
+    j.close()
+    assert j.path.name.startswith("foundryai-coding-data_")
+
+
+def test_a_service_that_never_answers_is_restarted_once_then_says_why(monkeypatch):
+    from rlgate.sandbox import staged
+    monkeypatch.setattr(staged.time, "sleep", lambda s: None)
+
+    class Slow(_Host):
+        ups = 0
+        answers_after = 2               # the service answers once the stack is restarted
+
+        def exec(self, cmd, *, cwd=None, timeout=900):
+            if " up -d " in cmd:
+                Slow.ups += 1
+            elif " exec " in cmd and Slow.ups < Slow.answers_after:
+                return ExecResult(1, "", "service \"main\" is not running")
+            return super().exec(cmd, cwd=cwd, timeout=timeout)
+    _env(StackHosts(Slow, cap=1)).fresh().close()
+    assert Slow.ups == 2
+
+    Slow.ups, Slow.answers_after = 0, 99
+    hosts = StackHosts(Slow, cap=1)
+    with pytest.raises(MachineError) as e:
+        _env(hosts).fresh()
+    assert Slow.ups == 2 and 'service "main" is not running' in str(e.value)
+    h = hosts.lease()
+    assert h.busy == 1
+    hosts.release(h)
+
+
+def test_a_stack_host_lost_while_idle_is_replaced(monkeypatch):
+    made: list = []
+
+    class Host(_Host):
+        def __init__(self):
+            super().__init__()
+            self.gone = False
+            made.append(self)
+
+        def alive(self):
+            return not self.gone
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(StackHosts, "RECHECK_IDLE_S", 0)
+    hosts = StackHosts(Host, cap=1)
+    hosts.release(hosts.lease())
+    made[0].gone = True                           # the backend removed it while idle
+    h = hosts.lease()
+    assert h.machine is made[1] and len(made) == 2   # a replacement, not a failed task
+    hosts.release(h)
+    hosts.close()
+
+
+def test_every_open_daytona_sandbox_is_kept_alive_until_closed(monkeypatch):
+    import gc
+
+    from rlgate.sandbox import daytona as D
+
+    class Handle:
+        beats = 0
+
+        def refresh_activity(self):
+            Handle.beats += 1
+
+    class Fleet:
+        def _delete(self, handle):
+            pass
+    monkeypatch.setattr(D, "KEEPALIVE_S", 0.01)
+    monkeypatch.setattr(D, "_BEAT", {"thread": None})
+    m = D.DaytonaMachine(Handle(), Fleet())          # type: ignore[arg-type]
+    time.sleep(0.1)
+    assert Handle.beats > 0
+    m.close()
+    gc.collect()
+    n = Handle.beats
+    time.sleep(0.1)
+    assert Handle.beats == n                       # a closed sandbox is left alone
+
+
+def test_ctrl_c_deletes_the_runs_sandboxes_and_exits_at_once(monkeypatch):
+    import os
+
+    from rlgate import cli
+    from rlgate.sandbox import daytona as D
+    deleted = []
+
+    class Fleet:
+        def _delete(self, handle):
+            deleted.append(handle)
+
+    class Handle:
+        def refresh_activity(self):
+            pass
+    m = D.DaytonaMachine(Handle(), Fleet())          # type: ignore[arg-type]
+
+    def interrupted(*a, **kw):
+        raise KeyboardInterrupt
+    monkeypatch.setattr(cli, "app", interrupted)
+
+    def exit_now(code):
+        raise SystemExit(code)
+    monkeypatch.setattr(os, "_exit", exit_now)
+    with pytest.raises(SystemExit) as e:
+        cli.main(["check", "."])
+    assert e.value.code == 130 and deleted == [m.handle]
+
+
+_STOP = """
+import os, signal, sys, threading, time
+import rlgate.cli as c
+threading.Thread(target=time.sleep, args=(60,)).start()     # a busy, non-daemon worker
+def app(**kw):
+    sig = signal.SIGINT if sys.argv[1] == "ctrl-c" else signal.SIGTERM
+    for t in (0.5, 0.5, 0.52):                  # twice: uv run forwards kill; double Ctrl-C
+        threading.Timer(t, os.kill, (os.getpid(), sig)).start()
+    time.sleep(60)
+c.app = app
+sys.exit(c.main(["check", "x"]))
+"""
+
+
+@pytest.mark.parametrize("how", ["ctrl-c", "term"])
+def test_ctrl_c_and_kill_exit_at_once_with_workers_still_busy(how):
+    # Typer turns Ctrl-C into a plain return of 130, so the cleanup never ran and the
+    # interpreter then waited for the busy worker threads: the run hung instead of stopping
+    import subprocess
+    import sys
+    import time
+    t0 = time.monotonic()
+    p = subprocess.run([sys.executable, "-c", _STOP, how], capture_output=True, text=True,
+                       timeout=30, check=False)
+    assert p.returncode == 130, p.stderr
+    assert "Interrupted" in p.stderr and time.monotonic() - t0 < 20

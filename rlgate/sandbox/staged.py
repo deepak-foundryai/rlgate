@@ -175,6 +175,9 @@ class StackHosts:
     it shares the least busy host instead. Locally there is one host (this machine's
     daemon) and stacks share it."""
 
+    RECHECK_IDLE_S = 600        # a host unused this long is checked before it is reused
+                                # (the backend keeps it alive; this catches a lost one)
+
     def __init__(self, make: Callable[[], Machine], cap: int, *, exclusive: bool = True,
                  wait_log_s: float = 120) -> None:
         self._make = make
@@ -214,6 +217,16 @@ class StackHosts:
                     log.info("waiting %.0fs for a free stack host (%d in use)",
                              time.monotonic() - waited, len(self._hosts))
             h.busy += 1
+        if h.machine is not None and h.busy == 1 and \
+                time.monotonic() - h.used > self.RECHECK_IDLE_S and not h.machine.alive():
+            # the backend removed it while it sat unused: start a replacement
+            log.warning("stack host %d is gone (removed by the backend while idle); "
+                        "starting a new one", h.n + 1)
+            gone, h.machine, h.ready = h.machine, None, set()
+            try:
+                gone.close()
+            except Exception:  # noqa: BLE001, S110 - already removed by the backend
+                pass
         if h.machine is None:
             try:
                 log.info("starting stack host %d of at most %d", h.n + 1, self.cap)
@@ -233,6 +246,7 @@ class StackHosts:
         self._held.n = max(0, getattr(self._held, "n", 1) - 1)
         with self._cond:
             h.busy -= 1
+            h.used = time.monotonic()
             self._cond.notify_all()
 
     def close(self) -> None:
@@ -253,6 +267,7 @@ class _StackHost:
         self.n = n
         self.machine: Machine | None = None
         self.busy = 0
+        self.used = time.monotonic()            # last released
         self.ready: set[str] = set()         # ComposeEnv keys whose images are built here
         self.prep = threading.Lock()
 
@@ -351,14 +366,33 @@ class ComposeEnv(EnvProvider):
             raise MachineError(f"compose up failed twice:{state}\n"
                                f"{(up.stdout + up.stderr)[-2000:]}")
         m = ComposeMachine(host, cmd, self.spec.service, self.spec.workdir, on_close=down)
-        for _ in range(60):
-            if m.exec("true", timeout=30).exit_code == 0:
-                return m
-            time.sleep(2)
+        last = self._wait_ready(m)
+        if last is not None:
+            # every container is up but commands can't run in the service yet (a busy host,
+            # a slow entrypoint): start the stack again from scratch once before giving up
+            log.info("compose service %r not ready on host %d, restarting the stack once:"
+                     "%s\n%s", self.spec.service, h.n + 1, _stack_state(host, cmd), last)
+            host.exec(f"{cmd} down -v --remove-orphans --timeout 5", timeout=300)
+            if host.exec(f"{cmd} up -d --no-build", timeout=900).exit_code == 0:
+                last = self._wait_ready(m)
+        if last is None:
+            return m
         state = _stack_state(host, cmd)
         m.close()
         raise MachineError(f"compose service {self.spec.service!r} never became ready"
-                           + state)
+                           f"{state}\nlast attempt to run a command in it: {last}")
+
+    @staticmethod
+    def _wait_ready(m: Machine, tries: int = 60) -> str | None:
+        """None once a command runs in the service; else what the last attempt said."""
+        last = ""
+        for _ in range(tries):
+            r = m.exec("true", timeout=30)
+            if r.exit_code == 0:
+                return None
+            last = f"exit {r.exit_code}: {(r.stdout + r.stderr).strip()[-500:]}"
+            time.sleep(2)
+        return last
 
     def close(self) -> None:
         pass                # the hosts are owned (and closed) by the sandbox
@@ -548,6 +582,8 @@ class StagedSandbox(Sandbox):
         # every overlay is a fresh environment, so `isolated` always holds
         assert self.workspace_dir is not None and self._grader_env is not None, \
             "call build() first"
+        if self.separate and self.task.grader.submission:
+            return self._patch_submission(patch_text)
         if self.collect:
             # the harness collects the work (e.g. `git diff base HEAD`) inside the agent's
             # environment, so the edits must be made there — and committed, as an agent
@@ -577,6 +613,31 @@ class StagedSandbox(Sandbox):
             raise
         return StagedOverlay(m, ws, self._grade_cwd(), self.workdir,
                              self.task.grader.inject)
+
+    def _patch_submission(self, patch_text: str | None) -> StagedOverlay:
+        """The harness grades a patch file in a fresh environment (SWE-bench): a submitted
+        patch is that file, so nothing else of an agent's environment can cross."""
+        assert self.workspace_dir is not None and self._grader_env is not None
+        sub = self.task.grader.submission
+        assert sub is not None
+        ws = _copy_tree(self.workspace_dir, "rlgate-sovl-")
+        try:
+            if patch_text:
+                apply_zero_fuzz(ws, patch_text)       # a patch that can't apply is no grade
+            local = Path(tempfile.mkdtemp(prefix="rlgate-sub-")) / "model.patch"
+            self._tmp.append(local.parent)
+            local.write_text(patch_text or "", encoding="utf-8")
+            m = self._grader_env.fresh()
+            try:
+                m.exec(f"mkdir -p {shlex.quote(str(PurePosixPath(sub).parent))}", timeout=60)
+                upload_file(m, local, sub)
+            except BaseException:
+                m.close()
+                raise
+        except BaseException:
+            shutil.rmtree(ws, ignore_errors=True)
+            raise
+        return StagedOverlay(m, ws, self._grade_cwd(), self.workdir, self.task.grader.inject)
 
     def oracle_overlay(self, fresh: bool = False) -> StagedOverlay:
         """Grade what the reference solution SCRIPT produces, the way the harness does.

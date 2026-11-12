@@ -1,6 +1,6 @@
 [project]
 name = "rlgate"
-version = "0.1.5"
+version = "0.1.6"
 description = "A deterministic, third-party auditor that finds reward-hacking vulnerabilities in RL/eval environments."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -58,7 +58,7 @@ addopts = "--ignore=tests/fixtures"   # fixture repos contain their own test_*.p
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-extend-exclude = [".venv", "data", "tests/fixtures", "rlgate/demo"]
+extend-exclude = [".venv", "data", "tests/fixtures", "rlgate/demo", "rlgate/sandbox/parsers/swebench_logs"]
 
 [tool.pyright]
-exclude = [".venv", "data", "tests/fixtures", "rlgate/demo"]
+exclude = [".venv", "data", "tests/fixtures", "rlgate/demo", "rlgate/sandbox/parsers/swebench_logs"]

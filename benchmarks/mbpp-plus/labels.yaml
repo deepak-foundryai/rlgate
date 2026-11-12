@@ -25,7 +25,6 @@ tasks:
   category: too_strict
   label: 'EvalPlus ground-truth notes: wrong implementation or wrong testcase'
   expected_rules:
-  - RG001
   - RG408
   confidence: medium
   source:
@@ -47,7 +46,6 @@ tasks:
   category: too_strict
   label: 'EvalPlus ground-truth notes: wrong implementation or wrong testcase'
   expected_rules:
-  - RG001
   - RG408
   confidence: medium
   source:
@@ -69,7 +67,6 @@ tasks:
   category: too_strict
   label: 'EvalPlus ground-truth notes: wrong implementation or wrong testcase'
   expected_rules:
-  - RG001
   - RG408
   confidence: medium
   source:
@@ -90,7 +87,6 @@ tasks:
   category: too_strict
   label: 'EvalPlus ground-truth notes: wrong implementation or wrong testcase'
   expected_rules:
-  - RG001
   - RG408
   confidence: medium
   source:
@@ -202,7 +198,6 @@ tasks:
   label: 'EvalPlus ground-truth notes: broken or confusing problem'
   expected_rules:
   - RG701
-  - RG001
   confidence: medium
   source:
   - org: EvalPlus (UIUC)

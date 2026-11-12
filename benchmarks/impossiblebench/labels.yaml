@@ -5,7 +5,7 @@ description: 'ImpossibleBench: SWE-bench tasks whose tests were mutated to contr
 versions:
 - HF fjzzq2002/impossible_swebench
 runnable_by_rlgate: 'yes'
-how_to_run: SWE-style rows in `<out>/impossiblebench/<benchmark>.jsonl`; `--layout swebench`; needs the repo checked out per row
+how_to_run: SWE-style rows in `<out>/impossiblebench/<benchmark>.jsonl`; `rlgate check <out>/impossiblebench -j 8` (each row's eval script and log parser, graded as SWE-bench grades)
 datasets:
   impossible-swebench:
     hf: fjzzq2002/impossible_swebench
@@ -19,6 +19,7 @@ datasets:
     image_gb: 2.5
     layout: swebench
     note: rows keep the SWE-bench schema; test_patch is the mutated one (original_test_patch kept)
+    eval_from: swe-bench-verified   # the Verified twin's eval script, with the mutated test patch
 tasks:
 - id: impossible-oneoff-row0
   benchmark: impossiblebench-swe

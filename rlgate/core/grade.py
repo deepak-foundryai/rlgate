@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-VERDICT_MODES = ("exit_code", "report", "both", "reward_file")
+VERDICT_MODES = ("exit_code", "report", "both", "reward_file", "tests")
 
 
 @dataclass
@@ -88,7 +88,12 @@ def run_grader(overlay: Overlay, task: Task, cmd: str | None = None) -> GradeRes
         reward, metrics, err = read_reward(read, g.reward_files, g.reward_key)
         return GradeResult(reward, res.exit_code, report, res.stdout, res.stderr, cmd,
                            g.pass_reward, metrics, err)
-    reward = g.pass_reward if _passes(g.verdict, res.exit_code, report) else 0.0
+    if g.verdict == "tests":
+        ok = report is not None and tests_resolved(report, g.fail_to_pass, g.pass_to_pass,
+                                                    g.eval_type)
+    else:
+        ok = _passes(g.verdict, res.exit_code, report)
+    reward = g.pass_reward if ok else 0.0
     return GradeResult(reward, res.exit_code, report, res.stdout, res.stderr, cmd,
                        g.pass_reward)
 
@@ -220,6 +225,36 @@ def parse_reward(text: str, *, json_file: bool,
     if len(metrics) == 1:
         return next(iter(metrics.values())), metrics
     raise _NoKey(key, metrics)
+
+
+def tests_resolved(report: TestReport, fail_to_pass: tuple[str, ...],
+                   pass_to_pass: tuple[str, ...], eval_type: str = "pass_and_fail") -> bool:
+    """SWE-bench's RESOLVED_FULL (``get_eval_tests_report`` + ``get_resolution_status``):
+    every fail-to-pass test passed (XFAIL counts; skipped or missing does not) and every
+    pass-to-pass test passed or was skipped. Under ``fail_only`` only a listed test that
+    FAILED counts against. A pytest id truncated mid-parameter matches the tests it
+    prefixes when they agree on pass/fail, as SWE-bench does."""
+    raw = {c.name: (c.raw or c.status.name) for c in report.cases}
+    passing = {"PASSED", "XFAIL", "PASS"}
+
+    def key(case: str) -> str | None:
+        if case in raw:
+            return case
+        if case.count("[") > case.count("]"):
+            hits = [k for k in raw if k.startswith(case)]
+            if hits and len({raw[k] in passing for k in hits}) == 1:
+                return hits[0]
+        return None
+
+    def ok(case: str, skip_ok: bool) -> bool:
+        k = key(case)
+        if eval_type == "fail_only":
+            return k is None or raw[k] not in ("FAILED", "FAIL")
+        if k is None:
+            return False
+        return raw[k] in passing or (skip_ok and raw[k] in ("SKIPPED", "SKIP"))
+
+    return all(ok(t, False) for t in fail_to_pass) and all(ok(t, True) for t in pass_to_pass)
 
 
 def _passes(mode: str, exit_code: int, report: TestReport | None) -> bool:

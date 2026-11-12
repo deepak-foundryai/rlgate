@@ -48,6 +48,16 @@ class Machine(ABC):
     def close(self) -> None:
         """Release it (delete the container / sandbox). Idempotent."""
 
+    def keepalive(self) -> None:
+        """Tell the backend it is still in use (a cloud sandbox left idle is stopped)."""
+
+    def alive(self) -> bool:
+        """Still there to run commands (a cloud backend may have removed it)."""
+        try:
+            return self.exec("true", timeout=60).exit_code == 0
+        except Exception:  # noqa: BLE001 - any failure to reach it means it's gone
+            return False
+
     def check(self, cmd: str, *, what: str, timeout: int = 900, cwd: str | None = None) -> str:
         r = self.exec(cmd, timeout=timeout, cwd=cwd)
         if r.exit_code != 0:
@@ -76,6 +86,20 @@ def upload_dir(m: Machine, local: Path, remote: str, *, replace: bool = False) -
                 f"&& rm -f {dest}", what=f"upload to {remote}", timeout=600)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def pack_dir(local: Path, into: Path) -> Path:
+    """``local``'s contents as a .tgz inside the folder ``into`` (the caller removes it)."""
+    tgz = into / "d.tgz"
+    with tarfile.open(tgz, "w:gz") as tf:
+        for child in sorted(local.iterdir()) if local.is_dir() else []:
+            tf.add(child, arcname=child.name)
+    return tgz
+
+
+def held_out_dest(dest: str, workdir: str | None) -> str:
+    """Where a held-out folder lands: absolute as given, else under the workdir."""
+    return dest if dest.startswith("/") else f"{(workdir or '/').rstrip('/')}/{dest}"
 
 
 def upload_file(m: Machine, local: Path, remote: str) -> None:

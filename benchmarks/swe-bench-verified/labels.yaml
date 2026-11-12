@@ -6,7 +6,7 @@ versions:
 - HF SWE-bench/SWE-bench_Verified
 - images swebench/sweb.eval.x86_64.*:v1 (leaky) and :v2 (fixed)
 runnable_by_rlgate: 'yes'
-how_to_run: SWE-style rows in `<out>/swe-bench-verified/<benchmark>.jsonl`; `--layout swebench`; needs the repo checked out per row
+how_to_run: SWE-style rows in `<out>/swe-bench-verified/<benchmark>.jsonl`; `rlgate check <out>/swe-bench-verified -j 8` (each row's eval script and log parser, graded as SWE-bench grades)
 datasets:
   swe-bench-verified:
     hf: SWE-bench/SWE-bench_Verified

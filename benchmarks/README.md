@@ -19,8 +19,8 @@ This folder is a labelled test set for rlgate built from **public audits of RL e
 | [multi-swe-rl](multi-swe-rl/) | HF ByteDance-Seed/Multi-SWE-RL data_20240601_20250331; HF PrimeIntellect/Multi-SWE-RL-Verified | 14 | 0 | 1 / 6 | 2 | 2 | partial |
 | [openswe](openswe/) | HF GAIR/OpenSWE (gated) | 2 | 0 | 0 / 2 | 0 | 1 | partial |
 | [r2e-gym](r2e-gym/) | HF PrimeIntellect/R2E-Gym-Subset-Verified (split dropped) | 1 | 0 | 0 / 1 | 1 | 1 | partial |
-| [swe-bench](swe-bench/) | HF princeton-nlp/SWE-bench, SWE-bench_Lite (images :v1 only) | 13 | 0 | 0 / 5 | 2 | 3 | yes |
-| [swe-bench-multilingual](swe-bench-multilingual/) | HF SWE-bench/SWE-bench_Multilingual | 11 | 3 | 0 / 5 | 2 | 2 | partial |
+| [swe-bench](swe-bench/) | HF SWE-bench/SWE-bench, SWE-bench_Lite (images :v1 only) | 13 | 0 | 0 / 5 | 2 | 3 | yes |
+| [swe-bench-multilingual](swe-bench-multilingual/) | HF SWE-bench/SWE-bench_Multilingual | 11 | 3 | 0 / 5 | 2 | 2 | yes |
 | [swe-bench-pro](swe-bench-pro/) | HF ScaleAI/SWE-bench_Pro config v1 (tag v1.0); scaleapi/SWE-bench_Pro-os v2/tasks (V2) | 21 | 3 | 1 / 15 | 5 | 8 | partial |
 | [swe-bench-verified](swe-bench-verified/) | HF SWE-bench/SWE-bench_Verified; images swebench/sweb.eval.x86_64.*:v1 (leaky) and :v2 (fixed) | 56 | 13 | 5 / 23 | 6 | 7 | yes |
 | [swe-gym](swe-gym/) | HF SWE-Gym/SWE-Gym | 9 | 2 | 0 / 5 | 1 | 2 | yes |
@@ -70,7 +70,7 @@ Needs Python 3, PyYAML and git; `huggingface_hub` (+ `pyarrow`) for HF rows; `do
 ```
 rlgate check rlgate-benchmarks/terminal-bench-2 -j 8
 rlgate check rlgate-benchmarks/deepswe -j 8
-rlgate check rlgate-benchmarks/swe-bench-verified/swe-bench-verified.jsonl --layout swebench -j 8
+rlgate check rlgate-benchmarks/swe-bench-verified -j 8
 ```
 
 Each folder's README states the layout. Scoring a single-function benchmark (MBPP, HumanEval, BigCodeBench) uses the generated `task.rlgate.yaml` per task.

@@ -19,7 +19,8 @@ from rlgate.sandbox.base import ExecResult
 from rlgate.sandbox.machine import Machine, changed_files
 from rlgate.sandbox.staged import EnvProvider, StagedSandbox, tree_patch
 
-_PREFIXES = ("/app", "/tests", "/logs", "/solution", "/tmp", "/results", "/grading")
+_PREFIXES = ("/app", "/tests", "/logs", "/solution", "/tmp", "/results", "/grading",
+             "/testbed", "/rlgate-swe", "/rlgate-submission")
 _ABS = re.compile(r"(?<![\w/.$-])(" + "|".join(map(re.escape, _PREFIXES)) + r")(?=/|\s|$|'|\"|;)")
 
 

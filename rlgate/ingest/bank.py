@@ -1,10 +1,11 @@
 """A task *bank* is many tasks at once. Three ways to produce them, none touching the core:
 
   1. discover: a directory tree of ``task.rlgate.yaml`` descriptors (zero config);
-  2. a declarative mapping — a bundled ``--layout`` preset (mimo/swebench/deepswe) or a
+  2. a declarative mapping — a bundled ``--layout`` preset (mimo/deepswe) or a
      user-supplied ``bank.rlgate.yaml`` for any other layout (config, not code); the
-     ``harbor`` preset is the native Harbor loader (``ingest.harbor``), because that
-     format's semantics (separate graders, artifacts, reward files) aren't a mapping;
+     ``harbor`` and ``swebench`` presets are native loaders (``ingest.harbor``,
+     ``ingest.swe``), because those formats' semantics (separate graders, artifacts,
+     reward files; held-out eval scripts and per-test resolution) aren't a mapping;
   3. an entry-point Python adapter (``rlgate.adapters`` group) — the escape hatch for layouts
      a mapping can't express.
 
@@ -39,6 +40,9 @@ def detect_layout(target: str | Path) -> str | None:
     if (p / "envs").is_dir():
         return "mimo"
     from rlgate.ingest import harbor as _harbor
+    from rlgate.ingest import swe as _swe
+    if not _harbor.is_task_dir(p) and _swe.is_bank(p):
+        return "swebench"
     if _harbor.is_task_dir(p) or (p / "tasks").is_dir() and any(
             _harbor.is_task_dir(d) for d in (p / "tasks").iterdir()):
         return "harbor"
@@ -67,6 +71,9 @@ def load_bank(target: str | Path, preset: str | None = None,
     elif preset == "harbor":
         from rlgate.ingest import harbor
         tasks = harbor.load_bank(target)
+    elif preset == "swebench":
+        from rlgate.ingest import swe
+        tasks = swe.load_bank(target)
     elif preset:
         from rlgate.ingest.presets import load_preset
         tasks = load_preset(preset).resolve_all(target)

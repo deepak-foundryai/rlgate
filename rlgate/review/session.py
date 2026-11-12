@@ -116,7 +116,8 @@ class Session:
         register_models(ms.info)
         panel = models or ms.panel()
         base = {"timeout_s": ms.timeout_s, "max_retries": ms.max_retries,
-                    "max_tokens": ms.max_tokens, "extra": dict(ms.extra)}
+                "answer_deadline_s": ms.answer_timeout_s,
+                "max_tokens": ms.max_tokens, "extra": dict(ms.extra)}
         return cls(panel, votes=ms.votes, min_confidence=ms.min_confidence,
                    author=ms.author, budget_usd=ms.budget_usd,
                    client=lambda m: LLM(model=m, **base),

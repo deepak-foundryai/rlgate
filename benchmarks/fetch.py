@@ -304,11 +304,44 @@ def git_export(t, lock):
 
 
 # -------------------------------------------------------------------------------------------- HF
+_NET_CHECKED = False
+
+
+def prefer_ipv4_if_ipv6_is_broken(host="huggingface.co"):
+    """On networks where IPv6 routes are advertised but don't work, Python tries each IPv6
+    address first and waits on it (curl falls back within milliseconds). If IPv6 can't
+    connect to ``host`` in a few seconds while IPv4 can, use IPv4 for this fetch."""
+    global _NET_CHECKED
+    if _NET_CHECKED:
+        return
+    _NET_CHECKED = True
+    import socket
+
+    def reaches(family):
+        try:
+            addr = socket.getaddrinfo(host, 443, family, socket.SOCK_STREAM)[0][4]
+            with socket.socket(family, socket.SOCK_STREAM) as s:
+                s.settimeout(3)
+                s.connect(addr)
+            return True
+        except OSError:
+            return False
+
+    if not reaches(socket.AF_INET6) and reaches(socket.AF_INET):
+        real = socket.getaddrinfo
+
+        def v4_only(*a, **kw):
+            return [r for r in real(*a, **kw) if r[0] == socket.AF_INET] or real(*a, **kw)
+        socket.getaddrinfo = v4_only
+        print("  (IPv6 to huggingface.co doesn't connect here; using IPv4)", file=sys.stderr)
+
+
 def hf_rows(ds, patterns, lock_key, lock):
     try:
         from huggingface_hub import snapshot_download
     except ImportError:
         sys.exit("huggingface_hub is needed for HF rows: pip install huggingface_hub pyarrow")
+    prefer_ipv4_if_ipv6_is_broken()
     local = snapshot_download(repo_id=ds["hf"], repo_type="dataset", revision=ds["revision"],
                               allow_patterns=patterns, cache_dir=str(CACHE / "hf"))
     lock[lock_key] = {"hf": ds["hf"], "revision": ds["revision"], "local": local}
@@ -389,6 +422,29 @@ def write_single_fn(t, row, ds):
     (dest / "task.rlgate.yaml").write_text(yaml.safe_dump(spec, sort_keys=False))
 
 
+_TWINS = {}
+
+
+def with_eval_from(row, ds, lock):
+    """A row that reuses another dataset's grading (ImpossibleBench rows are SWE-bench
+    Verified instances with a mutated test patch): take the twin's eval script, log parser
+    and eval type, and put this row's test patch where the twin's original one was."""
+    name = ds["eval_from"]
+    twin_ds = load("all")["datasets"][name]
+    if name not in _TWINS:
+        _TWINS[name] = {str(r[twin_ds["id_field"]]): r
+                        for r in hf_rows(twin_ds, twin_ds["files"], f"hf:{name}", lock)}
+    twin = _TWINS[name].get(str(row["instance_id"]))
+    if twin is None:
+        raise RuntimeError(f"{name}: no row {row['instance_id']!r} to take the eval script from")
+    script, original = twin["eval_script"], row.get("original_test_patch") or twin["test_patch"]
+    if original not in script:
+        raise RuntimeError(f"{name}: the original test patch is not in {row['instance_id']}'s "
+                           "eval script (refusing to guess where the mutated one goes)")
+    return {**row, "eval_script": script.replace(original, row["test_patch"]),
+            "log_parser": twin["log_parser"], "eval_type": twin.get("eval_type") or "pass_and_fail"}
+
+
 def fetch_hf(tasks, manifest, lock, pull):
     ds_map = manifest["datasets"]
     groups = defaultdict(list)
@@ -425,6 +481,13 @@ def fetch_hf(tasks, manifest, lock, pull):
                 FAILED.append((t["id"], str(e)))
                 continue
             row = {k: v for k, v in row.items()}
+            if ds.get("eval_from"):
+                try:
+                    row = with_eval_from(row, ds, lock)
+                except Exception as e:  # noqa: BLE001 - keep going; report at the end
+                    print(f"  ! {t['id']}: {e}", file=sys.stderr)
+                    FAILED.append((t["id"], str(e)))
+                    continue
             img = image_for(ds, row, f.get("image_tag"))
             if img:
                 row["image_name"] = img

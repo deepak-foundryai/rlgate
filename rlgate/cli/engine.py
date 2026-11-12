@@ -10,6 +10,7 @@ import concurrent.futures as cf
 import logging
 import re
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
@@ -91,6 +92,10 @@ def load_target(target: str, source: Source | None = None) -> tuple[str, list[Ta
 
 
 def task_root(task: Task) -> Path:
+    if task.origin is None and task.source == "swebench" and task.meta.get("config_file"):
+        # a row of a JSONL bank: its file is what the user points at (its workspace is in
+        # an image; repo_dir is only a stand-in)
+        return Path(task.meta["config_file"])
     return waivers.task_root(task.origin or task.repo_dir)
 
 
@@ -485,7 +490,8 @@ def check_bank(tasks: list[Task], target: str, *, quick: bool, cfg: S.Settings, 
                source: Source | None = None, step: int | None = None,
                start: int | None = None, keep_going: bool = False,
                parallel: bool = False, workers: int | None = None,
-               depth: str | None = None, review: Any = None
+               depth: str | None = None, review: Any = None,
+               on_done: Callable[[TaskView], None] | None = None
                ) -> tuple[list[TaskView], str, float]:
     from rlgate.core.registry import discover
 
@@ -517,6 +523,12 @@ def check_bank(tasks: list[Task], target: str, *, quick: bool, cfg: S.Settings, 
         why = v.error.splitlines()[0] if v.error else (
             ", ".join(bad[:6]) + (f" +{len(bad) - 6} more" if len(bad) > 6 else ""))
         ui.task_line(v.task_id, v.verdict, secs, why)
+        if on_done is not None:             # saved now: a stopped run keeps finished tasks
+            try:
+                on_done(v)
+            except OSError as e:
+                logging.getLogger("rlgate.run").warning(
+                    "could not save %s's result: %s", v.task_id, e)
         return v
 
     def _one(task: Task) -> TaskView:
@@ -539,10 +551,16 @@ def check_bank(tasks: list[Task], target: str, *, quick: bool, cfg: S.Settings, 
     views: list[TaskView] = []
     with ui.task_board(len(tasks), jobs), ui.no_steps():
         if jobs > 1 and len(tasks) > 1:
-            with cf.ThreadPoolExecutor(max_workers=jobs) as ex:
+            ex = cf.ThreadPoolExecutor(max_workers=jobs)
+            try:
                 futs = {ex.submit(one, t): t for t in tasks}
                 for fut in cf.as_completed(futs):
                     views.append(shown(*fut.result()))
+            except KeyboardInterrupt:
+                # don't wait for tasks blocked in network calls; main() cleans up and exits
+                ex.shutdown(wait=False, cancel_futures=True)
+                raise
+            ex.shutdown(wait=True)
         else:
             views.extend(shown(*one(t)) for t in tasks)
     views.sort(key=lambda v: v.task_id)

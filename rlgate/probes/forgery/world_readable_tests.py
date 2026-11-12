@@ -20,26 +20,37 @@ class WorldReadableTests(Probe):
         doc="/tests (held-out sources, scorer) is readable by the candidate UID.",
     )
 
-    # The directory holding graded sources; overridable via task.meta without special-casing.
-    def _tests_dir(self, task: Task) -> str:
-        return task.meta.get("tests_dir", "tests")
+    def _held_out(self, task: Task) -> list[str]:
+        """Where the held-out material lives. A grader that brings it in only at grading
+        (``inject``: Harbor's /tests, SWE-bench's eval script) names it; otherwise the
+        workspace's tests folder (``meta["tests_dir"]``) is what the grader reads."""
+        dests = [dest for _, dest in task.grader.inject]
+        return dests or [task.meta.get("tests_dir", "tests")]
 
     def run(self, task: Task, ctx: ProbeContext) -> list[Finding]:
-        tdir = self._tests_dir(task)
+        # the agent's view: an overlay before grading. Held-out folders that arrive only at
+        # grading aren't there, so this fires only when the image (or the workspace) already
+        # holds them readable. A repo's own tests/ folder isn't held out and isn't checked.
+        out = []
         with ctx.sandbox.overlay(None) as ovl:
-            perms = ovl.read_perms(tdir)
-        if perms.world_readable:
-            return [Finding(
-                probe_id=self.meta.id,
-                title=f"{tdir}/ is world-readable; held-out names leak at runtime",
-                severity=Severity.HIGH,
-                verdict=VerdictTier.CONFIRMED,
-                location=tdir,
-                evidence=Evidence(
-                    kind="perms",
-                    detail=f"mode={perms.mode:#o}",
-                    replay=f"rlgate check {task.origin or task.id} --only faked",
-                ),
-                fix_hint="chmod 700 the graded dir; delete graded sources after build.",
-            )]
-        return []
+            for tdir in self._held_out(task):
+                perms = ovl.read_perms(tdir)
+                if perms.world_readable:
+                    out.append(self._finding(task, tdir, perms.mode))
+        return out
+
+    def _finding(self, task: Task, tdir: str, mode: int) -> Finding:
+        return Finding(
+            probe_id=self.meta.id,
+            title=f"{tdir}/ is world-readable; held-out names leak at runtime",
+            severity=Severity.HIGH,
+            verdict=VerdictTier.CONFIRMED,
+            location=tdir,
+            evidence=Evidence(
+                kind="perms",
+                detail=f"{tdir} is readable before grading (mode={mode:#o})",
+                replay=f"rlgate check {task.origin or task.id} --only faked",
+            ),
+            fix_hint="keep held-out tests out of the agent's image (add them only at "
+                     "grading), or chmod 700 the graded dir.",
+        )

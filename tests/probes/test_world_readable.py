@@ -31,3 +31,16 @@ def test_silent_on_700(tmp_path):
     # step 5 alone: this grader always passes, so step 2 would stop a full run before it
     result = audit(task, k=1, only={"forgery.world_readable_tests"}, steps={5})
     assert not any(f.probe_id == "forgery.world_readable_tests" for f in result.findings)
+
+
+def test_a_repos_own_tests_folder_is_not_the_held_out_one(tmp_path):
+    # Harbor / SWE-bench bring the held-out tests in only at grading: the workspace's own
+    # tests/ (Django's test suite, say) is visible by design and isn't checked
+    import dataclasses
+    hidden = tmp_path / "hidden"
+    hidden.mkdir()
+    task = _task(tmp_path, 0o755)
+    task = dataclasses.replace(task, grader=dataclasses.replace(
+        task.grader, inject=((str(hidden), "/held-out-tests"),)))
+    result = audit(task, k=1, only={"forgery.world_readable_tests"}, steps={5})
+    assert not any(f.probe_id == "forgery.world_readable_tests" for f in result.findings)

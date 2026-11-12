@@ -158,10 +158,11 @@ class VariantEngine:
 
     def _classify(self, v: Variant, g: GradeResult) -> VariantResult:
         pass_reward = self.task.grader.pass_reward
-        # a grader that writes its own reward decides pass itself (weighted checks, gates);
-        # its per-test report is then only for fail-to-pass / pass-to-pass bookkeeping
+        # a grader that writes its own reward (weighted checks, gates) or grades named tests
+        # (SWE-bench's fail-to-pass / pass-to-pass lists) decides pass itself; its per-test
+        # report is then only for bookkeeping
         if g.report is not None and self.baseline.per_test and \
-                self.task.grader.verdict != "reward_file":
+                self.task.grader.verdict not in ("reward_file", "tests"):
             status = g.report.status_by_name
             graded = [t for t in self._gold_passing if t in status]
             broke = [t for t in graded if status[t] is TestStatus.FAIL]

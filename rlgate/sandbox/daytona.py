@@ -36,6 +36,7 @@ import tempfile
 import threading
 import time
 import uuid
+import weakref
 from collections import deque
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -50,7 +51,7 @@ from rlgate.sandbox._image import context_hash, resolve_dockerfile
 from rlgate.sandbox._patch import apply_zero_fuzz
 from rlgate.sandbox.base import ExecResult, Overlay, Perms, Sandbox
 from rlgate.sandbox.errors import BackendUnavailable
-from rlgate.sandbox.machine import Machine, MachineError
+from rlgate.sandbox.machine import Machine, MachineError, held_out_dest, pack_dir
 
 log = logging.getLogger(__name__)
 
@@ -94,6 +95,11 @@ class DaytonaOptions:
     stack_hosts: int = 4                  # compose tasks: Docker-in-Docker sandboxes per
                                           # task, one live stack each (more run at once)
     dockerd_wait_s: float = 120
+    # compose stacks pull their images inside the sandbox; anonymous Docker Hub pulls from
+    # Daytona's shared addresses hit "429 Too Many Requests", so Docker Hub images come
+    # through Google's public mirror first (Docker falls back to Docker Hub itself).
+    # registry_mirror= (empty) turns it off.
+    registry_mirror: str = "https://mirror.gcr.io"
 
     @classmethod
     def from_kwargs(cls, kwargs: dict | None) -> DaytonaOptions:
@@ -306,9 +312,29 @@ class DaytonaOverlay(Overlay):
         self.root = host_copy
         self._parent = parent
         self._owned = owned            # True: a dedicated sandbox this overlay deletes
+        self._injected: list[str] = []
 
     def exec(self, cmd: str, timeout: int = 900) -> ExecResult:
         return _run(self._sb, cmd, cwd=self._parent.opts.workdir, timeout=timeout)
+
+    def before_grade(self) -> None:
+        """Held-out tests arrive only now, after the work: each (host dir, dest) replaces
+        ``dest`` (relative = under the workdir)."""
+        for host, dest in self._parent.inject:
+            remote = held_out_dest(dest, self._parent.opts.workdir)
+            tmp = Path(tempfile.mkdtemp(prefix="rlgate-inj-"))
+            try:
+                up = f"/tmp/rlgate-inj-{uuid.uuid4().hex[:12]}.tgz"
+                self._sb.fs.upload_file(str(pack_dir(Path(host), tmp)), up)
+            finally:
+                shutil.rmtree(tmp, ignore_errors=True)
+            q = shlex.quote(remote)
+            r = _run(self._sb, f"rm -rf {q} && mkdir -p {q} && tar xzf {up} -C {q} "
+                               f"--no-same-owner && rm -f {up}", cwd=None, timeout=300)
+            if r.exit_code != 0:
+                raise DaytonaUnavailable(f"could not upload the held-out tests to {remote}: "
+                                         f"{r.stdout[-500:]}")
+            self._injected.append(remote)
 
     def read_perms(self, path: str) -> Perms:
         target = f"{self._parent.opts.workdir}/{path.lstrip('/')}"
@@ -322,9 +348,42 @@ class DaytonaOverlay(Overlay):
             if self._owned:
                 self._parent._delete(self._sb)
             else:
+                if self._injected:     # a shared sandbox: the next overlay mustn't see them
+                    _run(self._sb, "rm -rf " + " ".join(map(shlex.quote, self._injected)),
+                         cwd=None, timeout=120)
                 self._parent._release_shared()
         finally:
             shutil.rmtree(self.root, ignore_errors=True)
+
+
+_LIVE: weakref.WeakSet = weakref.WeakSet()       # every open DaytonaMachine
+_BEAT: dict = {"thread": None}
+_BEAT_LOCK = threading.Lock()
+KEEPALIVE_S = 120          # well under auto_stop_minutes (30 by default; minimum 5)
+
+
+def _keep_alive_forever() -> None:
+    """Daytona stops (and so deletes) a sandbox after ``auto_stop_minutes`` without API
+    activity. A sandbox rlgate still holds can sit that long between commands (a stack host
+    waiting for its next stack, an agent's sandbox while a slow model thinks), so every open
+    one has its idle timer reset regularly until it is closed."""
+    while True:
+        time.sleep(KEEPALIVE_S)
+        for m in list(_LIVE):
+            m.keepalive()
+
+
+def release_all(timeout: float = 90) -> int:
+    """Delete every sandbox this process still holds (on Ctrl-C), waiting at most
+    ``timeout`` seconds; returns how many. The TTLs remove any that can't be reached."""
+    open_ = list(_LIVE)
+    for m in open_:
+        try:
+            m.close()
+        except Exception as e:  # noqa: BLE001 - reach every sandbox
+            log.warning("could not delete a sandbox: %s", e)
+    settle_deletes(timeout)
+    return len(open_)
 
 
 class DaytonaMachine(Machine):
@@ -335,6 +394,12 @@ class DaytonaMachine(Machine):
         self._fleet = fleet
         self.workdir = workdir
         self._closed = False
+        _LIVE.add(self)
+        with _BEAT_LOCK:
+            if _BEAT["thread"] is None:
+                _BEAT["thread"] = threading.Thread(target=_keep_alive_forever, daemon=True,
+                                                   name="rlgate-daytona-keepalive")
+                _BEAT["thread"].start()
 
     def exec(self, cmd: str, *, cwd: str | None = None, timeout: int = 900) -> ExecResult:
         return _run(self.handle, cmd, cwd=cwd or self.workdir, timeout=timeout)
@@ -345,9 +410,17 @@ class DaytonaMachine(Machine):
     def get_file(self, remote: str, local: Path) -> None:
         self.handle.fs.download_file(remote, str(local))
 
+    def keepalive(self) -> None:
+        """Reset Daytona's idle timer (auto-stop deletes a sandbox left idle that long)."""
+        try:
+            self.handle.refresh_activity()
+        except Exception as e:  # noqa: BLE001 - best effort; alive() catches a lost one
+            log.debug("could not refresh a sandbox's activity: %s", e)
+
     def close(self) -> None:
         if not self._closed:
             self._closed = True
+            _LIVE.discard(self)
             self._fleet._delete(self.handle)
 
 
@@ -362,6 +435,7 @@ class DaytonaSandbox(Sandbox):
         self.task_id = task_id
         self.opts = options or DaytonaOptions()
         self.dind = False                  # sandboxes run dockerd (compose host)
+        self.inject: tuple[tuple[str, str], ...] = ()   # held-out (host dir, dest) pairs
         self._client_factory = client_factory
         self._slotted: set[str] = set()                # handles holding a sandbox slot
         self._deleting: list[Future] = []
@@ -382,8 +456,10 @@ class DaytonaSandbox(Sandbox):
             DaytonaOptions.from_kwargs(options)
         img = task.grader.image
         dockerfile = resolve_dockerfile(img)
-        return cls(task.repo_dir, dockerfile=dockerfile,
-                   image_ref=None if dockerfile else img, task_id=task.id, options=opts)
+        sb = cls(task.repo_dir, dockerfile=dockerfile,
+                 image_ref=None if dockerfile else img, task_id=task.id, options=opts)
+        sb.inject = tuple(task.grader.inject)
+        return sb
 
     @classmethod
     def for_env(cls, env, task_id: str,
@@ -434,7 +510,9 @@ class DaytonaSandbox(Sandbox):
 
     def _start_dockerd(self, m: DaytonaMachine) -> None:
         # the dind image's entrypoint doesn't run under Daytona: start the daemon ourselves
-        m.exec("nohup dockerd-entrypoint.sh dockerd > /var/log/dockerd.log 2>&1 &",
+        mirror = (f" --registry-mirror={shlex.quote(self.opts.registry_mirror)}"
+                  if self.opts.registry_mirror else "")
+        m.exec(f"nohup dockerd-entrypoint.sh dockerd{mirror} > /var/log/dockerd.log 2>&1 &",
                timeout=15)
         deadline = time.monotonic() + self.opts.dockerd_wait_s
         while time.monotonic() < deadline:

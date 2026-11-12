@@ -99,6 +99,12 @@ class GraderSpec:
                                      # "exit_code" | "report" (no failed test, ≥1 passed) |
                                      # "both" (exit 0 AND report clean) |
                                      # "reward_file" (the grader writes its reward to a file)
+                                     # "tests" (SWE-bench: every fail_to_pass test passes
+                                     # and no pass_to_pass test fails, in the report)
+    fail_to_pass: tuple[str, ...] = ()   # verdict=tests: must pass with the fix
+    pass_to_pass: tuple[str, ...] = ()   # verdict=tests: must keep passing (or skip)
+    eval_type: str = "pass_and_fail"     # verdict=tests: "fail_only" → only a listed test
+                                          # that FAILED counts against (SWE-bench's rule)
     reward_files: tuple[str, ...] = ()   # verdict=reward_file: tried in order; .json holds
                                           # {name: number}, anything else one number
     reward_key: str = "reward"      # which .json entry is THE reward (else the only one)
@@ -108,6 +114,9 @@ class GraderSpec:
                                      # separate grading env — the only things it ever sees
     inject: tuple[tuple[str, str], ...] = ()   # (host dir, container dir) uploaded just
                                                 # before grading: held-out tests
+    submission: str | None = None   # separate grading only: the harness grades the work
+                                     # as a patch file at this path (SWE-bench's
+                                     # model.patch); a submitted patch goes straight there
     collect: tuple[tuple[str, int], ...] = ()  # (command, timeout s) run where the agent
                                                 # worked, after it finishes and before its
                                                 # artifacts are taken (Harbor
