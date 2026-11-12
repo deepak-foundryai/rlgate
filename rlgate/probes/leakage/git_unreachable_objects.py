@@ -112,7 +112,24 @@ class GitUnreachableObjects(Probe):
                 "may be among them; without a reference solution rlgate can't tell",
                 f"git log --all --oneline --not HEAD | head; git log -1 {ref}",
                 _FIX_REFS, proven=False))
-        return out
+        return self._one(out)
+
+    @staticmethod
+    def _one(found: list[Finding]) -> list[Finding]:
+        """One finding per task: the git store is a single leak, however many ways it shows.
+        The strongest sign leads (in the order found: the fix's own file, refs past HEAD,
+        unreachable commits, other refs); the rest are listed after it."""
+        if len(found) <= 1:
+            return found
+        proven = [f for f in found if f.verdict is VerdictTier.CONFIRMED]
+        lead = (proven or found)[0]
+        rest = [f for f in found if f is not lead]
+        lead.evidence = Evidence(
+            kind=lead.evidence.kind,
+            detail=lead.evidence.detail + ". Also: " + "; ".join(
+                f.title[0].lower() + f.title[1:] for f in rest),
+            replay=lead.evidence.replay)
+        return [lead]
 
     def _f(self, title: str, detail: str, replay: str, fix: str, *,
            proven: bool = True) -> Finding:

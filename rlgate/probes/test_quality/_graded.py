@@ -15,7 +15,7 @@ import re
 import shlex
 from collections.abc import Iterator
 from fnmatch import fnmatch
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from rlgate.core.task import Task
 
@@ -31,7 +31,8 @@ def graded_tests(task: Task) -> Iterator[tuple[str, str]]:
     added = test_patch_lines(task)
     if added is not None:
         for rel, lines in sorted(added.items()):
-            yield rel, "\n".join(lines)
+            if _is_test(rel):
+                yield rel, "\n".join(lines)
         return
     roots = task.test_roots
     held = roots[1:] if len(roots) > 1 else roots
@@ -43,11 +44,16 @@ def graded_tests(task: Task) -> Iterator[tuple[str, str]]:
                 continue
 
 
-def test_patch_lines(task: Task) -> dict[str, list[str]] | None:
+def test_patch_lines(task: Task, *, include_removed: bool = False
+                     ) -> dict[str, list[str]] | None:
     """{test file: the lines its test patch adds}, from a patch embedded in a script the
     grader uploads (SWE-bench's eval script). None when there is none."""
     out: dict[str, list[str]] = {}
-    for host, _ in task.grader.inject:
+    # the grader's uploads, and the held-out test folders (Harbor's tests/ holds DeepSWE's
+    # test.patch; ``inject`` is only filled in once a sandbox stages the task)
+    hosts = dict.fromkeys([str(h) for h, _ in task.grader.inject]
+                          + [str(r) for r, _ in task.test_roots[1:]])
+    for host in hosts:
         base = Path(host)
         files = [base] if base.is_file() else (base.rglob("*") if base.is_dir() else [])
         for f in files:
@@ -61,6 +67,8 @@ def test_patch_lines(task: Task) -> dict[str, list[str]] | None:
                 continue
             current: str | None = None
             for line in text.splitlines():
+                if include_removed and line.startswith("--- a/"):
+                    out.setdefault(line[6:].split("\t", 1)[0].rstrip(), [])
                 m = _TARGET.match(line)
                 if m:
                     current = None if m.group(1) == "/dev/null" else m.group(1)
@@ -71,6 +79,14 @@ def test_patch_lines(task: Task) -> dict[str, list[str]] | None:
                 elif line.startswith(("diff --git", "EOF")):
                     current = None
     return out or None
+
+
+def _is_test(rel: str) -> bool:
+    """A test file (by name, or under a test folder) — not the runner script a patch ships."""
+    p = PurePosixPath(rel)
+    return (any(fnmatch(p.name, g) for g in TEST_GLOBS) or p.name == "conftest.py"
+            or any(d in ("tests", "test", "testing", "__tests__", "spec") for d in p.parts[:-1])
+            ) and p.suffix not in (".sh", ".bash")
 
 
 def _test_files(root: Path) -> Iterator[Path]:
@@ -102,6 +118,11 @@ def grader_text(task: Task) -> str:
                     parts.append(f.read_text(errors="ignore"))
             except OSError:
                 continue
+    # a runner script the held-out test patch adds (DeepSWE's test.sh, run as
+    # `bash /app/test.sh base|new`): its pytest lines say what is collected
+    for rel, lines in sorted((test_patch_lines(task) or {}).items()):
+        if rel.endswith((".sh", ".bash")):
+            parts.append("\n".join(lines))
     return "\n".join(parts)
 
 
@@ -122,15 +143,17 @@ def collected_paths(task: Task) -> set[str] | None:
     repository for those."""
     ids = (*task.grader.fail_to_pass, *task.grader.pass_to_pass)
     paths = {i.split("::", 1)[0].split(" ", 1)[0] for i in ids if "::" in i or i.endswith(".py")}
-    paths |= set(test_patch_lines(task) or {})
+    paths |= {p for p in test_patch_lines(task) or {} if _is_test(p)}
     known = bool(paths)
     for words in _commands(grader_text(task)):
         at = next((k for k, w in enumerate(words)
                    if _PYTEST.fullmatch(w.rsplit("/", 1)[-1])
                    or (w == "-m" and k + 1 < len(words) and words[k + 1] == "pytest")), None)
-        if at is None:
-            continue
-        args = [w for w in words[at + 1:] if w != "pytest" and not w.startswith("-")
+        if at is None or not _launches(words[:at]):
+            continue        # `require_cmd pytest`, `echo pytest`: pytest isn't what runs
+        rest = words[at + 1:]
+        args = [w for k, w in enumerate(rest) if w != "pytest" and not w.startswith("-")
+                and "=" not in w and not (k and rest[k - 1] in _VALUE_OPTS)
                 and ("/" in w or w.endswith(".py") or "::" in w or w in _TEST_DIRS
                      or (task.repo_dir / w).is_dir())]
         if not args:
@@ -148,13 +171,39 @@ def collected_paths(task: Task) -> set[str] | None:
 
 
 _TEST_DIRS = {"tests", "test", "testing"}
+# pytest options whose value is the next word, not a path to collect
+_VALUE_OPTS = {"-o", "-W", "-p", "-k", "-m", "-c", "-n", "-r", "--tb", "--rootdir",
+               "--confcutdir", "--deselect", "--ignore", "--ignore-glob", "--junitxml",
+               "--junit-xml", "--cov", "--durations", "--maxfail", "--timeout", "--log-level",
+               "--basetemp", "--override-ini", "--import-mode", "--ctrf", "--json-report-file"}
+# what may come before pytest on a line that runs it: `python -m`, `uv run`, `timeout 600`
+_LAUNCHERS = re.compile(r"(?:.*/)?(?:python[\d.]*|uv|poetry|pipenv|pdm|hatch|rye|run|coverage|"
+                        r"timeout|xvfb-run|env|nice|stdbuf|-m|-[\w-]+|\d+[smh]?)$")
+
+
+def _launches(before: list[str]) -> bool:
+    """The words before pytest only start it (nothing, or a launcher and its flags)."""
+    return all(_LAUNCHERS.match(w) for w in before)
 _SEP = re.compile(r"&&|\|\||(?<!\\);|\|")
+_DIFF_LINE = re.compile(r"^(?:[+-]|@@ |diff --git |index [0-9a-f]+\.\.)")
+_HEREDOC = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][\w]*)\1")
 
 
 def _commands(text: str) -> list[list[str]]:
     """The grader's shell commands as word lists (continued lines joined)."""
     out = []
+    end: str | None = None                 # inside a heredoc body (a patch, a file): not commands
     for line in re.sub(r"\\\n", " ", text).splitlines():
+        if end is not None:
+            if line.strip() == end:
+                end = None
+            continue
+        if _DIFF_LINE.match(line):
+            continue                       # a diff line outside a heredoc: `+ import pytest`
+        m = _HEREDOC.search(line)
+        if m:
+            end = m.group(2)
+            line = line[:m.start()]
         for part in _SEP.split(line):
             try:
                 words = shlex.split(part, comments=True)
@@ -211,6 +260,9 @@ class Removal:
 
 def grader_removes(task: Task) -> Removal:
     r = Removal()
+    # a held-out test patch is applied over the candidate's tree (git apply fails, or the
+    # grader resets the file first, when a candidate edited it): what it touches is restored
+    r.paths |= set(test_patch_lines(task, include_removed=True) or {})
     for words in _commands(grader_text(task)):
         cmd, args = words[0].rsplit("/", 1)[-1], words[1:]
         if cmd == "rm":

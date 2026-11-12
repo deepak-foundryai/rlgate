@@ -11,14 +11,28 @@ SLASH = {".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".hxx", ".cs", ".java", ".kt
          ".dart", ".php", ".zig", ".sol", ".v"}
 
 QUOTE_STR = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".php", ".dart", ".swift"}
+# `--` line comments; block comments that open/close with their own tokens
+DASH = {".lean", ".hs", ".lhs", ".elm", ".agda", ".idr", ".sql", ".lua", ".ada", ".adb", ".ads"}
+BLOCK = {".lean": ("/-", "-/"), ".hs": ("{-", "-}"), ".lhs": ("{-", "-}"), ".elm": ("{-", "-}"),
+         ".agda": ("{-", "-}"), ".idr": ("{-", "-}"), ".lua": ("--[[", "]]"),
+         ".ml": ("(*", "*)"), ".mli": ("(*", "*)"), ".fs": ("(*", "*)"), ".v": ("(*", "*)"),
+         ".sql": ("/*", "*/")}
+# markup and templates: only what sits between template delimiters is code
+MARKUP = {".html", ".htm", ".xml", ".xhtml", ".svg", ".jinja", ".jinja2", ".j2", ".njk",
+          ".hbs", ".mustache", ".ejs", ".erb", ".liquid", ".twig", ".md", ".markdown", ".rst",
+          ".adoc"}
+_DELIMS = (("{{", "}}"), ("{%", "%}"), ("<%", "%>"), ("${", "}"))
 
 
 def mask(line: str, suffix: str, state: str | None) -> tuple[str, str | None]:
     """``line`` with string literals and comments blanked (same length), so operators are
     only found in code. ``state`` carries an open Python triple-quoted string or a C block
     comment from the line before; returns the state after this line."""
+    if suffix in MARKUP:
+        return _mask_markup(line, state)
     out = list(line)
     i, n = 0, len(line)
+    block = BLOCK.get(suffix)
 
     def blank(a: int, b: int) -> None:
         for k in range(a, min(b, n)):
@@ -33,6 +47,14 @@ def mask(line: str, suffix: str, state: str | None) -> tuple[str, str | None]:
             i, state = end + len(state), None
             continue
         c = line[i]
+        if block and line.startswith(block[0], i):
+            state = block[1]
+            blank(i, i + len(block[0]))
+            i += len(block[0])
+            continue
+        if suffix in DASH and line.startswith("--", i):
+            blank(i, n)
+            break
         if suffix in HASH and c == "#":
             blank(i, n)
             break
@@ -65,3 +87,25 @@ def mask(line: str, suffix: str, state: str | None) -> tuple[str, str | None]:
                 continue
         i += 1
     return "".join(out), state
+
+
+def _mask_markup(line: str, state: str | None) -> tuple[str, str | None]:
+    """Markup and prose: everything blanked but template expressions (``{{ a > b }}``,
+    ``{% if x and y %}``); ``state`` is the closing delimiter of an open expression."""
+    out = [" "] * len(line)
+    i, n = 0, len(line)
+    while i < n:
+        if state is None:
+            hit = min(((line.find(o, i), o, c) for o, c in _DELIMS if line.find(o, i) >= 0),
+                      default=None)
+            if hit is None:
+                break
+            i, state = hit[0] + len(hit[1]), hit[2]
+            continue
+        end = line.find(state, i)
+        stop = n if end < 0 else end
+        out[i:stop] = line[i:stop]
+        if end < 0:
+            return "".join(out), state
+        i, state = end + len(state), None
+    return "".join(out), None

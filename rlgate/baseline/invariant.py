@@ -109,6 +109,7 @@ def establish(task: Task, sandbox: Sandbox, k: int = 5, workers: int = 1) -> Bas
     if ref and b.oracle >= b.pass_reward and uses_oracle_script(task, sandbox):
         ui.progress("reference changes extracted as a patch, graded alone")
         b.extracted = _extracted(task, sandbox, b)
+        b.oracle_exit = getattr(sandbox, "oracle_exit", None)
     return b
 
 
@@ -208,7 +209,11 @@ def findings(task: Task, baseline: Baseline) -> list[Finding]:
                                    "works", None, "variant", verdict=VerdictTier.REVIEW))
 
     if baseline.extracted is not None and baseline.extracted < pass_reward:
-        what = ("the reference solution changes no file in the workspace"
+        failed = baseline.oracle_exit not in (None, 0)
+        what = (f"the solution script exits {baseline.oracle_exit} (its output is in "
+                "rlgate.log), so its workspace changes can't be taken as the reference fix"
+                if gold is None and failed else
+                "the reference solution changes no file in the workspace"
                 if gold is None else
                 f"its workspace changes, applied as a patch to a fresh environment, scored "
                 f"{baseline.extracted} (want {pass_reward})")

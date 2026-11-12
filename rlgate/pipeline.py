@@ -24,6 +24,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from rlgate import ui
 from rlgate.baseline.invariant import establish
@@ -532,6 +533,13 @@ def prepare(task: Task, sandbox: Sandbox) -> Task:
     ws = getattr(sandbox, "workspace_dir", None)
     if ws is not None:
         task = replace(task, repo_dir=ws)
+        # the languages came from the build context, which for a workspace baked into an
+        # image (DeepSWE: a Dockerfile that clones the repo) holds no source at all, so the
+        # Python-only checks (a conftest hook, sitecustomize) were skipped
+        from rlgate.ingest.harbor import _languages
+        found = _languages(Path(ws))
+        if found - task.languages:
+            task = replace(task, languages=frozenset(task.languages | found))
     if task.gold_patch is None and task.oracle is not None:
         derive = getattr(sandbox, "derive_gold", None)
         if derive is not None:

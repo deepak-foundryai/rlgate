@@ -149,3 +149,16 @@ def test_an_unreachable_copy_of_the_fix_is_proven(repo):
                    text=True, check=True, capture_output=True)
     titles = [f.title for f in _run(repo, gold=FIX)]
     assert any("no branch points to" in t for t in titles)
+
+
+def test_one_leak_is_one_finding_however_many_ways_it_shows(repo):
+    """Regression (SWE-V 0.1.8): the fix's blob, unreachable commits and other refs each
+    gave a finding, so one leaky .git counted three or four times per task."""
+    _commit(repo, "a.py", "the fix", "2024-02-01T00:00:00")
+    _git(repo, "branch", "-q", "upstream")
+    _git(repo, "reset", "-q", "--hard", "HEAD~1")
+    _commit(repo, "b.py", "other", "2024-03-01T00:00:00")
+    _git(repo, "reset", "-q", "--hard", "HEAD~1")
+    [f] = _run(repo, gold=FIX)
+    assert f.verdict is VerdictTier.CONFIRMED and "a.py is already in git" in f.title
+    assert "Also: " in f.evidence.detail

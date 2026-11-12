@@ -83,8 +83,8 @@ def deep_only(t: dict) -> bool:
 def run_dirs(arg: Path) -> list[Path]:
     """One run folder, or every run in a --jobs-dir, oldest first (a later run of the same
     task replaces an earlier one)."""
-    if (arg / "result.json").exists():
-        return [arg]
+    if (arg / "result.json").exists() or any(arg.glob("tasks/*/result.json")):
+        return [arg]                  # one run (a stopped one has only tasks/*/result.json)
 
     def created(d: Path) -> str:
         try:

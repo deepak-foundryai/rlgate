@@ -30,6 +30,21 @@ _CALL_COUNT = re.compile(
     r"\.Times\(\s*\d",
 )
 _MAX = 20
+_OWN_COUNTER = re.compile(r"\bself\.call_count\s*\+?=")
+_PLACEHOLDER = re.compile(r"\{[^{}]*\}|%[-+ 0#]*\d*(?:\.\d+)?[sdifr]")
+_WORD = re.compile(r"[A-Za-z]{2,}")
+
+
+def _named(s: str, instr: str) -> bool:
+    """The instruction spells the literal out: verbatim, or with its f-string / %
+    placeholders filled in (``'{n} items found'`` against "prints `3 items found`")."""
+    s = s.lower()
+    if s in instr:
+        return True
+    parts = [re.escape(x) for x in _PLACEHOLDER.split(s)]
+    if len(parts) < 2:
+        return False
+    return re.search(r".{1,40}?".join(parts), instr) is not None
 
 
 @register
@@ -69,9 +84,11 @@ class BrittleAssertions(Probe):
             & gold_strings
         out = []
         for s in sorted(hits):
-            if " " not in s.strip():
-                continue  # an identifier/dict-key (account_id) is normal; wording is a phrase
-            if s.lower() in instr:
+            fixed = _PLACEHOLDER.sub("\0", s)
+            if " " not in s.strip() or not any(
+                    len(_WORD.findall(seg)) >= 2 for seg in fixed.split("\0")):
+                continue  # an identifier, a key, a format ('x{i}', ' + {term}'): not wording
+            if _named(s, instr):
                 continue  # the instruction names it → a real requirement, not a fingerprint
             out.append(self._f(
                 rel, "exact-string pinning",
@@ -82,8 +99,13 @@ class BrittleAssertions(Probe):
         return out
 
     def _call_counts(self, rel, text):
-        if not _CALL_COUNT.search(text):
+        hits = {m.group(0) for m in _CALL_COUNT.finditer(text)}
+        if not hits:
             return []
+        if hits <= {m for m in hits if m.startswith(".call_count")} and \
+                _OWN_COUNTER.search(text):
+            return []   # the test's own fake counts its calls: "the backend ran once" is
+            #             the behaviour under test (coalescing, caching), not a call shape
         return [self._f(
             rel, "call-count assertion",
             "pins an exact invocation count / call shape (assert_called_once, .call_count, "

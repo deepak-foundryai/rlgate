@@ -699,3 +699,23 @@ def test_the_command_line_keeps_a_time_limit_no_input_and_its_own_session():
     line = _wrap("make test", 300)
     assert "timeout -k 10 300" in line and "< /dev/null" in line
     assert "setsid $T sh -c 'make test' < /dev/null & wait $!" in line
+
+
+def test_a_transfer_that_times_out_is_tried_again(monkeypatch):
+    """Regression (0.1.8 runs): a download that spent the whole outage window timing out
+    once was never retried ("Failed to download files: The read operation timed out")."""
+    import rlgate.sandbox.daytona as dt
+    clock = iter(range(0, 10_000, 400))          # each attempt "takes" 400s
+    monkeypatch.setattr(dt.time, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(dt.time, "sleep", lambda s: None)
+    calls = []
+
+    def flaky():
+        calls.append(1)
+        if len(calls) < 3:
+            raise de.DaytonaConnectionTimeoutError("The read operation timed out")
+        return "ok"
+    assert dt._retry(flaky, attempts=3) == "ok" and len(calls) == 3
+    calls.clear()
+    with pytest.raises(de.DaytonaConnectionTimeoutError):
+        dt._retry(flaky)                          # other calls keep the time window only

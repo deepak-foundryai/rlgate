@@ -51,8 +51,11 @@ class SymbolCrossref(Probe):
     )
 
     def run(self, task: Task, ctx: ProbeContext) -> list[Finding]:
-        instr = {t.lower() for t in _IDENT.findall(task.instruction or "")}
+        instr = _named(task.instruction or "")
         internals = self._gold_internals(task) - instr - _STOP
+        # a method the fix overrides (abatch, get_graph on a new subclass) is the code
+        # base's API, already there before the change: not the reference's internals
+        internals -= _preexisting(task.repo_dir, internals)
         if not internals:
             return []
 
@@ -98,3 +101,46 @@ class SymbolCrossref(Probe):
             fix_hint="test the required behavior, not a reference-implementation internal; "
                      "or name the symbol in the instruction if it is part of the contract.",
         )
+
+
+def _named(text: str) -> set[str]:
+    """Identifiers the instruction names, also in prose: "batch-as-completed" and "batch as
+    completed" both name batch_as_completed."""
+    names = {t.lower() for t in _IDENT.findall(text)}
+    words = re.findall(r"\w+", text.replace("-", "_").lower())
+    names |= {w for w in words if len(w) >= 5}
+    for n in (2, 3, 4):
+        names |= {"_".join(words[i:i + n]) for i in range(len(words) - n + 1)}
+    return names
+
+
+_CODE = {".py", ".pyi", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".go", ".rs", ".java", ".kt",
+         ".scala", ".rb", ".php", ".cs", ".swift", ".dart", ".c", ".cc", ".cpp", ".h", ".hpp"}
+_PRUNE = {".git", "node_modules", ".venv", "venv", "__pycache__", ".tox", "dist", "build"}
+_MAX_FILES = 20_000
+_MAX_BYTES = 1_000_000
+
+
+def _preexisting(root, names: set[str]) -> set[str]:
+    """The names already defined in the pre-change repository."""
+    if not names or root is None or not root.is_dir():
+        return set()
+    pat = re.compile(r"\b(?:def|class|func|function|fn|interface|struct|type)\s+("
+                     + "|".join(sorted(map(re.escape, names))) + r")\b", re.IGNORECASE)
+    found: set[str] = set()
+    seen = 0
+    for p in root.rglob("*"):
+        if p.suffix not in _CODE or any(part in _PRUNE for part in p.relative_to(root).parts):
+            continue
+        seen += 1
+        if seen > _MAX_FILES:
+            break
+        try:
+            if not p.is_file() or p.stat().st_size > _MAX_BYTES:
+                continue
+            found |= {m.group(1).lower() for m in pat.finditer(p.read_text(errors="ignore"))}
+        except OSError:
+            continue
+        if found >= names:
+            break
+    return found

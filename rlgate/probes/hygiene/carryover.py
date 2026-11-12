@@ -48,7 +48,10 @@ class Carryover(Probe):
             for path, what in traces.items():
                 if ovl.exec(f"test -e {path}", timeout=60).exit_code == 0:
                     found.append(what)
-            if ovl.exec(f"pgrep -f {shlex.quote(tag)} >/dev/null", timeout=60).exit_code == 0:
+            # `[r]lgate-carry-…` matches the planted process but not this command's own
+            # wrappers (Linux pgrep -f matches its `timeout … sh -c pgrep …` ancestors)
+            pattern = shlex.quote(f"[{tag[0]}]{tag[1:]}")
+            if ovl.exec(f"pgrep -f {pattern} >/dev/null", timeout=60).exit_code == 0:
                 found.append("a background process")
         if not found:
             return []

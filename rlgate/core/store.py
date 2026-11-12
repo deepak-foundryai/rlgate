@@ -84,13 +84,16 @@ def step_fingerprints(task) -> dict[int, str]:
     instruction = h(task.instruction or "")
     workspace = fp([task.repo_dir]) if ws_env is None else ""
     grader = h(g.run, str(g.timeout_s), repr(g.env_vars))
+    # steps 2+ hold check results: a new rlgate version's checks must run again (the
+    # build in step 1 is the task's own, whatever rlgate looks at afterwards)
+    v = __version__
     return {
         1: h(build),
-        2: h(build, tests, solution, workspace, grader),
-        3: h(build, tests, solution, workspace),
-        4: h(build, tests, solution, workspace, grader),
-        5: h(build, tests, workspace, grader),
-        6: h(tests, solution, instruction, workspace),
+        2: h(build, tests, solution, workspace, grader, v),
+        3: h(build, tests, solution, workspace, v),
+        4: h(build, tests, solution, workspace, grader, v),
+        5: h(build, tests, workspace, grader, v),
+        6: h(tests, solution, instruction, workspace, v),
     }
 
 

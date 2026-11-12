@@ -34,6 +34,7 @@ class Baseline:
     solve_limit: float = 0.0
     # the reference's workspace changes, extracted as a patch and graded alone
     extracted: float | None = None      # its reward; None = not applicable / not run
+    oracle_exit: int | None = None      # the solution script's exit code (scripts only)
     # False: the task ships no reference solution (RL data often doesn't). Only the
     # do-nothing runs happened; ``oracle`` is a placeholder and the reference checks are off
     reference: bool = True

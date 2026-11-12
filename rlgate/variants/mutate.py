@@ -119,7 +119,8 @@ def _mutations(line: str, code: str | None = None) -> Iterator[tuple[str, str]]:
     yield from _stub_return(line, code)
 
 
-def mutate_variants(gold: Patch) -> list[Variant]:
+def mutate_variants(gold: Patch, outputs: frozenset[str] | set[str] = frozenset()
+                    ) -> list[Variant]:
     """One variant per (added line, operator, match site), capped at ``MAX_VARIANTS``."""
     lines = gold.text.splitlines(keepends=True)
     variants: list[Variant] = []
@@ -133,7 +134,8 @@ def mutate_variants(gold: Patch) -> list[Variant]:
             path = raw[4:].split("\t", 1)[0].strip().removeprefix("b/")
             hunk_idx = -1
             # build output, docs and VCS metadata (.git/logs) aren't the fix's behaviour
-            skip = path == "/dev/null" or generated(path) or _vcs_metadata(path)
+            skip = path == "/dev/null" or generated(path) or _vcs_metadata(path) \
+                or path in outputs
             suffix = PurePosixPath(path).suffix.lower()
             state = None
             continue

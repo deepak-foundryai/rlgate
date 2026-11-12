@@ -31,6 +31,7 @@ from rlgate.core.task import Task
 from rlgate.sandbox._patch import PatchConflict
 from rlgate.sandbox.base import Sandbox
 from rlgate.sandbox.parsers import TestStatus
+from rlgate.variants._outputs import solution_outputs
 from rlgate.variants.equivalence import equivalence_variants
 from rlgate.variants.mutate import mutate_variants
 from rlgate.variants.revert import Variant, revert_variants
@@ -78,8 +79,8 @@ class VariantEngine:
         assert self.task.gold_patch is not None
         with self._lock:
             if self._revert is None:
-                self._revert = self.run(revert_variants(self.task.gold_patch,
-                                                         self.task.repo_dir))
+                self._revert = self.run(revert_variants(
+                    self.task.gold_patch, self.task.repo_dir, solution_outputs(self.task)))
             return self._revert
 
     def unguarded(self) -> set[str]:
@@ -104,7 +105,7 @@ class VariantEngine:
         off-by-one, negated or dropped branch, stub-return). Survivors are REVIEW-tier — see
         ``variants/mutate.py``. Pruned as the class docstring says."""
         assert self.task.gold_patch is not None
-        variants = mutate_variants(self.task.gold_patch)
+        variants = mutate_variants(self.task.gold_patch, solution_outputs(self.task))
         total = len(variants)
         bad = self.unguarded()
         variants = [v for v in variants if v.origin.rsplit(":", 1)[0] not in bad]

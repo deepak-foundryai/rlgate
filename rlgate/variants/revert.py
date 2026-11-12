@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from rlgate.core.task import Patch
-from rlgate.variants._code import HASH, SLASH, mask
+from rlgate.variants._code import BLOCK, DASH, HASH, SLASH, mask
 
 OPERATORS_VERSION = "operators@v1"
 
@@ -31,7 +31,8 @@ def _variant_id(gold_sha: str, origin: str, operator: str) -> str:
     return hashlib.sha256(key.encode()).hexdigest()[:16]
 
 
-def revert_variants(gold: Patch, root: Path | None = None) -> list[Variant]:
+def revert_variants(gold: Patch, root: Path | None = None,
+                    outputs: frozenset[str] | set[str] = frozenset()) -> list[Variant]:
     """One variant per hunk: the gold patch with that single hunk omitted.
 
     Hunks are addressed by (file, hunk_index) from the parsed diff — stable and ordered.
@@ -43,8 +44,9 @@ def revert_variants(gold: Patch, root: Path | None = None) -> list[Variant]:
     ps = gold.patchset
     variants: list[Variant] = []
     for pf in ps:
-        if _vcs_metadata(pf.path) or generated(pf.path):
-            continue    # git's own files, build output: no test guards a hunk there
+        if _vcs_metadata(pf.path) or generated(pf.path) or pf.path in outputs:
+            continue    # git's own files, build output, what the solution script's run
+            #             wrote: no test guards a hunk there
         for i, hunk in enumerate(pf):
             if _inert(pf, i, hunk, root):
                 continue
@@ -98,7 +100,7 @@ def _inert(pf, i: int, hunk, root: Path | None) -> bool:
     blank, or comment / docstring through and through (judged with what the hunk's own
     lines show is open — a line inside a block comment or a triple-quoted string)."""
     suffix = PurePosixPath(pf.path).suffix.lower()
-    if suffix in HASH or suffix in SLASH:
+    if suffix in HASH or suffix in SLASH or suffix in DASH or suffix in BLOCK:
         if _all_quiet(hunk, suffix):
             return True
     else:

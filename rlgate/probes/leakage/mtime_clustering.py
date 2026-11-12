@@ -20,7 +20,12 @@ _PRUNE = {".git", ".hg", "node_modules", ".venv", "venv", "__pycache__", ".tox",
           # written by the image build (pip install -e ., a compile step), not injected
           "build", "dist", ".eggs", ".pytest_cache", ".mypy_cache", ".ruff_cache", "target",
           ".lake", ".gradle", "_build"}
-_BUILT = (".egg-info", ".dist-info", ".pyc", ".pyo", ".so", ".o", ".class")
+_BUILT = (".egg-info", ".dist-info", ".pyc", ".pyo", ".so", ".o", ".class", ".pyd", ".dylib",
+          ".dll", ".a", ".mo")
+# compiled from a sibling source by the build: Cython's x.pyx → x.c / x.cpp
+_FROM = {".c": (".pyx", ".py"), ".cpp": (".pyx", ".py"), ".h": (".pyx", ".pxd")}
+# written by setuptools-scm / versioneer when the package is installed
+_VERSION_FILES = {"_version.py", "version.py", "__version__.py", "_version.txt"}
 _MIN_FILES = 8          # below this there isn't enough signal to call a cluster
 _GAP_SECONDS = 120      # a cluster this much later than the bulk is suspicious
 _MAX_MINORITY = 0.5     # the late cluster must be a minority to look "injected"
@@ -34,6 +39,10 @@ def _mtimes(root: Path) -> list[tuple[str, int]]:
         if any(part in _PRUNE or part.endswith(_BUILT) for part in rel):
             continue
         if p.is_symlink() or not p.is_file():
+            continue
+        if p.name in _VERSION_FILES or any(
+                p.with_suffix(src).is_file() for src in _FROM.get(p.suffix, ())) or any(
+                p.with_name(p.name + t).is_file() for t in (".tp", ".in", ".tmpl")):
             continue
         try:
             out.append((p.relative_to(root).as_posix(), int(p.stat().st_mtime)))

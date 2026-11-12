@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.1.9 (2026-11-13)
+
+Fewer false findings, from a finding-by-finding review of SWE-bench Verified, DeepSWE and
+Terminal-Bench 4 runs against their published audits.
+
+### Fixed
+
+- **"Changes outside the submission reach the grader" (RG010) fired on every staged task
+  on Daytona.** The background-process search (`pgrep -f <tag>`) matched its own
+  `timeout … sh -c 'pgrep …'` wrappers on Linux. The pattern no longer matches itself
+  (checked live on Daytona); a file left in /tmp or the home directory is still found.
+- **The Python cheating checks never ran on tasks whose repository is cloned inside the
+  image** (DeepSWE): the task's language came from the build folder, which holds only a
+  Dockerfile, so the conftest-hook (RG201) and sitecustomize (RG205) checks were skipped.
+  The language is now read from the workspace once it is pulled out of the image.
+- **Re-checks reused results from an older rlgate.** A step's cached result now counts
+  only for the rlgate version that made it (the image build in step 1 still carries
+  over), so fixed checks run again after an upgrade without `--fresh`.
+- Uploads and downloads that time out are tried 3 times. One attempt could spend the
+  whole retry window timing out, so a slow Daytona left 7 tasks of these runs unchecked.
+- RG211 (test infrastructure the grader doesn't restore):
+  - the patch inside SWE-bench's eval script (`+ import pytest`) is no longer read as a
+    pytest run that collects everything (30+ doc and example conftests on pytest-6202);
+  - `require_cmd pytest` and option values (`-o filterwarnings='ignore::X'`) no longer
+    count as pytest runs or paths;
+  - the runner script a held-out `test.patch` adds (DeepSWE's `test.sh`) says what pytest
+    collects;
+  - files the held-out test patch touches count as restored.
+- RG103 (mutants): comments in Lean, Haskell, OCaml/Coq, Lua and SQL are masked; in HTML
+  and templates only template expressions (`{{ }}`, `{% %}`) are mutated, not prose.
+- RG101/RG103: files the solution script writes as run output (`--out results.json`,
+  `> app.log`) are not part of the fix, unless the instruction or the tests name them.
+- RG301 (fix recoverable from git): one finding per task, the other signs listed in it,
+  not three or four.
+- RG305 (late files): Cython output (`x.c` next to `x.pyx`), files rendered from
+  `.tp`/`.in` templates and setuptools-scm version files are build output.
+- RG403 (exact-string pinning): format templates (`' + {term}'`, `'x{i}'`) and formats
+  the instruction spells out (placeholders filled in) aren't pinned wording.
+- RG402 (gold-internal names): a method the fix overrides that the code base already
+  defines (`Runnable.abatch`), and names the instruction writes as prose
+  ("batch-as-completed"), aren't internals.
+- RG404 (call counts): a test's own fake counting its calls (`self.call_count += 1`) is
+  the behaviour under test, not a call shape.
+- RG009: when the solution script exits non-zero, the finding says so instead of "the
+  reference solution changes no file".
+- The graded test files a held-out `test.patch` adds are what the static test checks
+  read (DeepSWE), and a patch's runner script isn't one of them.
+- `benchmarks/score.py` reads a run that was stopped before it finished.
+
 ## 0.1.8 (2026-11-12)
 
 ### Fixed

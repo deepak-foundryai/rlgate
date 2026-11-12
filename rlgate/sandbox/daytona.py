@@ -315,6 +315,7 @@ def _run(handle, cmd: str, *, cwd: str | None, timeout: int) -> ExecResult:
 
 
 _TRANSFER_S = 300      # a file transfer that moves nothing this long is dead: retry it
+_TRANSFER_TRIES = 3    # ... this many times in all
 
 
 def _upload(handle, local: Path | str, remote: str) -> None:
@@ -322,7 +323,8 @@ def _upload(handle, local: Path | str, remote: str) -> None:
     to repeat). Daytona's default waits 30 minutes on a dropped connection; this allows
     5 minutes plus 1 s per 2 MB."""
     mb = Path(local).stat().st_size / 2**20
-    _retry(lambda: handle.fs.upload_file(str(local), remote, int(_TRANSFER_S + mb / 2)))
+    _retry(lambda: handle.fs.upload_file(str(local), remote, int(_TRANSFER_S + mb / 2)),
+           attempts=_TRANSFER_TRIES)
 
 
 def _plain(out: str | None) -> str:
@@ -386,15 +388,18 @@ def _start(proc, sid: str, req, timeout: float):
             delay = min(delay * 2, 30.0)
 
 
-def _retry(call):
+def _retry(call, *, attempts: int = 1):
     """``call()``, retried on transient API errors (network, 5xx, rate limit) for up to
-    ``_OUTAGE_S``. Only for reads and idempotent calls."""
+    ``_OUTAGE_S``, and at least ``attempts`` times in all (a file transfer can spend the whole
+    window timing out once). Only for reads and idempotent calls."""
     end, delay = time.monotonic() + _OUTAGE_S, 1.0
+    tries = 0
     while True:
+        tries += 1
         try:
             return call()
         except Exception as e:
-            if not _is_transient(e) or time.monotonic() + delay > end:
+            if not _is_transient(e) or (time.monotonic() + delay > end and tries >= attempts):
                 raise
             log.warning("Daytona call failed (%s); retrying in %.0fs", e, delay)
             time.sleep(delay)
@@ -590,7 +595,8 @@ class DaytonaMachine(Machine):
         _upload(self.handle, local, remote)
 
     def get_file(self, remote: str, local: Path) -> None:
-        _retry(lambda: self.handle.fs.download_file(remote, str(local), _TRANSFER_S))
+        _retry(lambda: self.handle.fs.download_file(remote, str(local), _TRANSFER_S),
+               attempts=_TRANSFER_TRIES)
 
     def keepalive(self) -> None:
         """Reset Daytona's idle timer (auto-stop deletes a sandbox left idle that long)."""
