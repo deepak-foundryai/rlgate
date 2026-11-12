@@ -422,11 +422,16 @@ def bank(views: list[TaskView], target: str, seconds: float, mode: str) -> None:
     worst_view = next((v for v in sorted(views, key=lambda v: (order.get(v.verdict, 0),
                                                                v.task_id))
                        if v.verdict != Q.READY and v.standalone), None)
-    nxt = worst_view.cmd("check") if worst_view else \
-        "rlgate report --format html --output report.html"
-    c.print(Text.assemble(" Next: ", (nxt, "bold")))
-    c.print(Text("       rlgate report --format html --output report.html   a filterable "
-                 "report to share", style="dim"))
+    report = "rlgate report --format html --output report.html"
+    if worst_view:
+        nxt, why = worst_view.cmd("check"), ""
+    elif mode == "quick":               # file checks only: the full run is what's left
+        nxt, why = f"rlgate check {target}", "   the full run: builds, grades, probes"
+    else:
+        nxt, why = report, "   a filterable report to share"
+    c.print(Text.assemble(" Next: ", (nxt, "bold"), (why, "dim")))
+    if nxt != report:
+        c.print(Text(f"       {report}   a filterable report to share", style="dim"))
 
 
 # -- rules + waivers -----------------------------------------------------------------------

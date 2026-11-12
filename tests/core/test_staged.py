@@ -355,3 +355,25 @@ def test_harbor_collect_entries_are_loaded(tmp_path):
         '[[verifier.collect]]\ncommand = "git diff > /logs/artifacts/model.patch"\n'
         'timeout_sec = 120.0\n[environment]\ndocker_image = "x:1"\n')
     assert harbor.load(d).grader.collect == (("git diff > /logs/artifacts/model.patch", 120),)
+
+
+def test_tree_patch_names_added_and_deleted_files_like_git(tmp_path):
+    # TB2 mteb-leaderboard's reference adds "... copy.json": the folder diff wrote
+    # "diff --git b/p b/p", which patch parsers can't split when p has a space
+    from unidiff import PatchSet
+    a, b = tmp_path / "a", tmp_path / "b"
+    (a / "r").mkdir(parents=True)
+    (b / "r").mkdir(parents=True)
+    (a / "r" / "old one.txt").write_text("x\n")
+    (b / "r" / "x copy.json").write_text("{}\n")
+    patch = tree_patch(a, b)
+    assert patch is not None
+    assert "diff --git a/r/x copy.json b/r/x copy.json\n" in patch
+    assert "diff --git a/r/old one.txt b/r/old one.txt\n" in patch
+    files = {p.path: (p.is_added_file, p.is_removed_file) for p in PatchSet(patch)}
+    assert files == {"r/x copy.json": (True, False), "r/old one.txt": (False, True)}
+    from rlgate.sandbox._patch import apply_zero_fuzz
+    c = tmp_path / "c"
+    shutil.copytree(a, c)
+    apply_zero_fuzz(c, patch)
+    assert changed_files(b, c) == ([], [])

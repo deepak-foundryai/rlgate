@@ -28,6 +28,7 @@ Docker-in-Docker sandbox per task) and ``docker`` (a local daemon; compose via t
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import shlex
 import shutil
@@ -178,10 +179,16 @@ class StackHosts:
     RECHECK_IDLE_S = 600        # a host unused this long is checked before it is reused
                                 # (the backend keeps it alive; this catches a lost one)
 
+    ROOM_POLL_S = 15            # how often a stack waiting for room re-checks the account
+
     def __init__(self, make: Callable[[], Machine], cap: int, *, exclusive: bool = True,
-                 wait_log_s: float = 120) -> None:
+                 wait_log_s: float = 120,
+                 can_grow: Callable[[], bool] | None = None) -> None:
         self._make = make
         self.cap = max(1, cap)
+        # extra hosts only add speed: one is started only while the account has room for
+        # it; otherwise the stack waits for a host the task already has (slower, not failed)
+        self._can_grow = can_grow or (lambda: True)
         self.exclusive = exclusive
         self._wait_log_s = wait_log_s
         self._hosts: list[_StackHost] = []
@@ -205,17 +212,26 @@ class StackHosts:
                 if free or (not self.exclusive and ready):
                     h = min(free or ready, key=lambda h: h.busy)
                     break
+                tight = False
                 if len(self._hosts) < self.cap:
-                    h = _StackHost(len(self._hosts))
-                    self._hosts.append(h)        # reserved; made outside the lock
-                    break
+                    if not self._hosts or self._can_grow():
+                        h = _StackHost(len(self._hosts))
+                        self._hosts.append(h)        # reserved; made outside the lock
+                        break
+                    tight = True
                 if held and ready:
                     h = min(ready, key=lambda h: h.busy)
                     log.info("stack host %d shared: this thread already holds one", h.n)
                     break
-                if not self._cond.wait(timeout=self._wait_log_s):
+                if not self._cond.wait(timeout=self.ROOM_POLL_S if tight
+                                       else self._wait_log_s) and not tight:
                     log.info("waiting %.0fs for a free stack host (%d in use)",
                              time.monotonic() - waited, len(self._hosts))
+                elif tight and time.monotonic() - waited > self._wait_log_s:
+                    log.info("the Daytona account is near its limits: waiting for one of "
+                             "this task's %d stack hosts instead of starting another",
+                             len(self._hosts))
+                    waited = time.monotonic()
             h.busy += 1
         if h.machine is not None and h.busy == 1 and \
                 time.monotonic() - h.used > self.RECHECK_IDLE_S and not h.machine.alive():
@@ -285,7 +301,7 @@ class ComposeEnv(EnvProvider):
     def __init__(self, spec: EnvSpec, key: str, hosts: StackHosts) -> None:
         super().__init__(spec)
         assert spec.compose is not None
-        self.key = _slug(key)[:40]
+        self.key = _stack_key(key)
         self.hosts = hosts
         self.remote_dir = f"/rlgate/{self.key}"
         rd = self.remote_dir
@@ -376,6 +392,10 @@ class ComposeEnv(EnvProvider):
             if host.exec(f"{cmd} up -d --no-build", timeout=900).exit_code == 0:
                 last = self._wait_ready(m)
         if last is None:
+            if self.spec.workdir:
+                # the service's workdir may not exist yet (a grader's /grading, filled when
+                # the tests are uploaded); every later command runs there
+                m.exec(f"mkdir -p {shlex.quote(self.spec.workdir)}", cwd="/", timeout=60)
             return m
         state = _stack_state(host, cmd)
         m.close()
@@ -387,7 +407,10 @@ class ComposeEnv(EnvProvider):
         """None once a command runs in the service; else what the last attempt said."""
         last = ""
         for _ in range(tries):
-            r = m.exec("true", timeout=30)
+            # from /: the service's workdir can be a folder that only appears later (a
+            # grader's /grading, made when the tests are uploaded) — running there fails
+            # with "chdir … no such file" however ready the service is
+            r = m.exec("true", cwd="/", timeout=30)
             if r.exit_code == 0:
                 return None
             last = f"exit {r.exit_code}: {(r.stdout + r.stderr).strip()[-500:]}"
@@ -396,6 +419,16 @@ class ComposeEnv(EnvProvider):
 
     def close(self) -> None:
         pass                # the hosts are owned (and closed) by the sandbox
+
+
+def _stack_key(key: str) -> str:
+    """A compose project / image-tag name for ``key``: readable, at most 40 characters, and
+    unique — cutting a long task id to 40 gave its workspace and grader stacks (and two
+    long-named tasks) the same name, so a grader came up from the agent's image."""
+    slug = _slug(key)
+    if len(slug) <= 40:
+        return slug
+    return f"{slug[:31].rstrip('-_.')}-{hashlib.sha256(key.encode()).hexdigest()[:8]}"
 
 
 def _stack_state(host: Machine, cmd: str) -> str:
@@ -754,7 +787,7 @@ class StagedSandbox(Sandbox):
                         state["built"] = True
                 return fleet.machine()
 
-            pool = StackHosts(make, opts.stack_hosts)
+            pool = StackHosts(make, opts.stack_hosts, can_grow=fleet.has_room)
             outer = pool.close
 
             def close() -> None:
@@ -923,13 +956,33 @@ def tree_patch(base: Path, new: Path) -> str | None:
             raise RuntimeError("git diff failed: "
                                + proc.stderr.decode("utf-8", "replace").strip())
         try:
-            return proc.stdout.decode("utf-8") or None
+            return _git_headers(proc.stdout.decode("utf-8")) or None
         except UnicodeDecodeError as e:
             raise RuntimeError(
                 "the reference solution's changes can't be turned into a text patch "
                 f"(a file name that isn't UTF-8?): {e}") from None
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def _git_headers(text: str) -> str:
+    """``diff --git a/p b/p`` as git writes it in a repository. Diffing two folders names an
+    added file ``b/p b/p`` and a deleted one ``a/p a/p``; with a space in the name, patch
+    parsers can't split that header ("Target without source")."""
+    out = []
+    for line in text.splitlines(keepends=True):
+        if line.startswith("diff --git "):
+            body = line[len("diff --git "):].rstrip("\n")
+            half = (len(body) - 1) // 2
+            left, right = body[:half], body[half + 1:]
+            q = '"' if left.startswith('"') else ""
+            if body[half] == " " and left[len(q) + 2:] == right[len(q) + 2:] \
+                    and left[len(q):len(q) + 2] in ("a/", "b/") \
+                    and right[len(q):len(q) + 2] in ("a/", "b/"):
+                rel = left[len(q) + 2:]
+                line = f"diff --git {q}a/{rel} {q}b/{rel}\n"
+        out.append(line)
+    return "".join(out)
 
 
 def _utf8(p: Path) -> bool:

@@ -25,7 +25,14 @@ class WorldReadableTests(Probe):
         (``inject``: Harbor's /tests, SWE-bench's eval script) names it; otherwise the
         workspace's tests folder (``meta["tests_dir"]``) is what the grader reads."""
         dests = [dest for _, dest in task.grader.inject]
-        return dests or [task.meta.get("tests_dir", "tests")]
+        if dests:
+            return dests
+        g = task.grader
+        if g.env is not None and g.env != task.workspace_env:
+            # graded in its own image (Harbor's tests/Dockerfile, a grader service): the
+            # held-out tests live there, and the agent's tests/ is the repo's visible suite
+            return []
+        return [task.meta.get("tests_dir", "tests")]
 
     def run(self, task: Task, ctx: ProbeContext) -> list[Finding]:
         # the agent's view: an overlay before grading. Held-out folders that arrive only at

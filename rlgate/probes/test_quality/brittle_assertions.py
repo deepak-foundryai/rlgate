@@ -14,21 +14,20 @@ Both are necessary-condition proxies (an alternative solution *may* fail), so RE
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 from rlgate.core.context import ProbeContext
 from rlgate.core.finding import Evidence, Finding, Severity, VerdictTier
 from rlgate.core.probe import Probe, ProbeKind, ProbeMeta
 from rlgate.core.registry import register
 from rlgate.core.task import Task
+from rlgate.probes.test_quality._graded import graded_tests
 
-_TEST_GLOBS = ("test_*.py", "*_test.py", "*_test.go", "*.test.ts", "*.test.js",
-               "*.spec.ts", "*.spec.js")
-_PRUNE = {".git", ".hg", "node_modules", ".venv", "venv", "__pycache__", ".tox"}
-_STRING = re.compile(r"(['\"])([^'\"\\]{4,})\1")
+# whole literals, left to right: a pattern without quotes inside ran from one string's
+# closing quote to the next one's opening quote ("'] == '")
+_STRING = re.compile(r"""(['"])((?:\\.|(?!\1)[^\\\n])*)\1""")
 _CALL_COUNT = re.compile(
-    r"assert_called_once|assert_called_with|\.call_count\s*==|times\s*=\s*\d|"
-    r"toHaveBeenCalledTimes|\.mock\.calls\.length|Times\(\s*\d",
+    r"assert_called_once|\.call_count\s*==|toHaveBeenCalledTimes|\.mock\.calls\.length|"
+    r"\.Times\(\s*\d",
 )
 _MAX = 20
 
@@ -47,11 +46,7 @@ class BrittleAssertions(Probe):
         gold_strings = self._gold_strings(task)
         instr = (task.instruction or "").lower()
         findings: list[Finding] = []
-        for test_file, rel in self._all_test_files(task):
-            try:
-                text = test_file.read_text(errors="ignore")
-            except OSError:
-                continue
+        for rel, text in graded_tests(task):
             findings += self._pinned_strings(rel, text, gold_strings, instr)
             findings += self._call_counts(rel, text)
             if len(findings) >= _MAX:
@@ -65,12 +60,13 @@ class BrittleAssertions(Probe):
         for pf in task.gold_patch.patchset:
             for hunk in pf:
                 added += [ln.value for ln in hunk if ln.is_added]
-        return {m.group(2) for m in _STRING.finditer("\n".join(added))}
+        return {m.group(2) for m in _STRING.finditer("\n".join(added)) if len(m.group(2)) >= 4}
 
     def _pinned_strings(self, rel, text, gold_strings, instr):
         if not gold_strings:
             return []
-        hits = {m.group(2) for m in _STRING.finditer(text)} & gold_strings
+        hits = {m.group(2) for m in _STRING.finditer(text) if len(m.group(2)) >= 4} \
+            & gold_strings
         out = []
         for s in sorted(hits):
             if " " not in s.strip():
@@ -106,18 +102,3 @@ class BrittleAssertions(Probe):
             evidence=Evidence(kind="code_line", detail=detail, replay=f"cat {rel}"),
             fix_hint=fix,
         )
-
-    def _all_test_files(self, task: Task):
-        for root, prefix in task.test_roots:
-            for p in self._test_files(root):
-                yield p, prefix + p.relative_to(root).as_posix()
-
-    def _test_files(self, root: Path):
-        seen: set[Path] = set()
-        for glob in _TEST_GLOBS:
-            for p in root.rglob(glob):
-                if p in seen or any(part in _PRUNE for part in p.relative_to(root).parts):
-                    continue
-                if p.is_file():
-                    seen.add(p)
-                    yield p

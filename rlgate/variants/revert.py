@@ -7,8 +7,10 @@ construction). Generation is a pure function of the patch bytes: no RNG, no sear
 
 from __future__ import annotations
 
+import ast
 import hashlib
 from dataclasses import dataclass
+from pathlib import Path, PurePosixPath
 
 from rlgate.core.task import Patch
 
@@ -28,17 +30,23 @@ def _variant_id(gold_sha: str, origin: str, operator: str) -> str:
     return hashlib.sha256(key.encode()).hexdigest()[:16]
 
 
-def revert_variants(gold: Patch) -> list[Variant]:
+def revert_variants(gold: Patch, root: Path | None = None) -> list[Variant]:
     """One variant per hunk: the gold patch with that single hunk omitted.
 
     Hunks are addressed by (file, hunk_index) from the parsed diff — stable and ordered.
+    Skipped, since leaving them out can't be "a part of the fix": build output and caches
+    (a patch derived from a solution script picks up what it compiled), and hunks that only
+    touch blank lines, comments or (Python, given the pre-change tree ``root``) docstrings
+    and formatting.
     """
     ps = gold.patchset
     variants: list[Variant] = []
     for pf in ps:
-        if _vcs_metadata(pf.path):
-            continue    # git's own files (ORIG_HEAD, logs, index): no test guards a hunk there
-        for i, _hunk in enumerate(pf):
+        if _vcs_metadata(pf.path) or generated(pf.path):
+            continue    # git's own files, build output: no test guards a hunk there
+        for i, hunk in enumerate(pf):
+            if _inert(pf, i, hunk, root):
+                continue
             origin = f"{pf.path}#hunk{i}"
             text = _patch_without(ps, pf.path, i)
             if text is None:
@@ -50,6 +58,100 @@ def revert_variants(gold: Patch) -> list[Variant]:
                 origin=origin,
             ))
     return variants
+
+
+_GEN_DIRS = {".lake", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
+             "node_modules", ".gradle", ".tox", "CMakeFiles", ".cache", ".hypothesis"}
+_GEN_SUFFIXES = {".pyc", ".pyo", ".o", ".obj", ".a", ".class", ".aux", ".glob", ".vo",
+                 ".vok", ".vos", ".olean", ".ilean", ".trace", ".hash", ".d", ".log"}
+_COMMENT = {
+    "#": (".py", ".sh", ".bash", ".rb", ".pl", ".r", ".yaml", ".yml", ".toml", ".cfg",
+          ".ini", ".mk", ".cmake", ".jl", ".nim", ".ex", ".exs"),
+    "//": (".c", ".h", ".cc", ".cpp", ".hpp", ".cxx", ".js", ".mjs", ".cjs", ".ts", ".tsx",
+           ".jsx", ".java", ".go", ".rs", ".cs", ".kt", ".swift", ".scala", ".php", ".dart",
+           ".zig", ".v", ".sol"),
+    "--": (".lean", ".hs", ".sql", ".lua", ".elm", ".ada"),
+}
+
+
+_DOC_SUFFIXES = {".md", ".rst", ".adoc", ".txt"}
+_DOC_DIRS = {"docs", "doc"}
+_LINT_PREFIXES = (".eslintrc", ".prettierrc", ".editorconfig", ".stylelintrc", ".flake8",
+                  ".pylintrc", ".rubocop", ".golangci", ".markdownlint", ".codespellrc")
+
+
+def generated(path: str) -> bool:
+    """Not part of what a fix does: build output or a cache (what a solution script
+    compiled or ran), documentation, or a linter's settings."""
+    p = PurePosixPath(path.replace("\\", "/"))
+    dirs = set(p.parts[:-1])
+    return (bool(dirs & _GEN_DIRS) or p.suffix.lower() in _GEN_SUFFIXES
+            or p.suffix.lower() in _DOC_SUFFIXES or bool(dirs & _DOC_DIRS)
+            or p.name.startswith(_LINT_PREFIXES))
+
+
+def _inert(pf, i: int, hunk, root: Path | None) -> bool:
+    """The hunk changes nothing a program can observe."""
+    changed = [ln.value.strip() for ln in hunk if ln.is_added or ln.is_removed]
+    suffix = PurePosixPath(pf.path).suffix.lower()
+    marks = [m for m, exts in _COMMENT.items() if suffix in exts]
+    if suffix in _COMMENT["//"]:
+        marks += ["/*", "*/", "* "]
+
+    def quiet(s: str) -> bool:
+        if not s:
+            return True
+        if s == "*" and "/*" in marks:
+            return True
+        if s.startswith("#!") or (suffix in _COMMENT["//"] and s.startswith("#")):
+            return False                 # a shebang; a C preprocessor line
+        return any(s.startswith(m) for m in marks)
+    if all(quiet(s) for s in changed):
+        return True
+    if suffix == ".py" and root is not None:
+        return _same_python(pf, i, root)
+    return False
+
+
+def _same_python(pf, i: int, root: Path) -> bool:
+    """The file with and without hunk ``i`` parses to the same program, docstrings aside."""
+    base = root / pf.path
+    try:
+        lines = base.read_text(encoding="utf-8").splitlines(keepends=True) \
+            if base.is_file() else []
+        full = _apply(lines, list(pf))
+        rest = _apply(lines, [h for j, h in enumerate(pf) if j != i])
+        if full is None or rest is None:
+            return False
+        return _shape(full) == _shape(rest)
+    except (OSError, UnicodeDecodeError, SyntaxError, ValueError, RecursionError):
+        return False
+
+
+def _apply(lines: list[str], hunks) -> str | None:
+    out, pos = [], 0
+    for h in hunks:
+        start = h.source_start - 1 if h.source_length else h.source_start
+        if start < pos:
+            return None
+        out += lines[pos:start]
+        src = [ln.value for ln in h if ln.is_context or ln.is_removed]
+        if [x.rstrip("\r\n") for x in lines[start:start + len(src)]] != \
+                [x.rstrip("\r\n") for x in src]:
+            return None                   # doesn't match the tree: can't tell, keep it
+        out += [ln.value for ln in h if ln.is_context or ln.is_added]
+        pos = start + h.source_length
+    return "".join(out + lines[pos:])
+
+
+def _shape(src: str) -> str:
+    tree = ast.parse(src)
+    for node in ast.walk(tree):
+        body = getattr(node, "body", None)
+        if isinstance(body, list) and body and isinstance(body[0], ast.Expr) and \
+                isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+            node.body = body[1:] or [ast.Pass()]   # type: ignore[attr-defined]
+    return ast.dump(tree, annotate_fields=False, include_attributes=False)
 
 
 def _vcs_metadata(path: str) -> bool:

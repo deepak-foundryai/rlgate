@@ -20,3 +20,18 @@ def test_default_suppresses_review():
 def test_include_review_surfaces_review():
     result = audit(spec.load(WEAK), k=1, include_review=True)
     assert any(f.verdict is VerdictTier.REVIEW for f in result.findings)
+
+
+def test_a_check_that_crashes_costs_that_check_not_the_task(monkeypatch):
+    # an rlgate bug in one check (a patch it couldn't parse) failed the whole task and
+    # reported it Broken, dropping every other check's result
+    from rlgate.pipeline import CheckRun
+    from rlgate.probes.grader_strength import mutation_probe
+
+    def boom(self, task, ctx):
+        raise ValueError("Target without source: +++ b/x copy.json")
+    monkeypatch.setattr(mutation_probe.MutationProbe, "run", boom)
+    result = audit(spec.load(WEAK), k=1)
+    (c,) = [c for c in result.checks if c.probe_id == "grader_strength.mutation_probe"]
+    assert c.status == CheckRun.UNFINISHED and "Target without source" in c.reason
+    assert len(result.checks) > 1

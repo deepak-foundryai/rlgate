@@ -15,3 +15,13 @@ def _isolated_state_dir(tmp_path, monkeypatch):
     monkeypatch.delenv("RLGATE_CONFIG", raising=False)
     from rlgate import config
     monkeypatch.setattr(config, "_DIRS", [])
+
+
+@pytest.fixture(autouse=True)
+def _no_stop_left_over():
+    """A test of Ctrl-C stops the process's sandbox creation; the next test starts fresh."""
+    yield
+    import sys
+    d = sys.modules.get("rlgate.sandbox.daytona")
+    if d is not None:
+        d._STOPPING.clear()

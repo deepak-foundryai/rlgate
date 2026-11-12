@@ -56,8 +56,26 @@ def upstream_id(t: dict) -> str | None:
     return f.get("id") or (Path(f["path"]).name if f.get("path") else None)
 
 
+def _llm_rules() -> frozenset[str]:
+    """Rules only an LLM check can report (empty when rlgate isn't importable)."""
+    try:
+        from rlgate.core.registry import discover
+        from rlgate.core.rules import RULES
+    except ImportError:
+        return frozenset()
+    probes = discover()
+    return frozenset(r.id for r in RULES.values()
+                     if r.probe_id in probes and probes[r.probe_id].meta.needs_llm)
+
+
+LLM_RULES = _llm_rules()
+
+
 def deep_only(t: dict) -> bool:
-    return "deep-review" in str(t.get("needs") or "")
+    """Only --deep-review can find it: the label says so, or every rule it expects comes
+    from an LLM check."""
+    exp = set(t.get("expected_rules") or [])
+    return "deep-review" in str(t.get("needs") or "") or bool(exp and exp <= LLM_RULES)
 
 
 # -- runs -----------------------------------------------------------------------------------
@@ -73,14 +91,25 @@ def run_dirs(arg: Path) -> list[Path]:
             return json.loads((d / "config.json").read_text()).get("created", "")
         except (OSError, ValueError):
             return ""
-    return sorted((p.parent for p in arg.glob("*/result.json")),
-                  key=lambda d: (created(d), d.stat().st_mtime))
+    # a run still going, or one that was stopped, has no top-level result.json yet: its
+    # finished tasks are in tasks/<task>/result.json
+    runs = {p.parent for p in arg.glob("*/result.json")} | {
+        p.parent.parent.parent for p in arg.glob("*/tasks/*/result.json")}
+    return sorted(runs, key=lambda d: (created(d), d.stat().st_mtime))
 
 
 def task_results(run: Path) -> tuple[dict, list[tuple[dict, Path | None]]]:
     cfg = json.loads((run / "config.json").read_text()) if (run / "config.json").exists() else {}
-    top = json.loads((run / "result.json").read_text())
-    results = top.get("results", [top])
+    if (run / "result.json").exists():
+        top = json.loads((run / "result.json").read_text())
+        results = top.get("results", [top])
+    else:                                  # unfinished run: what has finished so far
+        results = []
+        for f in sorted(run.glob("tasks/*/result.json")):
+            try:
+                results.append(json.loads(f.read_text()))
+            except (OSError, ValueError):
+                continue                   # still being written
     out = []
     for r in results:
         d = run / "tasks" / _slug(r["task"])
@@ -168,6 +197,9 @@ def markdown(rows: list[dict], summ: dict, meta: dict) -> str:
          f"| Could not run (layout or backend) | {oc.get('not run', 0)} |",
          f"| Needs --deep-review (not scored here) | {oc.get('deep-only', 0)} |",
          f"| In the tier but not in these runs | {oc.get('absent', 0)} |",
+         *([("| Left out: rlgate could not check them (backend errors) | "
+             f"{len(meta['not_checked_left_out'])} |")] if meta.get("not_checked_left_out")
+           else []),
          "", "## By benchmark", "",
          ("| Benchmark | Found | Warning only | Missed | Could not run | Deep-only | Absent "
          "| Controls clean |"), "|---|---|---|---|---|---|---|---|"]
@@ -219,6 +251,9 @@ def main() -> int:
     ap.add_argument("--only-run", action="store_true",
                     help="score only labels found in the runs (skip 'not in these runs')")
     ap.add_argument("--publish", type=Path, help="write a cleaned copy here (in the repo)")
+    ap.add_argument("--checked-only", action="store_true",
+                    help="leave out tasks rlgate could not check (backend or layout errors), "
+                         "so only real results are scored and published")
     a = ap.parse_args()
 
     labels = [t for t in load_labels() if a.tier in (t.get("tiers") or [])]
@@ -246,10 +281,15 @@ def main() -> int:
     deep = any(deep_flags)
     pool = [t for t in labels if t["id"] in seen] if a.only_run else labels
     rows = [score(t, seen.get(t["id"], (None, None))[0], deep) for t in pool]
+    left_out = []
+    if a.checked_only:
+        left_out = sorted(r["id"] for r in rows if r["outcome"] == "not run")
+        rows = [r for r in rows if r["outcome"] != "not run"]
     summ = summarise(rows)
     from datetime import date
     meta = {"rlgate": ", ".join(sorted(versions)) or "?", "tier": a.tier, "deep": deep,
-            "date": date.today().isoformat(), "unmatched": unmatched}
+            "date": date.today().isoformat(), "unmatched": unmatched,
+            "not_checked_left_out": left_out}
 
     if a.publish:
         out = a.publish

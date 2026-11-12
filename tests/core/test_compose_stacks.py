@@ -77,6 +77,29 @@ def test_each_stack_gets_its_own_host_up_to_the_cap():
     assert all(h.peak == 1 and h.live == 0 for h in made)   # one live stack per host
 
 
+def test_a_full_account_gets_no_extra_hosts_only_slower_stacks(monkeypatch):
+    # a compose task's extra DinD hosts (16 GB each) pushed a shared account over its
+    # memory limit; without room the stacks queue on the hosts the task already has
+    monkeypatch.setattr(StackHosts, "ROOM_POLL_S", 0.01)
+    made: list[_Host] = []
+
+    def make():
+        made.append(_Host())
+        return made[-1]
+    room = [False]
+    env = _env(StackHosts(make, cap=3, can_grow=lambda: room[0]))
+
+    def grade():
+        m = env.fresh()
+        time.sleep(0.05)
+        m.close()
+    _run(4, grade)
+    assert len(made) == 1 and made[0].peak == 1          # the first host is always made
+    room[0] = True
+    _run(4, grade)
+    assert len(made) == 3                                # room again: grows to the cap
+
+
 def test_a_thread_holding_a_host_never_waits_for_another():
     hosts = StackHosts(_Host, cap=1)
     env = _env(hosts)
@@ -485,3 +508,42 @@ def test_ctrl_c_and_kill_exit_at_once_with_workers_still_busy(how):
                        timeout=30, check=False)
     assert p.returncode == 130, p.stderr
     assert "Interrupted" in p.stderr and time.monotonic() - t0 < 20
+
+
+def test_readiness_does_not_depend_on_a_workdir_made_later(monkeypatch):
+    # a grader stack's workdir (/grading) appears only when the tests are uploaded: probing
+    # readiness there failed every time ("chdir to cwd ... no such file") and the task
+    # was reported as "compose service 'main' never became ready"
+    from rlgate.sandbox import staged
+    monkeypatch.setattr(staged.time, "sleep", lambda s: None)
+
+    class NoWorkdirYet(_Host):
+        made = False
+
+        def exec(self, cmd, *, cwd=None, timeout=900):
+            if "mkdir -p /grading" in cmd:
+                NoWorkdirYet.made = True
+            if " exec " in cmd and "-w /grading " in cmd and not NoWorkdirYet.made:
+                return ExecResult(127, "", 'chdir to cwd ("/grading") set in config.json '
+                                  "failed: no such file or directory")
+            return super().exec(cmd, cwd=cwd, timeout=timeout)
+    env = ComposeEnv(EnvSpec(compose=Path("docker-compose.yaml"), workdir="/grading"),
+                     "t-gr", StackHosts(NoWorkdirYet, cap=1))
+    env._setup = lambda host: None          # type: ignore[method-assign]
+    m = env.fresh()
+    assert m.workdir == "/grading"          # commands still run there once it exists
+    assert m.exec("true").exit_code == 0     # (uploads into the service, say)
+    m.close()
+
+
+def test_a_long_task_ids_workspace_and_grader_stacks_get_different_names():
+    # cut to 40 characters, "lostly-cross-notification-delivery-outcomes-workspace" and
+    # "...-grader" were the same name: one image tag, one folder, and a grader that came up
+    # from the agent's image (no /grading, no /tests)
+    from rlgate.sandbox.staged import _stack_key
+    tid = "lostly-cross-notification-delivery-outcomes"
+    a, b = _stack_key(f"{tid}-workspace"), _stack_key(f"{tid}-grader")
+    assert a != b and len(a) <= 40 and len(b) <= 40 and a.startswith("lostly-cross")
+    assert _stack_key("ast-ops-canary-decides-early-grader") == \
+        "ast-ops-canary-decides-early-grader"          # short names are unchanged
+    assert _stack_key(f"{tid}x-grader") != b           # nor do two long task ids collide

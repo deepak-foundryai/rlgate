@@ -27,3 +27,21 @@ BUILD_COMMANDS = ("docker build", "docker pull", "compose build")
 def is_build_error(e: Exception) -> bool:
     """A ``Machine.check`` failure of a build/pull command (its message starts with it)."""
     return str(e).startswith(BUILD_COMMANDS)
+
+
+def is_infrastructure(e: BaseException) -> bool:
+    """The backend failed (unreachable, quota, API error), not the task: the task was never
+    examined, so its verdict is "Not checked", not "Broken". A failed image build is the
+    task's own defect and stays Broken."""
+    seen: set[int] = set()
+    while e is not None and id(e) not in seen:
+        seen.add(id(e))
+        if isinstance(e, BuildFailed):
+            return False
+        mod = type(e).__module__ or ""
+        if isinstance(e, (BackendUnavailable, ConnectionError, TimeoutError)) or \
+                mod.split(".")[0] in ("daytona", "daytona_api_client", "docker", "urllib3",
+                                      "requests", "httpx", "aiohttp"):
+            return True
+        e = e.__cause__ or e.__context__   # type: ignore[assignment]
+    return False

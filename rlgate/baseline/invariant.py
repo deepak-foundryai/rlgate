@@ -141,6 +141,20 @@ def has_reference(task: Task, sandbox: Sandbox | None = None) -> bool:
         sandbox is None and task.oracle is not None)
 
 
+def _gold_failures(task: Task, baseline: Baseline) -> str:
+    """Which graded tests the reference failed, so a person can tell a broken task from an
+    environment difference (e.g. a timeout test that needs an unroutable address)."""
+    if not baseline.per_test:
+        return ""
+    g = task.grader
+    required = list(g.fail_to_pass) + list(g.pass_to_pass)
+    if required:
+        bad = [n for n in required if not baseline.per_test.get(n, False)]
+    else:
+        bad = [n for n, ok in baseline.per_test.items() if not ok]
+    return f"; tests it fails: {_some(sorted(bad))}" if bad else ""
+
+
 def uses_oracle_script(task: Task, sandbox: Sandbox | None) -> bool:
     """The reference is a solution SCRIPT the sandbox can run as the harness would — the
     true oracle (a derived patch can't carry effects outside the workspace)."""
@@ -162,7 +176,7 @@ def findings(task: Task, baseline: Baseline) -> list[Finding]:
                                     else "apply the reference fix and grade"))
         out.append(_f("RG001", f"the reference solution scored {baseline.oracle} "
                                f"(want {pass_reward}) on its worst of {baseline.k} runs"
-                               + _early(baseline),
+                               + _early(baseline) + _gold_failures(task, baseline),
                       replay, "reproduced_exploit"))
     if baseline.nop > 0.0:
         replay = repro.record(task, "RG002", patch=None, expect="pass",

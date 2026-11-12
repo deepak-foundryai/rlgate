@@ -76,7 +76,7 @@ class DaytonaOptions:
     cache_snapshots: bool = True          # build Dockerfiles once into rlgate-<hash>
     reuse_sandbox: bool = True            # one sandbox per task (False = one per grade)
     auto_stop_minutes: int = 30           # idle → stopped → deleted (crash safety)
-    ttl_minutes: int = 240                # hard wall-clock cap per sandbox (crash safety)
+    ttl_minutes: int = 720                # hard cap per sandbox; idle auto-stop is the crash net
     network_block_all: bool = False
     network_allow_list: str | None = None  # comma-separated CIDRs, e.g. "10.0.0.0/8"
     create_timeout_s: float = 300
@@ -84,7 +84,7 @@ class DaytonaOptions:
     create_retries: int = 3               # transient API errors (429/5xx/network)
     # account limits: read from Daytona at run time; these only override or bound that
     max_snapshots: int | None = None      # snapshot cap when this API key can't read it
-    snapshot_idle_minutes: float = 10     # rlgate-* snapshots unused this long may be freed
+    snapshot_idle_minutes: float = 60     # rlgate-* snapshots unused this long may be freed
     snapshot_wait_s: float = 1800         # wait this long for a slot, then build per sandbox
     room_wait_s: float = 600              # wait this long for CPU/memory/disk room
     max_sandboxes: int = 32               # live sandboxes at once across all tasks and
@@ -143,6 +143,12 @@ def available() -> bool:
 
 _OPEN: set[DaytonaSandbox] = set()
 _OPEN_GUARD = threading.Lock()
+# Every sandbox this process creates carries this label, so a stop can find the ones it
+# never got a handle for (a create still in flight when Ctrl-C came).
+RUN_LABEL = ("rlgate-run", uuid.uuid4().hex[:16])
+_STOPPING = threading.Event()          # set on Ctrl-C: no new sandboxes from here on
+_CREATING = [0]                        # creates in flight
+_CREATING_GUARD = threading.Condition()
 
 
 @atexit.register
@@ -233,19 +239,41 @@ def _is_transient(e: Exception) -> bool:
                           de.DaytonaBadGatewayError, de.DaytonaTimeoutError))
 
 
+def _snapshot_gone(e: BaseException) -> bool:
+    m = str(e).lower()
+    return "snapshot" in m and "not found" in m
+
+
+_SEEN_SIZE: dict[str, tuple[float, float, float]] = {}   # source → a sandbox's real size
+
+
+def _is_full(e: Exception) -> bool:
+    """Daytona refused because the account's CPU, memory, disk or sandbox limit is in use
+    (by this run, another rlgate run, or anything else on the account): room comes back
+    as other sandboxes stop, so it is worth waiting for."""
+    from daytona.common import errors as de
+    msg = str(e).lower()
+    return isinstance(e, (de.DaytonaError,)) and (
+        "limit exceeded" in msg or "quota" in msg or "insufficient resources" in msg)
+
+
+_FULL_POLL_S = 30      # how often to retry a create refused for lack of room
+
+
 _SHORT_S = 60          # commands with a timeout up to this run as one request
 _POLL_MAX_S = 5.0      # longest gap between status checks of a background command
 _OUTAGE_S = 300        # how long a background command survives the API being unreachable
 
 
 def _run(handle, cmd: str, *, cwd: str | None, timeout: int) -> ExecResult:
-    """Run ``cmd`` in a sandbox. A short command is one request. A longer one starts in the
-    background and is polled: a single HTTP request held open for minutes gets cut by
-    Daytona's proxy (connection reset / read timeout) and loses a task that was fine.
-    Polls that fail on a network error are retried for up to ``_OUTAGE_S``; the command
-    itself is never started twice. Output is stdout and stderr combined, as ``exec``."""
+    """Run ``cmd`` in a sandbox, in a session of its own. A short command answers in the
+    same request; a longer one starts in the background and is polled (a request held open
+    for minutes gets cut by Daytona's proxy). A network error never loses the task and never
+    runs the command twice: the session shows whether it started, so a start that was lost
+    is sent again and one that got through is waited for. Polls are retried for up to
+    ``_OUTAGE_S``. Output is stdout and stderr combined, as ``exec``."""
     proc = handle.process
-    if timeout <= _SHORT_S or not hasattr(proc, "execute_session_command"):
+    if not hasattr(proc, "execute_session_command"):
         r = proc.exec(cmd, cwd=cwd, timeout=timeout)
         return ExecResult(exit_code=r.exit_code, stdout=r.result or "", stderr="")
     from daytona import SessionExecuteRequest
@@ -257,21 +285,26 @@ def _run(handle, cmd: str, *, cwd: str | None, timeout: int) -> ExecResult:
                f"sh -c {shlex.quote(inner)} < /dev/null; "
                f"else sh -c {shlex.quote(inner)} < /dev/null; fi")
     sid = f"rlgate-{uuid.uuid4().hex[:12]}"
+    short = timeout <= _SHORT_S
     _retry(lambda: proc.create_session(sid, request_timeout=60))
     try:
-        started = proc.execute_session_command(
-            sid, SessionExecuteRequest(command=wrapped, run_async=True), timeout=60)
+        req = SessionExecuteRequest(command=wrapped, run_async=not short)
+        started, cmd_id = _start(proc, sid, req, timeout + 10 if short else 60)
+        if started is not None and short and started.exit_code is not None:
+            out = started.output if started.output is not None else (
+                (started.stdout or "") + (started.stderr or ""))
+            return ExecResult(exit_code=started.exit_code, stdout=_plain(out), stderr="")
         deadline = time.monotonic() + timeout + 30
-        gap, code = 0.5, None
+        gap, code = (0.2 if short else 0.5), None
         while code is None and time.monotonic() < deadline:
             time.sleep(gap)
             gap = min(gap * 1.5, _POLL_MAX_S)
             code = _retry(lambda: proc.get_session_command(
-                sid, started.cmd_id, request_timeout=30)).exit_code
+                sid, cmd_id, request_timeout=30)).exit_code
         logs = _retry(lambda: proc.get_session_command_logs(
-            sid, started.cmd_id, request_timeout=120))
-        out = logs.output if getattr(logs, "output", None) is not None else (
-            (logs.stdout or "") + (logs.stderr or ""))
+            sid, cmd_id, request_timeout=120))
+        out = _plain(logs.output if getattr(logs, "output", None) is not None else (
+            (logs.stdout or "") + (logs.stderr or "")))
         if code is None:                       # still running past its deadline
             return ExecResult(exit_code=124, stdout=out + f"\n[timed out after {timeout}s]",
                               stderr="")
@@ -281,6 +314,45 @@ def _run(handle, cmd: str, *, cwd: str | None, timeout: int) -> ExecResult:
             proc.delete_session(sid, request_timeout=30)   # also stops a command left running
         except Exception as e:  # noqa: BLE001 - the sandbox is deleted at the end anyway
             log.debug("delete_session %s: %s", sid, e)
+
+
+_TRANSFER_S = 300      # a file transfer that moves nothing this long is dead: retry it
+
+
+def _upload(handle, local: Path | str, remote: str) -> None:
+    """Upload a file, retried on network errors (the same file to the same place, so safe
+    to repeat). Daytona's default waits 30 minutes on a dropped connection; this allows
+    5 minutes plus 1 s per 2 MB."""
+    mb = Path(local).stat().st_size / 2**20
+    _retry(lambda: handle.fs.upload_file(str(local), remote, int(_TRANSFER_S + mb / 2)))
+
+
+def _plain(out: str | None) -> str:
+    """Session output without Daytona's stream markers (\\x01\\x01\\x01 before stdout,
+    \\x02\\x02\\x02 before stderr), which would hide a report line's start from its parser."""
+    return (out or "").replace("\x01\x01\x01", "").replace("\x02\x02\x02", "")
+
+
+def _start(proc, sid: str, req, timeout: float):
+    """Start ``req`` in session ``sid`` exactly once: (response, command id), or (None, id)
+    when the response was lost but the session shows the command started."""
+    end, delay = time.monotonic() + _OUTAGE_S, 1.0
+    while True:
+        try:
+            r = proc.execute_session_command(sid, req, timeout=int(timeout))
+            return r, r.cmd_id
+        except Exception as e:
+            if not _is_transient(e) or time.monotonic() + delay > end:
+                raise
+            cmds = _retry(lambda: proc.get_session(sid, request_timeout=30)).commands or []
+            if cmds:                       # it got through: wait for it, don't run it again
+                log.warning("Daytona dropped the reply to a command (%s); it is running, "
+                            "waiting for it", e)
+                return None, cmds[0].id
+            log.warning("Daytona call failed before the command started (%s); retrying in "
+                        "%.0fs", e, delay)
+            time.sleep(delay)
+            delay = min(delay * 2, 30.0)
 
 
 def _retry(call):
@@ -325,7 +397,7 @@ class DaytonaOverlay(Overlay):
             tmp = Path(tempfile.mkdtemp(prefix="rlgate-inj-"))
             try:
                 up = f"/tmp/rlgate-inj-{uuid.uuid4().hex[:12]}.tgz"
-                self._sb.fs.upload_file(str(pack_dir(Path(host), tmp)), up)
+                _upload(self._sb, pack_dir(Path(host), tmp), up)
             finally:
                 shutil.rmtree(tmp, ignore_errors=True)
             q = shlex.quote(remote)
@@ -337,8 +409,9 @@ class DaytonaOverlay(Overlay):
             self._injected.append(remote)
 
     def read_perms(self, path: str) -> Perms:
-        target = f"{self._parent.opts.workdir}/{path.lstrip('/')}"
-        r = self._sb.process.exec(f"stat -c %a {target}", timeout=30)
+        target = path if path.startswith("/") else \
+            f"{self._parent.opts.workdir}/{path}"
+        r = self._sb.process.exec(f"stat -c %a {shlex.quote(target)}", timeout=30)
         if r.exit_code != 0:
             return Perms(mode=0, exists=False)
         return Perms(mode=int((r.result or "0").strip(), 8))
@@ -374,16 +447,69 @@ def _keep_alive_forever() -> None:
 
 
 def release_all(timeout: float = 90) -> int:
-    """Delete every sandbox this process still holds (on Ctrl-C), waiting at most
-    ``timeout`` seconds; returns how many. The TTLs remove any that can't be reached."""
-    open_ = list(_LIVE)
-    for m in open_:
+    """Delete every sandbox this run created (on Ctrl-C), waiting at most ``timeout``
+    seconds; returns how many. Staged machines, the plain backend's sandboxes, and the
+    ones still being created when the stop came (found by this run's label). The TTLs
+    remove any that can't be reached."""
+    _STOPPING.set()
+    deadline = time.monotonic() + timeout
+    with _OPEN_GUARD:
+        fleets = list(_OPEN)
+    machines = list(_LIVE)
+    targets: list[Any] = [*machines, *fleets]
+    n = len(machines) + sum(len(f._live) for f in fleets)
+    with _CLIENTS_GUARD:
+        clients = list(_CLIENTS.values())
+    for c in [getattr(f, "_client", None) for f in fleets] + [
+            getattr(m._fleet, "_client", None) for m in machines]:
+        if c is not None and all(c is not k for k in clients):
+            clients.append(c)
+
+    def close(m: Any) -> None:
         try:
             m.close()
         except Exception as e:  # noqa: BLE001 - reach every sandbox
             log.warning("could not delete a sandbox: %s", e)
-    settle_deletes(timeout)
-    return len(open_)
+    # in parallel: one by one, a stop with 20 tasks open waited minutes and was cut short
+    threads = [threading.Thread(target=close, args=(m,), daemon=True) for m in targets]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(max(0.0, deadline - time.monotonic()))
+    with _CREATING_GUARD:                # creates in flight delete what they get
+        _CREATING_GUARD.wait_for(lambda: _CREATING[0] == 0,
+                                 timeout=max(0.0, min(60.0, deadline - time.monotonic())))
+    n += _sweep(clients, deadline)
+    settle_deletes(max(0.0, deadline - time.monotonic()))
+    return n
+
+
+def _sweep(clients: list[Any], deadline: float) -> int:
+    """Delete what is still up under this run's label (a create Daytona finished after
+    our side gave up on it). Returns how many it found."""
+    found = 0
+    for client in clients:
+        try:
+            try:
+                from daytona import ListSandboxesQuery
+                page = client.list(ListSandboxesQuery(labels=dict([RUN_LABEL])))
+            except (ImportError, TypeError):        # an older SDK: no query
+                page = client.list()
+            items = list(getattr(page, "items", page) or [])
+        except Exception as e:  # noqa: BLE001 - offline; the TTL is the backstop
+            log.warning("could not list this run's sandboxes: %s", e)
+            continue
+        for sb in items:
+            if time.monotonic() > deadline:
+                break
+            if (getattr(sb, "labels", None) or {}).get(RUN_LABEL[0]) != RUN_LABEL[1]:
+                continue                 # never another run's (or the user's own) sandbox
+            found += 1
+            try:
+                client.delete(sb)
+            except Exception as e:  # noqa: BLE001
+                log.warning("could not delete %s: %s", getattr(sb, "id", "?"), e)
+    return found
 
 
 class DaytonaMachine(Machine):
@@ -405,10 +531,10 @@ class DaytonaMachine(Machine):
         return _run(self.handle, cmd, cwd=cwd or self.workdir, timeout=timeout)
 
     def put_file(self, local: Path, remote: str) -> None:
-        self.handle.fs.upload_file(str(local), remote)
+        _upload(self.handle, local, remote)
 
     def get_file(self, remote: str, local: Path) -> None:
-        self.handle.fs.download_file(remote, str(local))
+        _retry(lambda: self.handle.fs.download_file(remote, str(local), _TRANSFER_S))
 
     def keepalive(self) -> None:
         """Reset Daytona's idle timer (auto-stop deletes a sandbox left idle that long)."""
@@ -566,9 +692,7 @@ class DaytonaSandbox(Sandbox):
         with self._lock:
             deleting, self._deleting = self._deleting, []
         wait_all(deleting, timeout=600)       # a finished task leaves nothing running
-        if self._held_snapshot is not None and self._budget is not None:
-            self._budget.done(self._held_snapshot)
-            self._held_snapshot = None
+        self._release_snapshot()
         if self._host_snapshot is not None:
             shutil.rmtree(self._host_snapshot, ignore_errors=True)
             self._host_snapshot = None
@@ -774,13 +898,19 @@ class DaytonaSandbox(Sandbox):
         with self._lock:
             self._shared_busy = False
 
+    def _release_snapshot(self) -> None:
+        if self._held_snapshot is not None and self._budget is not None:
+            self._budget.done(self._held_snapshot)
+        self._held_snapshot = None
+
     def _create(self):
         from daytona import CreateSandboxFromImageParams, CreateSandboxFromSnapshotParams
 
         assert self._source is not None
         kind, ref = self._source
         common: dict[str, Any] = {
-            "labels": {"rlgate": "true", "rlgate-task": self.task_id[:63]},
+            "labels": {"rlgate": "true", "rlgate-task": self.task_id[:63],
+                       RUN_LABEL[0]: RUN_LABEL[1]},
             "auto_stop_interval": self.opts.auto_stop_minutes,
             "auto_delete_interval": 0,            # delete as soon as it stops
             "ttl_minutes": self.opts.ttl_minutes,
@@ -800,7 +930,26 @@ class DaytonaSandbox(Sandbox):
         if self._budget is not None:
             self._budget.room(*need, wait_s=self.opts.room_wait_s)
         try:
-            handle = self._create_with_retry(params)
+            try:
+                handle = self._create_with_retry(params)
+            except DaytonaUnavailable as e:
+                # another rlgate run on the account, short of snapshot slots, deleted the
+                # snapshot this task built: build it again rather than fail the task
+                if not (kind == "snapshot" and self._held_snapshot == ref
+                        and _snapshot_gone(e)):
+                    raise
+                log.warning("snapshot %s was deleted while %s used it; rebuilding",
+                            ref, self.task_id)
+                ui.progress(f"the Daytona snapshot {ref} was deleted meanwhile; rebuilding")
+                self._release_snapshot()
+                self._source = self._resolve_source()
+                kind, ref = self._source
+                if kind == "snapshot":
+                    params = CreateSandboxFromSnapshotParams(snapshot=ref, **common)
+                else:
+                    params = CreateSandboxFromImageParams(
+                        image=ref, resources=self.opts.resources(), **common)
+                handle = self._create_with_retry(params)
         except BaseException:
             if slot:
                 _slots(self.opts.max_sandboxes).release()
@@ -808,6 +957,9 @@ class DaytonaSandbox(Sandbox):
         finally:
             if self._budget is not None:
                 self._budget.started(*need)
+        size = tuple(float(getattr(handle, k, 0) or 0) for k in ("cpu", "memory", "disk"))
+        if all(size):
+            _SEEN_SIZE[repr(self._source)] = size        # type: ignore[assignment]
         hid = str(getattr(handle, "id", id(handle)))
         with self._lock:
             self._live[hid] = handle
@@ -818,22 +970,67 @@ class DaytonaSandbox(Sandbox):
         return handle
 
     def _size(self) -> tuple[float, float, float]:
-        """(vCPU, GiB memory, GiB disk) one sandbox asks for: the options, else Daytona's
-        documented per-sandbox defaults (1 vCPU, 1 GiB, 3 GiB)."""
+        """(vCPU, GiB memory, GiB disk) one sandbox asks for: the options; else what the
+        last sandbox from the same source really got (a snapshot fixes its own size, often
+        well above the defaults); else Daytona's documented defaults (1 vCPU, 1 GiB, 3 GiB)."""
         o = self.opts
-        return (float(o.cpus or 1), float(o.memory_gb or 1), float(o.disk_gb or 3))
+        seen = _SEEN_SIZE.get(repr(self._source))
+        return (float(o.cpus or (seen and seen[0]) or 1),
+                float(o.memory_gb or (seen and seen[1]) or 1),
+                float(o.disk_gb or (seen and seen[2]) or 3))
+
+    def has_room(self, margin: float = 0.1) -> bool:
+        """Whether the account can take one more sandbox of this size and still keep
+        ``margin`` of each limit free (for other runs and other work on the account). True
+        when usage can't be read: then refusals are what limit it."""
+        if self._budget is None:
+            return True
+        try:
+            r = self._budget._region(self._budget.usage())
+        except Exception:  # noqa: BLE001 - unknown means don't hold back
+            return True
+        if r is None:
+            return True
+        need = self._size()
+        return all(q <= 0 or used + n <= q * (1 - margin)
+                   for (used, q), n in ((r.cpu, need[0]), (r.memory, need[1]),
+                                        (r.disk, need[2])))
 
     def _create_with_retry(self, params):
         delay, attempt = 2.0, 1
+        full_since: float | None = None
         while True:
             # A create can time out on our side yet finish on Daytona's: tag each attempt so
             # a failed one can be found and deleted instead of running until auto-stop.
             tag = uuid.uuid4().hex[:16]
             params.labels = {**(params.labels or {}), "rlgate-create": tag}
+            if _STOPPING.is_set():
+                raise DaytonaUnavailable("the run is stopping")
+            with _CREATING_GUARD:
+                _CREATING[0] += 1
             try:
-                return self._client.create(params, timeout=self.opts.create_timeout_s)
+                handle = self._client.create(params, timeout=self.opts.create_timeout_s)
+                if _STOPPING.is_set():          # landed after Ctrl-C: nobody will use it
+                    self._delete_now(handle, slot=False)
+                    raise DaytonaUnavailable("the run is stopping")
+                return handle
+            except DaytonaUnavailable:
+                raise
             except Exception as e:
                 self._reap(tag)
+                if _is_full(e):
+                    now = time.monotonic()
+                    full_since = full_since or now
+                    if now - full_since < self.opts.room_wait_s:
+                        log.info("Daytona account full (%s); waiting for room to create %s",
+                                 e, self.task_id)
+                        time.sleep(_FULL_POLL_S)
+                        continue
+                    raise DaytonaUnavailable(
+                        f"could not create a Daytona sandbox for {self.task_id}: the account "
+                        f"stayed full for {self.opts.room_wait_s:.0f}s ({e}). Run fewer tasks "
+                        "at once (-j), or fewer rlgate runs side by side; --backend-opt "
+                        "room_wait_s=N waits longer") from e
                 if attempt >= self.opts.create_retries or not _is_transient(e):
                     raise DaytonaUnavailable(f"could not create a Daytona sandbox for "
                                              f"{self.task_id}: {type(e).__name__}: {e}") from e
@@ -841,6 +1038,10 @@ class DaytonaSandbox(Sandbox):
                             self.opts.create_retries - 1, delay)
                 time.sleep(delay)
                 delay, attempt = delay * 2, attempt + 1
+            finally:
+                with _CREATING_GUARD:
+                    _CREATING[0] -= 1
+                    _CREATING_GUARD.notify_all()
 
     def _reap(self, tag: str) -> None:
         """Delete sandboxes a failed create attempt may have left behind (best effort)."""
@@ -887,7 +1088,7 @@ class DaytonaSandbox(Sandbox):
         try:
             with tarfile.open(tar_path, "w:gz") as tf:
                 tf.add(host_copy, arcname=".")
-            handle.fs.upload_file(str(tar_path), _REMOTE_TAR)
+            _upload(handle, tar_path, _REMOTE_TAR)
         finally:
             tar_path.unlink(missing_ok=True)
         wd = self.opts.workdir

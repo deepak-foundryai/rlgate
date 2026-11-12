@@ -9,14 +9,15 @@ names, constants) that the equivalence probe's execution check doesn't reach —
 
 from __future__ import annotations
 
+import builtins
 import re
-from pathlib import Path
 
 from rlgate.core.context import ProbeContext
 from rlgate.core.finding import Evidence, Finding, Severity, VerdictTier
 from rlgate.core.probe import Probe, ProbeKind, ProbeMeta
 from rlgate.core.registry import register
 from rlgate.core.task import Capability, Task
+from rlgate.probes.test_quality._graded import graded_tests
 
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]{4,}")  # length >= 5 cuts noise
 # Only symbols the gold patch *defines* (functions / classes / types it introduces) count as
@@ -26,15 +27,16 @@ _DEF = re.compile(
     r"\b(?:def|class|func|function|interface|struct|type)\s+([A-Za-z_]\w{3,})"
     r"|\b(?:const|let|var)\s+([A-Za-z_]\w{3,})\s*=",
 )
-_TEST_GLOBS = ("test_*.py", "*_test.py", "*_test.go", "*.test.ts", "*.test.js",
-               "*.spec.ts", "*.spec.js")
-_PRUNE = {".git", ".hg", "node_modules", ".venv", "venv", "__pycache__", ".tox"}
 _STOP = {
     "assert", "assertion", "import", "return", "self", "true", "false", "none", "null",
     "value", "result", "expect", "equal", "equals", "should", "tests", "testcase", "setup",
     "teardown", "fixture", "mock", "patch", "class", "async", "await", "const", "print",
 }
 _MAX = 15
+# Python and JS/TS builtins: a test calling sorted() doesn't use the reference's sorted
+_BUILTINS = {n.lower() for n in dir(builtins)} | {
+    "array", "object", "string", "number", "boolean", "promise", "symbol", "error",
+    "sorted", "filter", "reduce", "keys", "values", "entries", "parse", "stringify"}
 
 
 @register
@@ -55,12 +57,10 @@ class SymbolCrossref(Probe):
             return []
 
         findings: list[Finding] = []
-        for test_file, rel in self._all_test_files(task):
-            try:
-                text = test_file.read_text(errors="ignore")
-            except OSError:
-                continue
-            refs = {t.lower() for t in _IDENT.findall(text)} & internals
+        for rel, text in graded_tests(task):
+            # what the test defines itself (a helper of its own) isn't the reference's
+            own = {(m.group(1) or m.group(2)).lower() for m in _DEF.finditer(text)}
+            refs = ({t.lower() for t in _IDENT.findall(text)} & internals) - own
             for sym in sorted(refs):
                 findings.append(self._finding(rel, sym))
                 if len(findings) >= _MAX:
@@ -76,23 +76,11 @@ class SymbolCrossref(Probe):
                 added += [ln.value for ln in hunk if ln.is_added]
         names = set()
         for m in _DEF.finditer("\n".join(added)):
-            names.add((m.group(1) or m.group(2)).lower())
-        return names
-
-    def _all_test_files(self, task: Task):
-        for root, prefix in task.test_roots:
-            for p in self._test_files(root):
-                yield p, prefix + p.relative_to(root).as_posix()
-
-    def _test_files(self, root: Path):
-        seen: set[Path] = set()
-        for glob in _TEST_GLOBS:
-            for p in root.rglob(glob):
-                if p in seen or any(part in _PRUNE for part in p.relative_to(root).parts):
-                    continue
-                if p.is_file():
-                    seen.add(p)
-                    yield p
+            name = m.group(1) or m.group(2)
+            if name.startswith("__") and name.endswith("__"):
+                continue            # a dunder (__init__, __hash__) is the language's, not an internal
+            names.add(name.lower())
+        return names - _BUILTINS
 
     def _finding(self, rel: str, sym: str) -> Finding:
         return Finding(

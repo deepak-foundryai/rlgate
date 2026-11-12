@@ -301,6 +301,8 @@ ALL += _PRIVATE
 BY_NAME = {c.name: c for c in ALL}
 # Rules no case covers yet, and why (kept honest; tests check this list stays current).
 NOT_COVERED = {
+    "RG403": "no natural case: the one it had was a false hit (fixed in 0.1.7); tested on "
+             "a fixture in tests/probes/test_hygiene_and_brittle.py",
     "RG101": "full run on a task with a gold patch whose tests miss a hunk: none found yet",
     "RG103": "full run (mutation survives): none found yet",
     "RG201": "full run: needs a task whose verifier lets a planted conftest.py load",

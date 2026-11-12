@@ -22,6 +22,7 @@ from rlgate.core import rules, store, waivers
 from rlgate.core.report import TaskView
 from rlgate.core.rules import STEPS, Step
 from rlgate.core.task import Capability, Task
+from rlgate.sandbox.errors import is_infrastructure
 
 NONE = "__no_probes__"          # `--only works`: the baseline only, no probes
 
@@ -452,26 +453,6 @@ def saved_view(task: Task, target: str) -> TaskView | None:
 
 def changed_since(view: TaskView, d_fingerprint: str | None) -> bool:
     return bool(d_fingerprint) and store.task_fingerprint(view.root) != d_fingerprint
-
-
-def is_infrastructure(e: BaseException) -> bool:
-    """The backend failed (unreachable, quota, API error), not the task: the task was never
-    examined, so its verdict is "Not checked", not "Broken". A failed image build is the
-    task's own defect and stays Broken."""
-    from rlgate.sandbox.errors import BackendUnavailable, BuildFailed
-
-    seen: set[int] = set()
-    while e is not None and id(e) not in seen:
-        seen.add(id(e))
-        if isinstance(e, BuildFailed):
-            return False
-        mod = type(e).__module__ or ""
-        if isinstance(e, (BackendUnavailable, ConnectionError, TimeoutError)) or \
-                mod.split(".")[0] in ("daytona", "daytona_api_client", "docker", "urllib3",
-                                      "requests", "httpx", "aiohttp"):
-            return True
-        e = e.__cause__ or e.__context__   # type: ignore[assignment]
-    return False
 
 
 def _explain_error(e: Exception) -> str:

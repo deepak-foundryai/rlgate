@@ -16,7 +16,11 @@ from rlgate.core.probe import Probe, ProbeKind, ProbeMeta
 from rlgate.core.registry import register
 from rlgate.core.task import Task
 
-_PRUNE = {".git", ".hg", "node_modules", ".venv", "venv", "__pycache__", ".tox"}
+_PRUNE = {".git", ".hg", "node_modules", ".venv", "venv", "__pycache__", ".tox",
+          # written by the image build (pip install -e ., a compile step), not injected
+          "build", "dist", ".eggs", ".pytest_cache", ".mypy_cache", ".ruff_cache", "target",
+          ".lake", ".gradle", "_build"}
+_BUILT = (".egg-info", ".dist-info", ".pyc", ".pyo", ".so", ".o", ".class")
 _MIN_FILES = 8          # below this there isn't enough signal to call a cluster
 _GAP_SECONDS = 120      # a cluster this much later than the bulk is suspicious
 _MAX_MINORITY = 0.5     # the late cluster must be a minority to look "injected"
@@ -26,7 +30,8 @@ _SAMPLE = 8
 def _mtimes(root: Path) -> list[tuple[str, int]]:
     out: list[tuple[str, int]] = []
     for p in root.rglob("*"):
-        if any(part in _PRUNE for part in p.parts):
+        rel = p.relative_to(root).parts
+        if any(part in _PRUNE or part.endswith(_BUILT) for part in rel):
             continue
         if p.is_symlink() or not p.is_file():
             continue

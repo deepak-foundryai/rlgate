@@ -129,3 +129,20 @@ def test_subset_command_runs_only_gold_passing_tests():
     ran = [c for c in sb.record if c.startswith("( ")]    # the grading commands
     assert any(c.startswith("( run m.T.t1 m.T.t2 m.T.t3\n)") for c in ran)  # subset, sorted
     assert not any(c.startswith("( grade\n)") for c in ran)  # full suite was skipped
+
+
+def test_a_failing_reference_names_the_required_tests_it_failed():
+    # SWE-bench requests-2931 on Daytona: the gold fix passed its target test but two
+    # connect-timeout tests failed (the sandbox rejects the unroutable address the harness
+    # lets time out). Without the names, RG001 can't be told from a broken task.
+    from dataclasses import replace
+
+    from rlgate.baseline.invariant import findings
+    t = _task(None)
+    t = replace(t, gold_patch=Patch("PATCH"), grader=replace(
+        t.grader, fail_to_pass=("m.T.fix",), pass_to_pass=("m.T.keep", "m.T.timeout")))
+    b = Baseline(oracle=0.0, nop=0.0, k=2, per_test={
+        "m.T.fix": True, "m.T.keep": True, "m.T.timeout": False, "m.T.other": False})
+    (f,) = [f for f in findings(t, b) if f.rule_id == "RG001"]
+    assert "tests it fails: m.T.timeout" in f.evidence.detail
+    assert "m.T.other" not in f.evidence.detail

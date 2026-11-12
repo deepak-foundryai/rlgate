@@ -1,5 +1,82 @@
 # Changelog
 
+## 0.1.7 (2026-11-12)
+
+### Fixed
+
+- A compose task whose grader works in a folder that appears only when the tests are
+  uploaded (`/grading`) no longer fails with "compose service 'main' never became ready":
+  the readiness check ran its command in that folder before it existed.
+- A full Daytona account (several runs side by side hitting its CPU or memory limit) no
+  longer fails tasks with "Total memory limit exceeded": rlgate waits for room (up to
+  `room_wait_s`, 10 minutes by default), then says to run fewer tasks at once.
+- Compose tasks use the account more gently: a task starts an extra stack host only while
+  the account has room for it (with 10% to spare) and otherwise runs its stacks one after
+  another on the host it has. Room is judged by the size sandboxes from the same snapshot
+  really got, not Daytona's 1 GiB default.
+- Two compose services of a task with a long id (over 40 characters) no longer share one
+  stack name, which brought the grader up from the agent's image ("/tests/test.sh: not
+  found").
+- A task whose cached Daytona snapshot was deleted mid-run (another rlgate run on the account,
+  short of snapshot slots, freed it) rebuilds the snapshot instead of failing with
+  "Snapshot rlgate-... not found". Other runs now leave an rlgate snapshot alone until it
+  has been unused for 60 minutes (was 10; `--backend-opt snapshot_idle_minutes=N`).
+- A reference solution that adds or deletes a file with a space in its name (TB2
+  mteb-leaderboard adds "... copy.json") no longer fails the task with
+  "UnidiffParseError: Target without source": the derived patch names files the way git
+  does.
+- A check that hits an error in rlgate itself is marked unfinished (with the error, to
+  report) and the task's other checks still count; before, the whole task was reported
+  Broken with no findings. Sandbox and backend failures still stop the task as before.
+- A dropped connection to Daytona ("Connection reset by peer", a 502) no longer fails the
+  task, and still never runs a command twice: each command runs in a session of its own,
+  so rlgate can see whether a lost start got through, then sends it again or waits for it.
+  This had cost a 2.5-hour deep review on its last step.
+- Command output from Daytona no longer carries its stream markers (\x01\x01\x01,
+  \x02\x02\x02), which could hide the start of a test-report line from its parser.
+- "The reference solution does not pass" (RG001) names the graded tests it fails, so an
+  environment difference (e.g. a connect-timeout test on a network that rejects the
+  address at once) can be told from a broken task.
+- A Daytona sandbox lives up to 12 hours (was 4): a long deep review had its sandbox
+  deleted under it ("sandbox ... not found"). A crashed run still leaves nothing behind:
+  idle sandboxes stop after 30 minutes.
+- A file upload or download cut by the network is retried instead of failing the task
+  ("Failed to upload files: [Errno 60] Operation timed out"), and gives up after 5 minutes
+  (plus 1 s per 2 MB) rather than Daytona's 30, so a dropped connection can't stall a task
+  for half an hour.
+- After a quick run where every task passes, "Next:" suggests the full run instead of
+  printing the report command twice.
+- Ctrl-C (or `kill`) deletes every sandbox the run made. Before, it reached only some:
+  the plain backend's sandboxes and any still being created when the stop came were left
+  up until their TTL. A second Ctrl-C (pressed again, or forwarded again by `uv run`)
+  skipped the cleanup entirely. Now each sandbox carries a label for its run, the cleanup
+  runs in parallel and finds stragglers by that label, no new sandbox starts once a stop
+  begins, and repeated Ctrl-Cs are ignored until the cleanup finishes (at most 90 s).
+  Sandboxes from other runs, and ones rlgate didn't make, are never touched.
+- "The suite passes with part of the fix removed" (RG101/RG102) no longer counts hunks
+  that change nothing a program runs: build output and caches a solution script left
+  behind (`.lake`, `__pycache__`, `.olean`, `.aux`, ...), docs, linter settings, and hunks
+  that only touch blank lines, comments or (Python) docstrings.
+- "A mutant survives the suite" (RG103) mutates code only: no more mutants of words in a
+  docstring, comment or string ("or" → "and"), of `frozen=`/`strict=`-style option flags,
+  or of files under `.git/` (all 18 findings on one Terminal-Bench git task were reflog
+  lines).
+- "A test pins an exact call count" (RG404), "a test pins the reference's wording" (RG403)
+  and "a test uses the reference's internals" (RG402) read only the tests the grader runs:
+  the lines a SWE-bench row's test patch adds, or the held-out test folder. They used to
+  scan every test file in the repository, so 58 of 60 RG404 hits on SWE-bench Verified
+  were in tests no grading reads. RG403 now reads whole string literals (it took `'] == '`,
+  the gap between two strings, as a string); RG404 no longer counts `assert_called_with`
+  or a bare `times=N`; RG402 skips dunders, builtins and helpers the test defines itself.
+- "Test infrastructure the grader doesn't restore" (RG211) flags a conftest or pytest ini
+  file only when the grader runs pytest (not Django's `runtests.py` or sympy's `bin/test`),
+  only a conftest on the way to a graded test, and only the ini file pytest reads its
+  settings from.
+- "Files written after the checkout" (RG305) ignores what the image build writes
+  (`*.egg-info`, `*.dist-info`, `build/`, `dist/`, compiled files).
+- "The agent can read the held-out tests" (RG212) no longer reports the workspace's own
+  tests when the grader runs in an environment of its own.
+
 ## 0.1.6 (2026-11-12)
 
 ### Added

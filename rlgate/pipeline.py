@@ -19,6 +19,7 @@ branches on benchmark identity.
 from __future__ import annotations
 
 import contextvars
+import logging
 import threading
 import time
 from collections.abc import Callable
@@ -414,6 +415,19 @@ class _Run:
             self.result.checks.append(CheckRun(pid, m.family, CheckRun.UNFINISHED, doc=m.doc,
                                                seconds=time.monotonic() - t,
                                                reason=str(e)))
+            return []
+        except Exception as e:
+            # the sandbox or the backend failing stops the task as before; a bug in one
+            # check (e.g. a patch it can't parse) costs that check, not the whole task
+            from rlgate.sandbox.errors import is_infrastructure
+            if is_infrastructure(e) or (type(e).__module__ or "").startswith("rlgate.sandbox"):
+                raise
+            logging.getLogger("rlgate.run").exception("check %s failed on %s", pid,
+                                                      task.id)
+            self.result.checks.append(CheckRun(
+                pid, m.family, CheckRun.UNFINISHED, doc=m.doc, seconds=time.monotonic() - t,
+                reason=f"rlgate error in this check ({type(e).__name__}: {str(e)[:200]}); "
+                       "please report it"))
             return []
         self.result.checks.append(CheckRun(
             pid, m.family, CheckRun.FLAGGED if fs else CheckRun.GOOD, len(fs), m.doc,

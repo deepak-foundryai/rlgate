@@ -78,7 +78,8 @@ class VariantEngine:
         assert self.task.gold_patch is not None
         with self._lock:
             if self._revert is None:
-                self._revert = self.run(revert_variants(self.task.gold_patch))
+                self._revert = self.run(revert_variants(self.task.gold_patch,
+                                                         self.task.repo_dir))
             return self._revert
 
     def unguarded(self) -> set[str]:

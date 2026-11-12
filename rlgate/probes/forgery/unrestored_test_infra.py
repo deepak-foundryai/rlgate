@@ -14,6 +14,7 @@ from rlgate.core.finding import Evidence, Finding, Severity, VerdictTier
 from rlgate.core.probe import Probe, ProbeKind, ProbeMeta
 from rlgate.core.registry import register
 from rlgate.core.task import Capability, Task
+from rlgate.probes.test_quality._graded import collected_paths, runs_pytest
 
 _DANGER_NAMES = {
     "conftest.py", "sitecustomize.py", "usercustomize.py",
@@ -21,6 +22,11 @@ _DANGER_NAMES = {
 }
 _PRUNE = {".git", ".hg", "node_modules", ".venv", "venv", "__pycache__", ".tox", "dist", "build"}
 _MAX_READ = 200_000
+# the ini file pytest takes its config from: the first of these at the root that has the
+# section (pytest.ini always counts)
+_INI_ORDER = (("pytest.ini", ""), ("pyproject.toml", "[tool.pytest.ini_options]"),
+              ("tox.ini", "[pytest]"), ("setup.cfg", "[tool:pytest]"))
+_INI = {"pytest.ini", "tox.ini", "setup.cfg"}
 
 
 def _reads(p: Path, needle: str) -> bool:
@@ -45,10 +51,20 @@ class UnrestoredTestInfra(Probe):
         assert task.gold_patch is not None         # requires GOLD_PATCH
         gold_files = {pf.path for pf in task.gold_patch.patchset}
         root = task.repo_dir
+        pytest = runs_pytest(task)
+        collected = collected_paths(task)
+        ini = self._pytest_ini(root)
         findings: list[Finding] = []
         for rel, kind in self._candidates(root):
             if rel in gold_files:
                 continue  # the reference touches it → in scope, not a hidden channel
+            if kind == "conftest.py" or kind in _INI:
+                if pytest is False:
+                    continue        # the grader runs another runner: pytest never loads it
+                if kind in _INI and rel != ini:
+                    continue        # not the file pytest reads its config from
+                if kind == "conftest.py" and collected and not _above(rel, collected):
+                    continue        # pytest loads a conftest only on the way to a test
             findings.append(Finding(
                 probe_id=self.meta.id,
                 title=f"unrestored test-infra ({kind}): {rel}",
@@ -67,9 +83,17 @@ class UnrestoredTestInfra(Probe):
             ))
         return findings
 
+    @staticmethod
+    def _pytest_ini(root: Path) -> str | None:
+        for name, section in _INI_ORDER:
+            p = root / name
+            if p.is_file() and (not section or _reads(p, section)):
+                return name
+        return None
+
     def _candidates(self, root: Path):
         for p in root.rglob("*"):
-            if any(part in _PRUNE for part in p.parts):
+            if any(part in _PRUNE for part in p.relative_to(root).parts):
                 continue
             if not p.is_file():
                 continue
@@ -78,3 +102,9 @@ class UnrestoredTestInfra(Probe):
                 yield rel, p.name
             elif p.name.endswith("_test.go") and _reads(p, "func TestMain("):
                 yield rel, "TestMain"
+
+
+def _above(conftest: str, collected: set[str]) -> bool:
+    """The conftest's folder holds (at any depth) one of the collected test files."""
+    folder = conftest.rsplit("/", 1)[0] + "/" if "/" in conftest else ""
+    return any(c.startswith(folder) for c in collected)

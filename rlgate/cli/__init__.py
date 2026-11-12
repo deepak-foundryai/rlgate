@@ -1260,10 +1260,17 @@ def _interrupted() -> NoReturn:
     import logging
     import os
     import signal
-    if signal.SIGINT in _STOP_SIGNALS:   # a second Ctrl-C now skips the cleanup (TTLs)
-        signal.signal(signal.SIGINT, signal.default_int_handler)
+    # Repeats are ignored until the sandboxes are gone (at most 90 s): a second Ctrl-C
+    # (pressed again, or forwarded once more by `uv run`) used to skip the cleanup and
+    # leave the run's sandboxes up until their TTL.
+    for s in (signal.SIGINT, signal.SIGTERM):
+        try:
+            signal.signal(s, signal.SIG_IGN)
+        except (ValueError, OSError):
+            pass
     ui.echo("", console=ui.err())
     ui.error("Interrupted.", "run the same command again; finished tasks are cached")
+    ui.echo("  deleting this run's sandboxes (up to 90 s)...", console=ui.err())
     if "rlgate.sandbox.daytona" in sys.modules:
         from rlgate.sandbox.daytona import release_all
         try:

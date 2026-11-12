@@ -31,7 +31,7 @@ class FakeHandle:
         self.cmds: list[str] = []
         self.uploads: list[str] = []
         self.process = SimpleNamespace(exec=self._exec)
-        self.fs = SimpleNamespace(upload_file=lambda local, remote: self.uploads.append(remote))
+        self.fs = SimpleNamespace(upload_file=lambda local, remote, timeout=1800: self.uploads.append(remote))
 
     def _exec(self, cmd, cwd=None, timeout=None):
         self.cmds.append(cmd)
@@ -379,20 +379,35 @@ def test_a_create_that_times_out_but_lands_is_deleted(tmp_path, monkeypatch):
 class _Proc:
     """A sandbox process API with background sessions, a flaky network and a slow command."""
 
-    def __init__(self, polls_before_done=2, fail_polls=1, exit_code=0):
+    def __init__(self, polls_before_done=2, fail_polls=1, exit_code=0, lose_start=None):
         self.left, self.fail, self.code = polls_before_done, fail_polls, exit_code
         self.started, self.deleted, self.execs = [], [], []
+        self.lose_start = lose_start     # "before": never reached Daytona; "after": ran
+        self.sessions: dict[str, list] = {}
 
     def exec(self, cmd, cwd=None, timeout=None):
         self.execs.append(cmd)
         return SimpleNamespace(exit_code=0, result="short")
 
     def create_session(self, sid, request_timeout=None):
-        pass
+        self.sessions[sid] = []
+
+    def get_session(self, sid, request_timeout=None):
+        return SimpleNamespace(commands=self.sessions[sid])
 
     def execute_session_command(self, sid, req, timeout=None):
+        from daytona.common.errors import DaytonaConnectionError
+        lost, self.lose_start = self.lose_start, None
+        if lost == "before":
+            raise DaytonaConnectionError("Connection reset by peer")
         self.started.append(req.command)
-        return SimpleNamespace(cmd_id="c1")
+        self.sessions[sid].append(SimpleNamespace(id="c1"))
+        if lost == "after":
+            raise DaytonaConnectionError("Connection reset by peer")
+        if not req.run_async:
+            return SimpleNamespace(cmd_id="c1", exit_code=0, output="short", stdout="",
+                                   stderr="")
+        return SimpleNamespace(cmd_id="c1", exit_code=None, output=None)
 
     def get_session_command(self, sid, cid, request_timeout=None):
         from daytona.common.errors import DaytonaConnectionError
@@ -422,12 +437,25 @@ def test_long_commands_run_in_the_background_and_survive_a_dropped_poll(monkeypa
     assert "timeout -k 10 900" in p.started[0] and p.deleted and not p.execs
 
 
-def test_short_commands_are_one_request(monkeypatch):
+def test_short_commands_answer_in_the_same_request(monkeypatch):
     pytest.importorskip("daytona")
     from rlgate.sandbox import daytona as d
     p = _Proc()
     assert d._run(SimpleNamespace(process=p), "true", cwd=None, timeout=30).stdout == "short"
-    assert p.execs == ["true"] and not p.started
+    assert len(p.started) == 1 and not p.execs and p.deleted
+
+
+@pytest.mark.parametrize("lost", ["before", "after"])
+def test_a_dropped_connection_never_loses_or_repeats_a_command(monkeypatch, lost):
+    # "Failed to execute command: Connection reset by peer" lost a 2.5-hour deep review on
+    # its last step. A start that never arrived is sent again; one that ran is waited for.
+    pytest.importorskip("daytona")
+    from rlgate.sandbox import daytona as d
+    monkeypatch.setattr(d.time, "sleep", lambda s: None)
+    p = _Proc(fail_polls=0, lose_start=lost)
+    r = d._run(SimpleNamespace(process=p), "git apply x.patch", cwd=None, timeout=30)
+    assert len(p.started) == 1                        # ran exactly once either way
+    assert r.exit_code == 0
 
 
 def test_a_command_past_its_deadline_reports_a_timeout(monkeypatch):
@@ -486,3 +514,133 @@ def test_held_out_tests_reach_the_grader_and_leave_a_shared_sandbox(tmp_path, mo
     if not ovl._owned:                       # the next overlay on this sandbox can't see them
         assert any(c.startswith("rm -rf ") and "/abs/tests" in c for c in h.cmds)
     sb.close()
+
+
+def test_a_full_account_is_waited_out_not_a_failed_task(tmp_path, monkeypatch):
+    # several rlgate runs side by side filled the account; Daytona said "Total memory limit
+    # exceeded" and the task was reported as could-not-check instead of waiting for room
+    import rlgate.sandbox.daytona as dt
+    monkeypatch.delenv("DAYTONA_SNAPSHOT", raising=False)
+    monkeypatch.setattr(dt.time, "sleep", lambda s: None)
+    full = "Failed to create sandbox: Total memory limit exceeded. Maximum allowed: 500"
+    client = FakeClient(fail_creates=4, error=lambda m: de.DaytonaBadRequestError(full))
+    sb = _sandbox(_task(tmp_path), client, create_retries=1)   # not the transient retries
+    sb.build()
+    sb.overlay().close()
+    assert len(client.handles) == 1
+    sb.close()
+
+    clock = itertools.count(0, 400)        # never frees up: a clear error after room_wait_s
+    monkeypatch.setattr(dt.time, "monotonic", lambda: float(next(clock)))
+    client2 = FakeClient(fail_creates=99, error=lambda m: de.DaytonaBadRequestError(full))
+    (tmp_path / "b").mkdir()
+    sb2 = _sandbox(_task(tmp_path / "b"), client2, create_retries=1, room_wait_s=600)
+    sb2.build()
+    with pytest.raises(DaytonaUnavailable, match="stayed full"):
+        sb2.overlay()
+    sb2.close()
+
+
+def test_room_for_one_more_keeps_a_margin_and_learns_snapshot_sizes(tmp_path, monkeypatch):
+    import rlgate.sandbox.daytona as dt
+    from rlgate.sandbox.daytona_quota import Region
+    monkeypatch.setattr(dt, "_SEEN_SIZE", {})
+    sb = _sandbox(_task(tmp_path), FakeClient())
+    region = Region("us", cpu=(100.0, 250.0), memory=(440.0, 500.0), disk=(100.0, 2000.0))
+
+    class B:
+        def usage(self):
+            return None
+
+        def _region(self, u):
+            return region
+    sb._budget = B()                                   # type: ignore[assignment]
+    assert sb.has_room()                               # 1 GiB fits under 450 (90%)
+    dt._SEEN_SIZE[repr(sb._source)] = (4.0, 16.0, 10.0)  # a snapshot really gets 16 GiB
+    assert sb._size() == (4.0, 16.0, 10.0)
+    assert not sb.has_room()                           # 456 > 450: leave the margin
+    sb._budget = None
+    assert sb.has_room()                               # unknown usage: don't hold back
+    sb.close()
+
+
+def test_a_snapshot_deleted_mid_task_is_rebuilt_not_a_failed_task(tmp_path, monkeypatch):
+    # another rlgate run at the account's snapshot limit freed this task's snapshot while
+    # the task was still running; its next sandbox failed with "Snapshot ... not found"
+    monkeypatch.delenv("DAYTONA_SNAPSHOT", raising=False)
+    client = FakeClient()
+    sb = _sandbox(_task(tmp_path), client)
+    sb.build()
+    assert sb._source is not None
+    name = sb._source[1]
+    real_create = client.create
+
+    def create(params, timeout=None):
+        if params.snapshot not in client.snapshot.states:
+            raise de.DaytonaBadRequestError(
+                f"Failed to create sandbox: Snapshot {params.snapshot} not found.")
+        return real_create(params, timeout)
+    client.create = create                              # type: ignore[method-assign]
+    client.snapshot.delete(name)
+    sb.overlay().close()
+    assert len(client.snapshot.created) == 2 and name in client.snapshot.states
+    sb.close()
+
+
+def test_an_upload_cut_by_the_network_is_retried(tmp_path, monkeypatch):
+    # "Failed to upload files: [Errno 60] Operation timed out" lost a whole task; the same
+    # file to the same place is safe to send again
+    import rlgate.sandbox.daytona as dt
+    monkeypatch.setattr(dt.time, "sleep", lambda s: None)
+    f = tmp_path / "w.tgz"
+    f.write_bytes(b"x" * 10)
+    calls = []
+
+    def upload(local, remote, timeout):
+        calls.append(timeout)
+        if len(calls) == 1:
+            raise de.DaytonaConnectionTimeoutError("[Errno 60] Operation timed out")
+    dt._upload(SimpleNamespace(fs=SimpleNamespace(upload_file=upload)), f, "/tmp/w.tgz")
+    assert len(calls) == 2 and calls[0] < 1800       # not Daytona's 30-minute default
+
+
+def test_session_output_comes_without_daytona_stream_markers(monkeypatch):
+    # a session's output marks each chunk's stream (\x01\x01\x01 stdout, \x02\x02\x02
+    # stderr); left in, a report's first "PASSED ..." line doesn't start with PASSED
+    pytest.importorskip("daytona")
+    from rlgate.sandbox import daytona as d
+    p = _Proc()
+    p.execute_session_command = lambda sid, req, timeout=None: SimpleNamespace(  # type: ignore[method-assign]
+        cmd_id="c1", exit_code=1, output="\x01\x01\x01PASSED t::a\n\x02\x02\x02boom")
+    p.sessions = {}
+    r = d._run(SimpleNamespace(process=p), "pytest", cwd=None, timeout=30)
+    assert (r.exit_code, r.stdout) == (1, "PASSED t::a\nboom")
+
+
+def test_a_stop_deletes_every_sandbox_of_this_run_and_only_those(tmp_path, monkeypatch):
+    """Regression (live runs): Ctrl-C left sandboxes up. It deleted only staged machines
+    one by one; the plain backend's sandboxes and creates still in flight stayed until the
+    TTL. Now all of them go, found by this run's label, and other sandboxes are left alone."""
+    from rlgate.sandbox import daytona as mod
+
+    monkeypatch.setenv("DAYTONA_SNAPSHOT", "")
+    monkeypatch.setattr(mod, "_STOPPING", __import__("threading").Event())
+    client = FakeClient()
+    sb = _sandbox(_task(tmp_path), client)
+    sb.build()
+    ovl = sb.overlay(None)                         # held open when the stop comes
+    held = client.handles[0].id
+    landed = SimpleNamespace(id="landed-late", labels={mod.RUN_LABEL[0]: mod.RUN_LABEL[1]})
+    users = SimpleNamespace(id="users-own", labels={"rlgate": "true"})
+    client.orphans += [landed, users]
+    assert mod.release_all(timeout=10) >= 2
+    assert held in client.deleted and "landed-late" in client.deleted
+    assert "users-own" not in client.deleted
+    assert client.handles[0].params.labels[mod.RUN_LABEL[0]] == mod.RUN_LABEL[1]
+    del ovl
+    (tmp_path / "late").mkdir()
+    late = _sandbox(_task(tmp_path / "late"), client)
+    late.build()
+    with pytest.raises(DaytonaUnavailable, match="stopping"):      # nothing new after
+        late.overlay(None)
+    late.close()
