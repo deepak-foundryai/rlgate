@@ -30,6 +30,9 @@ _ANSWER_EXT = {".gold", ".golden", ".expected"}
 _SKIP_EXT = {".class", ".pyc", ".pyo", ".o", ".so", ".a", ".jar", ".db", ".bin", ".png",
              ".jpg", ".jpeg", ".gif", ".pdf", ".zip", ".tar", ".gz", ".wasm"}
 _MAX = 25  # cap each category so a pathological tree can't flood the report
+# a repo's own committed test fixtures: Go keeps golden output in testdata/, snapshot
+# testers in __snapshots__/ — the existing tests' expectations, not an injected answer key
+_FIXTURE_DIRS = {"testdata", "__snapshots__", "snapshots", "fixtures", "golden", "goldens"}
 
 
 def _pruned(p: Path, root: Path) -> bool:
@@ -99,6 +102,8 @@ class CacheScan(Probe):
             if f.suffix.lower() in _SKIP_EXT:
                 continue
             if _ANSWER_RE.match(f.stem) or f.suffix.lower() in _ANSWER_EXT:
+                if _FIXTURE_DIRS & {d.lower() for d in f.relative_to(root).parts[:-1]}:
+                    continue
                 out.append(self._finding(
                     root, f, VerdictTier.REVIEW, Severity.MEDIUM, "answer-named file",
                     "filename suggests reference/expected output readable by the candidate",

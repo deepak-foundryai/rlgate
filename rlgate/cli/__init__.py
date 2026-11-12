@@ -1271,15 +1271,33 @@ def _interrupted() -> NoReturn:
     ui.echo("", console=ui.err())
     ui.error("Interrupted.", "run the same command again; finished tasks are cached")
     ui.echo("  deleting this run's sandboxes (up to 90 s)...", console=ui.err())
+    for h in logging.getLogger("rlgate").handlers:    # tasks now fail as their sandboxes
+        if getattr(h, "_rlgate_console", False):      # go; that's expected, not news
+            h.setLevel(logging.CRITICAL + 1)          # (rlgate.log still has it all)
     if "rlgate.sandbox.daytona" in sys.modules:
+        # on a thread of its own, with a hard limit: this runs inside a signal handler,
+        # and the interrupted main thread may hold a lock the cleanup needs (a run with
+        # -j 1 works on the main thread) — waiting on it here would hang for good
+        import threading
+
         from rlgate.sandbox.daytona import release_all
-        try:
-            n = release_all(timeout=90)
-            if n:
-                ui.echo(f"  removed this run's {n} sandbox{'es' if n != 1 else ''}",
-                        console=ui.err())
-        except BaseException:  # noqa: BLE001, S110 - a second Ctrl-C: exit anyway (TTLs)
-            pass
+        done: list[int] = []
+
+        def clean() -> None:
+            try:
+                done.append(release_all(timeout=90))
+            except Exception:  # noqa: BLE001, S110 - exit anyway; the TTLs remain
+                pass
+        t = threading.Thread(target=clean, daemon=True, name="rlgate-stop")
+        t.start()
+        t.join(100)
+        if done and done[0]:
+            n = done[0]
+            ui.echo(f"  removed this run's {n} sandbox{'es' if n != 1 else ''}",
+                    console=ui.err())
+        elif t.is_alive():
+            ui.echo("  some sandboxes may still be up; they stop by themselves within "
+                    "30 minutes", console=ui.err())
     logging.shutdown()
     os._exit(130)
 

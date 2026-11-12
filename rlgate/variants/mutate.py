@@ -20,6 +20,7 @@ from collections.abc import Iterator
 from pathlib import PurePosixPath
 
 from rlgate.core.task import Patch
+from rlgate.variants._code import mask
 from rlgate.variants.revert import Variant, _variant_id, _vcs_metadata, generated
 
 MAX_VARIANTS = 300  # deterministic cap: take the first N in file/line/operator order
@@ -41,69 +42,6 @@ _ADJACENT_BAD = set("<>-=")  # avoid mutating <<, >>, ->, =>, <- digraphs
 # configuration flags whose flip no test is expected to see (dataclass/pydantic options)
 _FLAG_RE = re.compile(r"\b(?:strict|frozen|slots|kw_only|repr|eq|order|unsafe_hash|init|"
                       r"exist_ok)\s*=\s*$")
-_HASH = {".py", ".pyi", ".sh", ".bash", ".rb", ".pl", ".r", ".yaml", ".yml", ".toml", ".cfg",
-         ".ini", ".nix", ".jl", ".ex", ".exs", ".tf", ".mk", ""}
-_SLASH = {".c", ".h", ".cc", ".cpp", ".hpp", ".cs", ".java", ".kt", ".scala", ".go", ".rs",
-          ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".swift", ".dart", ".php", ".zig",
-          ".lean", ".sol"}
-
-_QUOTE_STR = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".php", ".dart", ".swift"}
-
-
-def _mask(line: str, suffix: str, state: str | None) -> tuple[str, str | None]:
-    """``line`` with string literals and comments blanked (same length), so operators are
-    only found in code. ``state`` carries an open Python triple-quoted string or a C block
-    comment from the line before; returns the state after this line."""
-    out = list(line)
-    i, n = 0, len(line)
-
-    def blank(a: int, b: int) -> None:
-        for k in range(a, min(b, n)):
-            out[k] = " "
-    while i < n:
-        if state is not None:                      # inside a docstring / block comment
-            end = line.find(state, i)
-            if end < 0:
-                blank(i, n)
-                return "".join(out), state
-            blank(i, end + len(state))
-            i, state = end + len(state), None
-            continue
-        c = line[i]
-        if suffix in _HASH and c == "#":
-            blank(i, n)
-            break
-        if suffix in _SLASH and line.startswith("//", i):
-            blank(i, n)
-            break
-        if suffix in _SLASH and line.startswith("/*", i):
-            state = "*/"
-            blank(i, i + 2)
-            i += 2
-            continue
-        if suffix in (".py", ".pyi") and line.startswith(('"""', "\'\'\'"), i):
-            state = line[i:i + 3]
-            blank(i, i + 3)
-            i += 3
-            continue
-        if c in "\"'`":
-            if c == "'" and suffix in _SLASH and suffix not in _QUOTE_STR:
-                close = line.find("'", i + 1)        # a char literal ('c', '\\n'), not
-                if not 0 < close - i <= 3 and not (  # a lifetime ('a) or a Lean prime
-                        close - i == 4 and line[i + 1] == "\\"):
-                    i += 1
-                    continue
-            j = i + 1
-            while j < n and line[j] != c:
-                j += 2 if line[j] == "\\" else 1
-            if j < n:                              # a closed literal (not a Rust lifetime)
-                blank(i, j + 1)
-                i = j + 1
-                continue
-        i += 1
-    return "".join(out), state
-
-
 def _rel_ok(line: str, start: int, end: int, token: str) -> bool:
     if token not in ("<", ">"):
         return True
@@ -191,7 +129,8 @@ def mutate_variants(gold: Patch) -> list[Variant]:
     suffix, skip, state = "", False, None
     for i, raw in enumerate(lines):
         if raw.startswith("+++ "):
-            path = raw[4:].strip().removeprefix("b/")
+            # `+++ b/path<TAB>2026-08-30 01:19:07`: diff -u adds a timestamp after a tab
+            path = raw[4:].split("\t", 1)[0].strip().removeprefix("b/")
             hunk_idx = -1
             # build output, docs and VCS metadata (.git/logs) aren't the fix's behaviour
             skip = path == "/dev/null" or generated(path) or _vcs_metadata(path)
@@ -209,7 +148,7 @@ def mutate_variants(gold: Patch) -> list[Variant]:
         nl = ""
         if body.endswith("\n"):
             body, nl = body[:-1], "\n"
-        code, state = _mask(body, suffix, state)
+        code, state = mask(body, suffix, state)
         if not raw.startswith("+"):
             continue          # a context line: only read for an open docstring
 

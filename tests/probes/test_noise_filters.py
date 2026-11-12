@@ -11,7 +11,8 @@ from rlgate.core.task import GraderSpec, Patch, Task
 from rlgate.probes.forgery.unrestored_test_infra import UnrestoredTestInfra
 from rlgate.probes.leakage.mtime_clustering import MtimeClustering
 from rlgate.probes.test_quality._graded import graded_tests, runs_pytest
-from rlgate.variants.mutate import _mask, mutate_variants
+from rlgate.variants._code import mask as _mask
+from rlgate.variants.mutate import mutate_variants
 
 GOLD = Patch("--- a/mod.py\n+++ b/mod.py\n@@ -1,1 +1,2 @@\n-x = 0\n+x = 1\n+y = 2\n")
 
@@ -96,3 +97,81 @@ def test_mutants_change_code_not_words_flags_or_git_metadata():
 def test_masking_keeps_char_literals_apart_from_rust_lifetimes():
     code, _ = _mask("fn f<'a>(x: &'a str) -> bool { x == 'c' }", ".rs", None)
     assert "x ==     }" in code and "&'a str" in code
+
+
+def test_a_diff_u_timestamp_is_not_part_of_the_file_name():
+    """Regression (FoundryAI run): RG103 reported `models.py\t2026-08-30 01:19:07#hunk0`, so
+    the Python-only filters never saw a .py file and the unguarded-hunk pruning never matched."""
+    gold = Patch("--- a/m.py\t2026-08-30 01:19:07\n+++ b/m.py\t2026-08-30 01:19:07\n"
+                 "@@ -1 +1,2 @@\n x = 1\n+y = 2  # or 3\n")
+    (v, w) = mutate_variants(gold)
+    assert v.origin == "m.py#hunk0:increment" and w.origin == "m.py#hunk0:decrement"
+
+
+def test_unrestored_infra_is_quiet_when_the_grader_deletes_it(tmp_path):
+    """Regression (FoundryAI run): the grader's test.sh deletes every conftest.py from the
+    copy it grades, and removes the visible tests; RG211 still flagged them."""
+    repo, held = tmp_path / "repo", tmp_path / "tests"
+    (repo / "backend" / "tests_visible").mkdir(parents=True)
+    (repo / "backend" / "tests_visible" / "conftest.py").write_text("")
+    (repo / "setup.cfg").write_text("[tool:pytest]\n")
+    held.mkdir()
+    (held / "test.sh").write_text(
+        'rm -rf "$DEPLOY_DIR/backend/tests_visible"\n'
+        'find "$DEPLOY_DIR" \\( -name sitecustomize.py -o -name conftest.py \\\n'
+        "    -o -name 'pytest.ini' \\) -delete\npython -m pytest backend\n")
+    task = _task(repo, run="bash /tests/test.sh", inject=((str(held), "/tests"),))
+    assert {f.location for f in UnrestoredTestInfra().run(task, _ctx())} == {"setup.cfg"}
+
+
+def test_golden_test_fixtures_are_not_answer_files(tmp_path):
+    """Regression (MiMo run): a Go repo's testdata/*.golden — its own tests' expected
+    output, committed in the repo — gave 25 "file named like an answer" findings."""
+    from rlgate.probes.leakage.cache_scan import CacheScan
+    (tmp_path / "pkg" / "testdata").mkdir(parents=True)
+    (tmp_path / "pkg" / "testdata" / "TestList.golden").write_text("x\n")
+    assert CacheScan().run(_task(tmp_path), _ctx()) == []
+    (tmp_path / "answer_key.txt").write_text("42\n")
+    (f,) = CacheScan().run(_task(tmp_path), _ctx())
+    assert f.location == "answer_key.txt"
+
+
+def test_grader_removal_is_read_from_the_command_not_the_whole_line(tmp_path):
+    """Review of the RG211 fix: any token on a line with `rm` counted as removed (`rm -rf
+    /tmp/b && pytest tests/` excused tests/), and a removed name excused it everywhere."""
+    from rlgate.probes.test_quality._graded import grader_removes
+    held = tmp_path / "t"
+    held.mkdir()
+
+    def removal(script: str):
+        (held / "test.sh").write_text(script)
+        return grader_removes(_task(tmp_path, run="bash /t/test.sh",
+                                    inject=((str(held), "/t"),)))
+    r = removal("rm -rf /tmp/build && cd /testbed && pytest tests/\n")
+    assert not r.covers("tests/conftest.py")
+    r = removal("rm -f /app/tests_visible/conftest.py\n")
+    assert r.covers("tests_visible/conftest.py") and not r.covers("conftest.py")
+    r = removal('find "$DEPLOY_DIR/backend" \\( -name conftest.py -o -name x \\) -delete\n')
+    assert r.covers("backend/a/conftest.py") and not r.covers("cli/conftest.py")
+    r = removal('git checkout "$BASE" -- tests/conftest.py\nfor p in $L; do rm -rf -- "$p"; done\n')
+    assert r.covers("tests/conftest.py") and not r.covers("other/conftest.py")
+
+
+def test_conftests_and_ini_pytest_really_loads(tmp_path):
+    """Review of the RG211 fix: `pytest tests/` loads sibling conftests even when the
+    graded ids sit under tests/unit, and `tests/pytest.ini` is the ini for `pytest tests/`."""
+    for f in ("tests/unit/conftest.py", "tests/integration/conftest.py", "tests/pytest.ini",
+              "setup.cfg", "other/conftest.py"):
+        (tmp_path / f).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / f).write_text("[tool:pytest]\n" if f == "setup.cfg" else "")
+    task = _task(tmp_path, run="pytest tests/", fail_to_pass=("tests/unit/test_a.py::t",))
+    got = {f.location for f in UnrestoredTestInfra().run(task, _ctx())}
+    assert got == {"tests/unit/conftest.py", "tests/integration/conftest.py", "tests/pytest.ini"}
+    # Harbor: pytest runs the held-out /tests only, so nothing in the repo is loaded
+    harbor = _task(tmp_path, run="pytest /tests/test_outputs.py")
+    assert UnrestoredTestInfra().run(harbor, _ctx()) == []
+    # a grader that doesn't say what it runs: every conftest stays, and the root's ini
+    got = {f.location for f in UnrestoredTestInfra().run(_task(tmp_path, run="make check"),
+                                                         _ctx())}
+    assert got == {"tests/unit/conftest.py", "tests/integration/conftest.py",
+                   "other/conftest.py", "setup.cfg"}

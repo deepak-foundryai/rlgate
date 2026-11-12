@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from rlgate.core.task import Patch
+from rlgate.variants._code import HASH, SLASH, mask
 
 OPERATORS_VERSION = "operators@v1"
 
@@ -62,8 +63,9 @@ def revert_variants(gold: Patch, root: Path | None = None) -> list[Variant]:
 
 _GEN_DIRS = {".lake", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
              "node_modules", ".gradle", ".tox", "CMakeFiles", ".cache", ".hypothesis"}
+# (not .d or .v: D and Coq/Verilog source share them)
 _GEN_SUFFIXES = {".pyc", ".pyo", ".o", ".obj", ".a", ".class", ".aux", ".glob", ".vo",
-                 ".vok", ".vos", ".olean", ".ilean", ".trace", ".hash", ".d", ".log"}
+                 ".vok", ".vos", ".olean", ".ilean", ".trace", ".hash", ".log"}
 _COMMENT = {
     "#": (".py", ".sh", ".bash", ".rb", ".pl", ".r", ".yaml", ".yml", ".toml", ".cfg",
           ".ini", ".mk", ".cmake", ".jl", ".nim", ".ex", ".exs"),
@@ -74,8 +76,9 @@ _COMMENT = {
 }
 
 
-_DOC_SUFFIXES = {".md", ".rst", ".adoc", ".txt"}
-_DOC_DIRS = {"docs", "doc"}
+# (not .txt — CMakeLists.txt, requirements.txt — nor a `doc` folder: Go has src/go/doc)
+_DOC_SUFFIXES = {".md", ".rst", ".adoc"}
+_DOC_DIRS = {"docs"}
 _LINT_PREFIXES = (".eslintrc", ".prettierrc", ".editorconfig", ".stylelintrc", ".flake8",
                   ".pylintrc", ".rubocop", ".golangci", ".markdownlint", ".codespellrc")
 
@@ -91,25 +94,52 @@ def generated(path: str) -> bool:
 
 
 def _inert(pf, i: int, hunk, root: Path | None) -> bool:
-    """The hunk changes nothing a program can observe."""
-    changed = [ln.value.strip() for ln in hunk if ln.is_added or ln.is_removed]
+    """The hunk changes nothing a program can observe: every line it adds or removes is
+    blank, or comment / docstring through and through (judged with what the hunk's own
+    lines show is open — a line inside a block comment or a triple-quoted string)."""
     suffix = PurePosixPath(pf.path).suffix.lower()
-    marks = [m for m, exts in _COMMENT.items() if suffix in exts]
-    if suffix in _COMMENT["//"]:
-        marks += ["/*", "*/", "* "]
-
-    def quiet(s: str) -> bool:
-        if not s:
+    if suffix in HASH or suffix in SLASH:
+        if _all_quiet(hunk, suffix):
             return True
-        if s == "*" and "/*" in marks:
+    else:
+        marks = [m for m, exts in _COMMENT.items() if suffix in exts and m == "--"]
+        changed = [ln.value.strip() for ln in hunk if ln.is_added or ln.is_removed]
+        if all(not s or any(s.startswith(m) for m in marks) for s in changed):
             return True
-        if s.startswith("#!") or (suffix in _COMMENT["//"] and s.startswith("#")):
-            return False                 # a shebang; a C preprocessor line
-        return any(s.startswith(m) for m in marks)
-    if all(quiet(s) for s in changed):
-        return True
     if suffix == ".py" and root is not None:
         return _same_python(pf, i, root)
+    return False
+
+
+def _all_quiet(hunk, suffix: str) -> bool:
+    """Each changed line masks to nothing: the old side (context + removed lines) and the
+    new side (context + added) are each read in order, so an open block comment or
+    docstring carries from one line to the next."""
+    for side in ("old", "new"):
+        lines = [ln for ln in hunk
+                 if not ((side == "old" and ln.is_added) or (side == "new" and ln.is_removed))]
+        texts = [ln.value.rstrip("\n") for ln in lines]
+        state = "*/" if suffix in SLASH and _starts_inside_block(texts) else None
+        for ln, text in zip(lines, texts, strict=True):
+            code, state = mask(text, suffix, state)
+            if not (ln.is_added or ln.is_removed):
+                continue
+            if code.strip() or text.lstrip().startswith("#!"):   # code, or a shebang
+                return False
+    return True
+
+
+def _starts_inside_block(texts: list[str]) -> bool:
+    """The hunk begins partway through a ``/* ... */`` block: its first lines are `` * ``
+    lines and a ``*/`` closes before any ``/*`` opens."""
+    first = next((t.strip() for t in texts if t.strip()), "")
+    if not first.startswith("*") or first.startswith("*/") and len(first) > 2:
+        return False
+    for t in texts:
+        if "/*" in t:
+            return False
+        if "*/" in t:
+            return True
     return False
 
 

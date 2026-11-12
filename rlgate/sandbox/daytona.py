@@ -281,12 +281,10 @@ def _run(handle, cmd: str, *, cwd: str | None, timeout: int) -> ExecResult:
     inner = f"cd {shlex.quote(cwd)} && {cmd}" if cwd else cmd
     # no input, as `docker exec` gives the harness: a prompt (apt's tzdata, a pager) sees
     # end-of-file and takes its default instead of waiting on the session's open stdin
-    wrapped = (f"if command -v timeout >/dev/null 2>&1; then timeout -k 10 {int(timeout)} "
-               f"sh -c {shlex.quote(inner)} < /dev/null; "
-               f"else sh -c {shlex.quote(inner)} < /dev/null; fi")
+    wrapped = _wrap(inner, timeout)
     sid = f"rlgate-{uuid.uuid4().hex[:12]}"
     short = timeout <= _SHORT_S
-    _retry(lambda: proc.create_session(sid, request_timeout=60))
+    _retry(lambda: _create_session(proc, sid))
     try:
         req = SessionExecuteRequest(command=wrapped, run_async=not short)
         started, cmd_id = _start(proc, sid, req, timeout + 10 if short else 60)
@@ -333,6 +331,34 @@ def _plain(out: str | None) -> str:
     return (out or "").replace("\x01\x01\x01", "").replace("\x02\x02\x02", "")
 
 
+def _wrap(inner: str, timeout: int) -> str:
+    """The shell line that runs ``inner`` in a session: no input (as `docker exec` gives
+    the harness — a prompt sees end-of-file and takes its default), a time limit, and in a
+    new Unix session of its own. Deleting a Daytona session kills every process in it, so
+    without that a server or daemon the command starts in the background (`dockerd &`, an
+    agent's leftover process) died with it — under `docker exec` it lives on. Run as a
+    background job (never a group leader, so `setsid` stays in place, BusyBox's included)
+    and waited for, it keeps its exit code."""
+    q = shlex.quote(inner)
+    return (f"if command -v timeout >/dev/null 2>&1; then T='timeout -k 10 {int(timeout)}'; "
+            f"else T=''; fi; "
+            f"if command -v setsid >/dev/null 2>&1; then setsid $T sh -c {q} < /dev/null & "
+            f"wait $!; else $T sh -c {q} < /dev/null; fi")
+
+
+def _create_session(proc, sid: str) -> None:
+    """Create session ``sid``; one a lost reply already created counts as created."""
+    try:
+        proc.create_session(sid, request_timeout=60)
+    except Exception as e:
+        if "already exists" not in str(e).lower():
+            raise
+
+
+_SEEN_CHECKS = (0.0, 2.0, 4.0)     # look again before resending: a command Daytona took
+                                   # may not be listed in its session at once
+
+
 def _start(proc, sid: str, req, timeout: float):
     """Start ``req`` in session ``sid`` exactly once: (response, command id), or (None, id)
     when the response was lost but the session shows the command started."""
@@ -344,7 +370,12 @@ def _start(proc, sid: str, req, timeout: float):
         except Exception as e:
             if not _is_transient(e) or time.monotonic() + delay > end:
                 raise
-            cmds = _retry(lambda: proc.get_session(sid, request_timeout=30)).commands or []
+            cmds = []
+            for pause in _SEEN_CHECKS:
+                time.sleep(pause)
+                cmds = _retry(lambda: proc.get_session(sid, request_timeout=30)).commands or []
+                if cmds:
+                    break
             if cmds:                       # it got through: wait for it, don't run it again
                 log.warning("Daytona dropped the reply to a command (%s); it is running, "
                             "waiting for it", e)
@@ -446,6 +477,31 @@ def _keep_alive_forever() -> None:
             m.keepalive()
 
 
+_GONE_STATES = ("destroying", "destroyed")
+
+
+def delete_sandbox(client: Any, sb: Any, patience: float = 60.0) -> bool:
+    """Delete one sandbox; True when it is gone. Already gone counts as done (a stop and
+    a task's own close can both reach it). Daytona refuses while a sandbox is starting or
+    stopping ("state change in progress"), so that waits and tries again rather than
+    leaving it up until its TTL."""
+    end = time.monotonic() + patience
+    while True:
+        try:
+            client.delete(sb)
+            return True
+        except Exception as e:  # noqa: BLE001 - classified below
+            msg = str(e).lower()
+            if "not found" in msg or ("already" in msg and "delet" in msg):
+                return True
+            if ("state change in progress" in msg or _is_transient(e)) \
+                    and time.monotonic() < end:
+                time.sleep(3)
+                continue
+            log.warning("could not delete sandbox %s: %s", getattr(sb, "id", "?"), e)
+            return False
+
+
 def release_all(timeout: float = 90) -> int:
     """Delete every sandbox this run created (on Ctrl-C), waiting at most ``timeout``
     seconds; returns how many. Staged machines, the plain backend's sandboxes, and the
@@ -457,7 +513,8 @@ def release_all(timeout: float = 90) -> int:
         fleets = list(_OPEN)
     machines = list(_LIVE)
     targets: list[Any] = [*machines, *fleets]
-    n = len(machines) + sum(len(f._live) for f in fleets)
+    held = {str(getattr(m.handle, "id", id(m))) for m in machines} | {
+        hid for f in fleets for hid in list(f._live)}
     with _CLIENTS_GUARD:
         clients = list(_CLIENTS.values())
     for c in [getattr(f, "_client", None) for f in fleets] + [
@@ -479,15 +536,16 @@ def release_all(timeout: float = 90) -> int:
     with _CREATING_GUARD:                # creates in flight delete what they get
         _CREATING_GUARD.wait_for(lambda: _CREATING[0] == 0,
                                  timeout=max(0.0, min(60.0, deadline - time.monotonic())))
-    n += _sweep(clients, deadline)
+    late = _sweep(clients, deadline, held)
     settle_deletes(max(0.0, deadline - time.monotonic()))
-    return n
+    return len(held) + late
 
 
-def _sweep(clients: list[Any], deadline: float) -> int:
+def _sweep(clients: list[Any], deadline: float,
+           held: set[str] | frozenset[str] = frozenset()) -> int:
     """Delete what is still up under this run's label (a create Daytona finished after
-    our side gave up on it). Returns how many it found."""
-    found = 0
+    our side gave up on it). Returns how many it found that the run didn't hold."""
+    late = 0
     for client in clients:
         try:
             try:
@@ -500,16 +558,14 @@ def _sweep(clients: list[Any], deadline: float) -> int:
             log.warning("could not list this run's sandboxes: %s", e)
             continue
         for sb in items:
-            if time.monotonic() > deadline:
-                break
             if (getattr(sb, "labels", None) or {}).get(RUN_LABEL[0]) != RUN_LABEL[1]:
                 continue                 # never another run's (or the user's own) sandbox
-            found += 1
-            try:
-                client.delete(sb)
-            except Exception as e:  # noqa: BLE001
-                log.warning("could not delete %s: %s", getattr(sb, "id", "?"), e)
-    return found
+            if str(getattr(sb, "state", "")).lower().rsplit(".", 1)[-1] in _GONE_STATES:
+                continue
+            if str(getattr(sb, "id", "")) not in held:
+                late += 1
+            delete_sandbox(client, sb, patience=max(0.0, deadline - time.monotonic()))
+    return late
 
 
 class DaytonaMachine(Machine):
@@ -1055,10 +1111,7 @@ class DaytonaSandbox(Sandbox):
         for sb in items:
             if (getattr(sb, "labels", None) or {}).get("rlgate-create") == tag:
                 log.warning("deleting sandbox %s left by a failed create", getattr(sb, "id", "?"))
-                try:
-                    self._client.delete(sb)
-                except Exception as e:  # noqa: BLE001
-                    log.warning("could not delete %s: %s", getattr(sb, "id", "?"), e)
+                delete_sandbox(self._client, sb)
 
     def _delete(self, handle, tracked: bool = True) -> None:
         """Delete in the background; ``close()`` waits for this fleet's deletions."""
@@ -1075,9 +1128,7 @@ class DaytonaSandbox(Sandbox):
 
     def _delete_now(self, handle, slot: bool) -> None:
         try:
-            self._client.delete(handle)
-        except Exception as e:  # noqa: BLE001 - auto-stop/TTL clean up what this misses
-            log.warning("could not delete sandbox %s: %s", getattr(handle, "id", "?"), e)
+            delete_sandbox(self._client, handle)     # auto-stop/TTL clean up what it misses
         finally:
             if slot:
                 _slots(self.opts.max_sandboxes).release()

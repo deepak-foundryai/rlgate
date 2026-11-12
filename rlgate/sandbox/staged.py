@@ -203,6 +203,7 @@ class StackHosts:
     def lease(self) -> _StackHost:
         held = getattr(self._held, "n", 0)
         waited = time.monotonic()
+        room: bool | None = None      # the account's answer, asked without the lock held
         with self._cond:
             while True:
                 if self._closed:
@@ -214,10 +215,19 @@ class StackHosts:
                     break
                 tight = False
                 if len(self._hosts) < self.cap:
-                    if not self._hosts or self._can_grow():
+                    if self._hosts and room is None:
+                        # a network call: never under the lock every lease and release need
+                        self._cond.release()
+                        try:
+                            room = self._can_grow()
+                        finally:
+                            self._cond.acquire()
+                        continue                     # things may have moved meanwhile
+                    if not self._hosts or room:
                         h = _StackHost(len(self._hosts))
                         self._hosts.append(h)        # reserved; made outside the lock
                         break
+                    room = None                      # ask again after the wait
                     tight = True
                 if held and ready:
                     h = min(ready, key=lambda h: h.busy)

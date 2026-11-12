@@ -4,6 +4,7 @@ caching, one-sandbox-per-task reuse, isolated overlays, retries, crash-safety pa
 from __future__ import annotations
 
 import itertools
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -644,3 +645,48 @@ def test_a_stop_deletes_every_sandbox_of_this_run_and_only_those(tmp_path, monke
     with pytest.raises(DaytonaUnavailable, match="stopping"):      # nothing new after
         late.overlay(None)
     late.close()
+
+
+def test_a_delete_waits_out_a_starting_sandbox_and_counts_gone_as_done(monkeypatch):
+    """Live Ctrl-C test: Daytona refused to delete a sandbox still starting ("state change
+    in progress"), and a sandbox both a task and the stop deleted logged "not found"."""
+    from rlgate.sandbox import daytona as mod
+    monkeypatch.setattr(mod.time, "sleep", lambda s: None)
+    calls = []
+
+    class Client:
+        def __init__(self, errors):
+            self.errors = list(errors)
+
+        def delete(self, sb):
+            calls.append(sb)
+            if self.errors:
+                raise de.DaytonaError(self.errors.pop(0))
+    assert mod.delete_sandbox(Client(["Sandbox state change in progress"] * 2), "a")
+    assert calls == ["a"] * 3
+    assert mod.delete_sandbox(Client(["Sandbox with ID or name a not found"]), "a")
+    assert not mod.delete_sandbox(Client(["Forbidden"]), "a")
+
+
+@pytest.mark.skipif(not __import__("shutil").which("setsid"), reason="needs util-linux setsid")
+def test_a_background_process_outlives_its_command(tmp_path):
+    """Regression (0.1.7, live): deleting a command's Daytona session killed what it
+    started in the background — `nohup dockerd &` died at once, failing every compose
+    task. Each command now runs in a Unix session of its own, keeping its exit code."""
+    import subprocess
+
+    from rlgate.sandbox.daytona import _wrap
+    pid = tmp_path / "pid"
+    line = _wrap(f"sleep 30 & echo $! > {pid}; exit 7", 20)
+    r = subprocess.run(["bash", "-c", line], check=False, capture_output=True, text=True)
+    assert r.returncode == 7
+    bg = int(pid.read_text())
+    assert os.getsid(bg) != os.getsid(0)          # not in the caller's session
+    os.kill(bg, 9)
+
+
+def test_the_command_line_keeps_a_time_limit_no_input_and_its_own_session():
+    from rlgate.sandbox.daytona import _wrap
+    line = _wrap("make test", 300)
+    assert "timeout -k 10 300" in line and "< /dev/null" in line
+    assert "setsid $T sh -c 'make test' < /dev/null & wait $!" in line

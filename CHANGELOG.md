@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.1.8 (2026-11-12)
+
+### Fixed
+
+- **Compose tasks work again on Daytona** (broken in 0.1.7): every task that runs its
+  services with Docker inside the sandbox failed with "Docker daemon did not start in the
+  Daytona sandbox within 120s". 0.1.7 ran each command in a Daytona session and deleted
+  the session afterwards, which kills everything the command started in the background
+  (`dockerd &`, a server, an agent's leftover process). Each command now runs in a Unix
+  session of its own, so what it starts in the background lives on, as under `docker
+  exec`; its exit code, output and time limit are as before. Checked live on Debian and
+  Alpine (BusyBox) images.
+- A reference patch made with `diff -u` (a timestamp after each file name) no longer
+  breaks the mutation check (RG103): its findings named `models.py<TAB>2026-08-30 ...`,
+  the code-only filters didn't see a Python file, and mutants of hunks already reported as
+  untested weren't pruned.
+- "Test infrastructure the grader doesn't restore" (RG211) stays quiet when the grader
+  deletes or restores the file itself (`find ... -name conftest.py -delete`,
+  `rm -rf .../tests_visible`, `git checkout` of the path).
+- "A file is named like an answer" (RG304) skips a repository's own test fixtures
+  (`testdata/`, `__snapshots__/`, `fixtures/`): one Go repo's `testdata/*.golden` files
+  gave 25 findings.
+- Ctrl-C: a sandbox Daytona is still starting ("state change in progress") is waited
+  for and deleted, not left to its TTL; the stop no longer prints "could not delete ...
+  not found" for a sandbox already gone, or "could not be checked" for each task it
+  stops, and counts each sandbox once.
+- Ctrl-C can no longer hang: the cleanup runs with a hard limit (100 s) even when the
+  interrupted work held a lock it needs (a run with `-j 1`).
+- 0.1.7's filters hid some real findings; they are now exact:
+  - RG101/RG102 and RG103 again test a fix hunk in `CMakeLists.txt`, `requirements.txt`,
+    a Go `doc/` package, or `.d`/`.v` source, and a C line that starts with `*` or
+    `/* ... */` followed by code. A hunk counts as comment-only when every changed line
+    is comment or docstring once strings and block comments are followed through it.
+  - RG211 reads what the grader removes from the command that removes it (`rm`, `git
+    checkout`/`restore`, `find <dir> -name X -delete`) and only under that folder. It
+    keeps a conftest in any folder `pytest` collects (`pytest tests/` loads
+    `tests/integration/conftest.py` too), and the ini pytest reads from where it starts
+    collecting (`tests/pytest.ini` for `pytest tests/`).
+- A command whose start reply Daytona dropped is looked for a few seconds longer before
+  it is sent again, so a slow-to-list command doesn't run twice; a session whose creation
+  reply was lost is used, not reported as "already exists".
+- Checking whether the account has room for another compose host no longer holds up the
+  task's other stacks while Daytona answers.
+
 ## 0.1.7 (2026-11-12)
 
 ### Fixed

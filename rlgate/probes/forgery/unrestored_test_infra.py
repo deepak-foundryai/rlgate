@@ -14,7 +14,7 @@ from rlgate.core.finding import Evidence, Finding, Severity, VerdictTier
 from rlgate.core.probe import Probe, ProbeKind, ProbeMeta
 from rlgate.core.registry import register
 from rlgate.core.task import Capability, Task
-from rlgate.probes.test_quality._graded import collected_paths, runs_pytest
+from rlgate.probes.test_quality._graded import collected_paths, grader_removes, runs_pytest
 
 _DANGER_NAMES = {
     "conftest.py", "sitecustomize.py", "usercustomize.py",
@@ -53,18 +53,22 @@ class UnrestoredTestInfra(Probe):
         root = task.repo_dir
         pytest = runs_pytest(task)
         collected = collected_paths(task)
-        ini = self._pytest_ini(root)
+        inis = self._pytest_inis(root, collected)
+        removed = grader_removes(task)
         findings: list[Finding] = []
         for rel, kind in self._candidates(root):
             if rel in gold_files:
                 continue  # the reference touches it → in scope, not a hidden channel
+            if removed.covers(rel):
+                continue  # the grader deletes or restores it before the tests run
             if kind == "conftest.py" or kind in _INI:
                 if pytest is False:
                     continue        # the grader runs another runner: pytest never loads it
-                if kind in _INI and rel != ini:
-                    continue        # not the file pytest reads its config from
-                if kind == "conftest.py" and collected and not _above(rel, collected):
-                    continue        # pytest loads a conftest only on the way to a test
+                if kind in _INI and rel not in inis:
+                    continue        # not a file pytest reads its config from
+                if kind == "conftest.py" and collected is not None \
+                        and not _loaded(rel, collected):
+                    continue        # not on pytest's way to (or inside) what it collects
             findings.append(Finding(
                 probe_id=self.meta.id,
                 title=f"unrestored test-infra ({kind}): {rel}",
@@ -84,12 +88,24 @@ class UnrestoredTestInfra(Probe):
         return findings
 
     @staticmethod
-    def _pytest_ini(root: Path) -> str | None:
-        for name, section in _INI_ORDER:
-            p = root / name
-            if p.is_file() and (not section or _reads(p, section)):
-                return name
-        return None
+    def _pytest_inis(root: Path, collected: set[str] | None) -> set[str]:
+        """The ini file(s) pytest takes its settings from: from each place it collects,
+        the nearest folder (going up) with one — the root when it collects everything."""
+        starts = [""] if collected is None else sorted(collected)
+        found = set()
+        for c in starts:
+            parts = c.split("/") if c else []
+            if parts and not (root / c).is_dir():
+                parts = parts[:-1]                   # a file: start from its folder
+            for k in range(len(parts), -1, -1):
+                folder = "/".join(parts[:k])
+                hit = next((f"{folder}/{name}".lstrip("/") for name, section in _INI_ORDER
+                            if (root / folder / name).is_file()
+                            and (not section or _reads(root / folder / name, section))), None)
+                if hit:
+                    found.add(hit)
+                    break
+        return found
 
     def _candidates(self, root: Path):
         for p in root.rglob("*"):
@@ -104,7 +120,8 @@ class UnrestoredTestInfra(Probe):
                 yield rel, "TestMain"
 
 
-def _above(conftest: str, collected: set[str]) -> bool:
-    """The conftest's folder holds (at any depth) one of the collected test files."""
+def _loaded(conftest: str, collected: set[str]) -> bool:
+    """pytest loads a conftest in a folder above where it collects, or inside it."""
     folder = conftest.rsplit("/", 1)[0] + "/" if "/" in conftest else ""
-    return any(c.startswith(folder) for c in collected)
+    return any(c.startswith(folder) or folder.startswith(c.rstrip("/") + "/")
+               for c in collected)

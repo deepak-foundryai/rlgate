@@ -52,3 +52,27 @@ def test_build_output_and_inert_hunks_are_not_parts_of_the_fix(tmp_path):
     (tmp_path / "c.c").write_text("int a;\nint b;\n")
     origins = [v.origin for v in revert_variants(Patch(patch), tmp_path)]
     assert origins == ["m.py#hunk1", "h.c#hunk0"]      # the real change; #include is code
+
+
+def test_inert_hunks_are_judged_by_code_not_by_how_a_line_starts():
+    """Review of 0.1.7: a C continuation line `* factor` and `/* x */ return y;` were taken
+    for comments, so a real fix hunk got no variant; CMakeLists.txt and a Go `doc/`
+    package were taken for docs."""
+    from rlgate.core.task import Patch
+    from rlgate.variants.revert import generated, revert_variants
+
+    def hunks(path: str, old: str, new: str, ctx: str = "int f() {\n") -> list:
+        text = (f"--- a/{path}\n+++ b/{path}\n@@ -1,2 +1,2 @@\n " + ctx
+                + "".join(f"-{x}\n" for x in old.splitlines())
+                + "".join(f"+{x}\n" for x in new.splitlines()))
+        other = "--- a/z.c\n+++ b/z.c\n@@ -1 +1 @@\n-int z = 1;\n+int z = 2;\n"
+        return [v for v in revert_variants(Patch(text + other)) if not v.origin.startswith("z.c")]
+    assert hunks("m.c", "    * factor;", "    * (factor + 1);")           # code
+    assert hunks("m.c", "    /* x */ return y;", "    /* x */ return z;")  # code
+    assert not hunks("m.c", "    // old note", "    // new note")           # comment
+    assert not hunks("m.c", " * old words", " * new words */", ctx="/**\n")   # in a block
+    assert hunks("m.py", 'x = """', 'y = """', ctx="def f():\n")             # code
+    assert not hunks("run.sh", "# old", "# new", ctx="set -e\n")
+    assert hunks("run.sh", "#!/bin/sh", "#!/bin/bash", ctx="\n")             # a shebang
+    assert not generated("CMakeLists.txt") and not generated("src/go/doc/comment.go")
+    assert not generated("lib/x.d") and generated("README.md")
