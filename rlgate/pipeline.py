@@ -97,6 +97,11 @@ class AuditResult:
     stopped_at: int | None = None              # the step the run stopped at
 
 
+def static_findings(findings: list[Finding]) -> list[Finding]:
+    """Without --deep-review: drop the rules reported only with it (``rules.DEEP_ONLY``)."""
+    return [f for f in findings if not rules.deep_only(f.rule_id)]
+
+
 def _kept(findings: list[Finding], include_review: bool) -> list[Finding]:
     """By default the library asserts only what it has PROVEN; REVIEW findings are kept only
     when the caller opts in (the CLI always does)."""
@@ -131,7 +136,7 @@ def audit(task: Task, sandbox: Sandbox | None = None, k: int = 5,
           fingerprints: dict[int, str] | None = None,
           on_findings: Callable[[list[Finding]], object] | None = None,
           workers: int = 1, depth: str = "fast", parallel: bool = False,
-          review: Session | None = None) -> AuditResult:
+          review: Session | None = None, weak_tests: bool | None = None) -> AuditResult:
     """Run the steps in order. ``steps``: the steps to run (None = all); ``reuse``: steps taken
     from ``prior`` unchanged; ``only``: restrict to these probe ids; ``on_findings`` marks
     waived findings before a step's pass/fail is decided.
@@ -146,12 +151,22 @@ def audit(task: Task, sandbox: Sandbox | None = None, k: int = 5,
     run = _Run(task, sandbox, k, only, backend, static_only, include_review, env_options,
                fingerprints or {}, on_findings)
     run.workers, run.depth, run.review = max(1, workers), depth, review
+    # the rules reported only with --deep-review (rules.DEEP_ONLY); tests can ask for them
+    if weak_tests is None:     # RLGATE_WEAK_TESTS=1: maintainers' tests run them offline
+        import os
+        weak_tests = review is not None or os.environ.get("RLGATE_WEAK_TESTS") == "1"
+    run.weak_tests = weak_tests
     t0 = time.monotonic()
     try:
         run.go(steps, keep_going or parallel, prior, reuse or set(), parallel=parallel)
     finally:
         run.close()
     r = run.result
+    if not run.weak_tests:       # steps reused from a --deep-review run carry its findings
+        r.findings = static_findings(r.findings)
+        for c in r.checks:
+            if rules.probe_deep_only(c.probe_id) and c.status != CheckRun.NA:
+                c.status, c.findings = CheckRun.SKIPPED_DEEP, 0
     r.seconds = time.monotonic() - t0
     return r
 
@@ -180,6 +195,7 @@ class _Run:
         self.workers = 1
         self.depth = "fast"
         self.review: Session | None = None
+        self.weak_tests = False
         probes = discover()
         self.by_step: dict[Step, list[tuple[str, type]]] = {s: [] for s in STEPS}
         for pid, cls in probes.items():
@@ -364,6 +380,8 @@ class _Run:
         for f in fs:
             if not f.rule_id:
                 _with_rules([f])
+        if not self.weak_tests:
+            fs[:] = static_findings(fs)
         if self.on_findings:
             self.on_findings(fs)
         self.result.findings.extend(fs)
@@ -387,7 +405,8 @@ class _Run:
         if not probe.applicable(self.task if live is None else self._prepared):
             self.result.checks.append(CheckRun(pid, m.family, CheckRun.NA, doc=m.doc))
             return []
-        if m.needs_llm and self.review is None:
+        if (m.needs_llm and self.review is None) or \
+                (rules.probe_deep_only(pid) and not self.weak_tests):
             self.result.checks.append(CheckRun(pid, m.family, CheckRun.SKIPPED_DEEP,
                                                doc=m.doc))
             return []

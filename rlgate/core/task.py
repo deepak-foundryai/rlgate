@@ -68,6 +68,7 @@ class EnvSpec:
     storage_mb: int | None = None
     build_timeout_s: float = 1800.0
     network: bool = True                 # outbound network while grading
+    agent_network: bool | None = None    # the agent's runs: None = the format doesn't say
 
     @property
     def context(self) -> Path | None:

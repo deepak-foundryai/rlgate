@@ -13,6 +13,9 @@ def _isolated_state_dir(tmp_path, monkeypatch):
     # nor their ~/.config/rlgate/rlgate.toml, an RLGATE_CONFIG, or a .env found by a past test
     monkeypatch.setenv("RLGATE_HOME", str(tmp_path / "no-user-config"))
     monkeypatch.delenv("RLGATE_CONFIG", raising=False)
+    # the weak-test checks (rules.DEEP_ONLY) are reported only with --deep-review; the
+    # suite's fixtures exercise them offline (tests/core/test_static_report.py turns it off)
+    monkeypatch.setenv("RLGATE_WEAK_TESTS", "1")
     from rlgate import config
     monkeypatch.setattr(config, "_DIRS", [])
 

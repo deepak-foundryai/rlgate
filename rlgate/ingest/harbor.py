@@ -97,10 +97,17 @@ def load(task_dir: str | Path) -> Task:
         unsupported.append("multi-step task ([[steps]]) — rlgate grades single-step tasks")
     if str(env_cfg.get("os", "linux")).lower() == "windows":
         unsupported.append("Windows task — rlgate runs Linux containers only")
+    gpus = max(_count(env_cfg.get("gpus")),
+               _count((ver_cfg.get("environment") or {}).get("gpus")))
+    if gpus:
+        unsupported.append(f"needs {gpus} GPU{'s' if gpus > 1 else ''} — rlgate's sandboxes "
+                           "have none, so its runs wouldn't show how the task behaves")
 
     env_dir = d / "environment"
     tests_dir = d / "tests"
     workspace_env = _env_spec(env_cfg, env_dir, unsupported, role="environment")
+    if workspace_env is not None:
+        workspace_env = _replace(workspace_env, agent_network=_agent_network(env_cfg, agent_cfg))
 
     mode = ver_cfg.get("environment_mode") or (
         "separate" if ver_cfg.get("environment") else "shared")
@@ -217,10 +224,32 @@ def _env_spec(cfg: dict, directory: Path, unsupported: list[str], role: str) -> 
     return None
 
 
-def _spec_from(cfg: dict, **kw) -> EnvSpec:
+_NO_NETWORK = frozenset({"none", "disabled", "no_network", "off", "isolated", "blocked"})
+
+
+def _network_off(cfg: dict) -> bool | None:
+    """True/False when the table turns the network off/on; None when it doesn't say."""
     net = cfg.get("allow_internet")
-    mode = str(cfg.get("network_mode") or "").lower()
-    network = not (net is False or mode in ("none", "disabled", "no_network"))
+    if isinstance(net, bool):
+        return not net
+    mode = str(cfg.get("network_mode") or "").strip().lower().replace("-", "_")
+    if not mode:
+        return None
+    return mode in _NO_NETWORK
+
+
+def _agent_network(env_cfg: dict, agent_cfg: dict) -> bool:
+    """Whether the agent's runs have the network: ``[agent]`` decides, then
+    ``[environment]``; Harbor's default is on."""
+    for table in (agent_cfg, env_cfg):
+        off = _network_off(table)
+        if off is not None:
+            return not off
+    return True
+
+
+def _spec_from(cfg: dict, **kw) -> EnvSpec:
+    network = not _network_off(cfg)
     return EnvSpec(
         workdir=cfg.get("workdir"),
         cpus=float(cfg["cpus"]) if cfg.get("cpus") else None,
@@ -230,6 +259,13 @@ def _spec_from(cfg: dict, **kw) -> EnvSpec:
         network=network,
         **kw,
     )
+
+
+def _count(v: object) -> int:
+    try:
+        return max(0, int(v))  # type: ignore[call-overload]
+    except (TypeError, ValueError):
+        return 0
 
 
 def _replace(spec: EnvSpec, **kw) -> EnvSpec:

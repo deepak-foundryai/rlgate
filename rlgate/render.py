@@ -341,7 +341,9 @@ def explain(rule_id: str) -> None:
     head = Text(f"{r.id}  {r.title}", style="bold")
     where = f"Step {r.step.number} {r.step.label}" if r.step else r.question.text
     sub = Text(f"{where}  {ui.dot()}  {r.proof.value}  {ui.dot()}  "
-               f"{r.severity.name.lower()} severity", style="dim")
+               f"{r.severity.name.lower()} severity"
+               + (f"  {ui.dot()}  runs with --deep-review" if rules.deep_only(r.id) else ""),
+               style="dim")
 
     def block(title: str, code: str, status: str) -> Group:
         return Group(Text.assemble(ui.sym(status), f" {title}", style="bold"),

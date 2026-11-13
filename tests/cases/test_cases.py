@@ -31,11 +31,14 @@ def _found(case: B.Case, *, full: bool = False) -> set[str]:
     from rlgate.pipeline import audit
 
     task = spec.load(case.path)
-    # keep_going: a case lists every rule it plants, even past the step a run stops at
+    # keep_going: a case lists every rule it plants, even past the step a run stops at;
+    # weak_tests: the rules reported only with --deep-review run when the case plants one
+    weak = bool(case.expect & rules.DEEP_ONLY)
     if full:
-        result = audit(task, k=3, include_review=True, keep_going=True)
+        result = audit(task, k=3, include_review=True, keep_going=True, weak_tests=weak)
     else:
-        result = audit(task, static_only=True, include_review=True, keep_going=True)
+        result = audit(task, static_only=True, include_review=True, keep_going=True,
+                       weak_tests=weak)
     return {f.rule_id for f in result.findings}
 
 
@@ -74,7 +77,9 @@ def test_planted_cases_change_only_one_thing():
         if c.plant is None:
             continue
         before = {f.rule_id for f in audit(spec.load(c.source), static_only=True,
-                                           include_review=True, keep_going=True).findings}
+                                           include_review=True, keep_going=True,
+                                           weak_tests=bool(c.expect & rules.DEEP_ONLY)
+                                           ).findings}
         added = _found(c) - before
         assert added == set(c.expect) - before, f"{c.name}: also added {sorted(added - c.expect)}"
 

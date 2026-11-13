@@ -533,6 +533,28 @@ def default_rule(probe_id: str) -> str | None:
     return rs[0].id if len(rs) == 1 else None
 
 
+# Rules reported only with --deep-review. A survived mutant, a removed hunk that still passes,
+# a test that names an internal symbol: each shows the tests let something through, not that
+# it matters (the change may be equivalent, unreachable, or outside what the task asks). The
+# static report keeps to proven exploits and concrete facts.
+DEEP_ONLY: frozenset[str] = frozenset({
+    "RG008",                                     # no regression tests: needs the task's intent
+    "RG101", "RG102", "RG103", "RG104",          # variants of the fix that still pass
+    "RG304", "RG305",                            # answer-like names, late-added files
+    "RG401", "RG402", "RG403", "RG404",          # wording, internal names, call counts
+})
+
+
+def deep_only(rule_id: str) -> bool:
+    return rule_id in DEEP_ONLY
+
+
+def probe_deep_only(probe_id: str) -> bool:
+    """Every rule the probe emits is reported only with --deep-review: skip running it."""
+    rs = for_probe(probe_id)
+    return bool(rs) and all(r.id in DEEP_ONLY for r in rs)
+
+
 def by_step() -> dict[Step, list[Rule]]:
     out: dict[Step, list[Rule]] = {s: [] for s in Step}
     for r in _RULES:

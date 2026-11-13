@@ -10,8 +10,13 @@ Every finding is one of two kinds:
 - **Proven**: rlgate ran it and showed the problem, and gives you a command to reproduce it.
 - **Needs your judgment**: a real signal that a person should decide on.
 
-The standard checks are deterministic and use no LLM. An optional LLM review
-(`--deep-review`) adds judges and agents on top.
+The standard checks are deterministic and use no LLM. They report only proven exploits
+(a faked pass, a leaked answer, a forgeable grader) and concrete facts about the task's
+files. An optional LLM review (`--deep-review`) adds judges and agents on top, and with it
+the test-strength checks: a part of the fix the tests never exercise (RG101), a stub or a
+small change that still passes (RG102, RG103), answers hardcoded to the visible tests
+(RG104), and tests tied to wording or internal names (RG401–RG404). Those show that the
+tests let a change through, not that the change matters, so they need a judge.
 
 ```text
 $ rlgate demo

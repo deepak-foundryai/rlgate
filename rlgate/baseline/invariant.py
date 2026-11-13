@@ -11,6 +11,7 @@ fail-to-pass (fails without the fix, passes with it) and pass-to-pass (passes ei
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 
@@ -113,18 +114,41 @@ def establish(task: Task, sandbox: Sandbox, k: int = 5, workers: int = 1) -> Bas
     return b
 
 
+GOLD_TRIES = 3       # a reference grading that produced no verdict at all is run again
+
+
 def _run(task: Task, sandbox: Sandbox, gold: bool,
          fresh: bool = False) -> tuple[float, TestReport | None, float]:
+    """One grading. For the reference, a grading that produced no verdict (the grader
+    couldn't start, or wrote no reward file) says nothing about the task: a lost sandbox
+    reply looks the same. It runs again from scratch, up to ``GOLD_TRIES`` times; one that
+    keeps failing that way is the task's own result."""
+    reward, report, secs, silent = _run_once(task, sandbox, gold, fresh)
+    for attempt in range(1, GOLD_TRIES if gold else 1):
+        if not silent:
+            break
+        logging.getLogger("rlgate.run").info(
+            "reference grading %d of %d gave no verdict; running it again", attempt,
+            GOLD_TRIES)
+        reward, report, secs, silent = _run_once(task, sandbox, gold, True)
+    return reward, report, secs
+
+
+def _run_once(task: Task, sandbox: Sandbox, gold: bool,
+              fresh: bool) -> tuple[float, TestReport | None, float, bool]:
+    def done(g, t: float):
+        silent = g.did_not_run or bool(g.reward_error
+                                       and g.reward_error.startswith("no reward file"))
+        return g.reward, g.report, time.monotonic() - t, silent
+
     if gold and uses_oracle_script(task, sandbox):
         with sandbox.oracle_overlay(fresh=fresh) as ovl:     # type: ignore[attr-defined]
             t = time.monotonic()
-            g = run_grader(ovl, task)
-            return g.reward, g.report, time.monotonic() - t
+            return done(run_grader(ovl, task), t)
     patch = task.gold_patch.text if (gold and task.gold_patch) else None
     with sandbox.overlay(patch) as ovl:
         t = time.monotonic()
-        g = run_grader(ovl, task)
-        return g.reward, g.report, time.monotonic() - t
+        return done(run_grader(ovl, task), t)
 
 
 def _extracted(task: Task, sandbox: Sandbox, b: Baseline) -> float:
@@ -156,6 +180,21 @@ def _gold_failures(task: Task, baseline: Baseline) -> str:
     return f"; tests it fails: {_some(sorted(bad))}" if bad else ""
 
 
+def _failing_before(task: Task, baseline: Baseline) -> list[str]:
+    """The graded tests the reference fails, when every one of them is a must-keep-passing
+    test (pass-to-pass) that also fails on the unchanged task; [] otherwise (including when
+    the grader names no such tests, or the reference fails a test it should fix)."""
+    g = task.grader
+    if not (baseline.per_test and baseline.nop_per_test and g.pass_to_pass):
+        return []
+    required = list(g.fail_to_pass) + list(g.pass_to_pass)
+    bad = [n for n in required if not baseline.per_test.get(n, False)]
+    keep = set(g.pass_to_pass)
+    if not bad or any(n not in keep or baseline.nop_per_test.get(n, False) for n in bad):
+        return []
+    return sorted(bad)
+
+
 def uses_oracle_script(task: Task, sandbox: Sandbox | None) -> bool:
     """The reference is a solution SCRIPT the sandbox can run as the harness would — the
     true oracle (a derived patch can't carry effects outside the workspace)."""
@@ -175,10 +214,22 @@ def findings(task: Task, baseline: Baseline) -> list[Finding]:
                               oracle=script,
                               note=("run the reference solution script and grade" if script
                                     else "apply the reference fix and grade"))
-        out.append(_f("RG001", f"the reference solution scored {baseline.oracle} "
-                               f"(want {pass_reward}) on its worst of {baseline.k} runs"
-                               + _early(baseline) + _gold_failures(task, baseline),
-                      replay, "reproduced_exploit"))
+        before = _failing_before(task, baseline)
+        if before:
+            # the reference fails only tests that must pass either way and that fail on the
+            # unchanged task too: the sandbox (a network call, a missing service) fails
+            # them, not the reference. Shown, but it doesn't stop the run.
+            out.append(_f("RG001", f"the reference solution scored {baseline.oracle} "
+                                   f"(want {pass_reward}) because {_some(before)} fail, and "
+                                   "they fail without the fix too: they need something this "
+                                   "sandbox doesn't give (often network access), so the "
+                                   "remaining checks still ran", replay, "variant",
+                          verdict=VerdictTier.REVIEW))
+        else:
+            out.append(_f("RG001", f"the reference solution scored {baseline.oracle} "
+                                   f"(want {pass_reward}) on its worst of {baseline.k} runs"
+                                   + _early(baseline) + _gold_failures(task, baseline),
+                          replay, "reproduced_exploit"))
     if baseline.nop > 0.0:
         replay = repro.record(task, "RG002", patch=None, expect="pass",
                               note="grade the unchanged workspace")
@@ -220,8 +271,13 @@ def findings(task: Task, baseline: Baseline) -> list[Finding]:
         replay = repro.record(task, "RG009", patch=gold, expect="pass",
                               note="apply the reference's extracted patch and grade") \
             if gold else None
+        # a solution script that exits non-zero proves only that it fails in the agent's
+        # environment (often on something only the grader's image has), not that a working
+        # fix is lost on the way to the grader: shown, for a person to decide
         out.append(_f("RG009", f"the reference solution passes when run in place, but {what}",
-                      replay, "reproduced_exploit"))
+                      replay, "variant" if gold is None and failed else "reproduced_exploit",
+                      verdict=VerdictTier.REVIEW if gold is None and failed
+                      else VerdictTier.CONFIRMED))
 
     for label, secs, limit in (("grading", baseline.grade_seconds, baseline.grade_limit),
                                ("the reference solution", baseline.solve_seconds,

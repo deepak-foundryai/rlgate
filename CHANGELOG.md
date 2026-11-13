@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.1.10 (2026-11-13)
+
+The standard report keeps to findings that are proven or that state a concrete fact about
+the task. An independent finding-by-finding review of the 0.1.9 runs on SWE-bench Verified,
+DeepSWE and Terminal-Bench 4 found 117 of 251 findings correct; nearly all the noise came
+from the checks below, and every exploit check (RG201, RG205, RG211, RG301) was correct.
+
+### Changed
+
+- **The test-strength checks run only with `--deep-review`:** RG101–RG104 (a removed hunk,
+  a stub, a small mutation or hardcoded answers still pass), RG401–RG404 (tests tied to
+  wording, internal names, call counts), RG008 (no regression tests), RG304 (a file named
+  like an answer) and RG305 (files added after checkout). A surviving change shows the
+  tests let it through, not that it matters: it may change nothing, never run, or touch
+  behaviour the task never asks for. Without `--deep-review` they are listed as "runs
+  with --deep-review" and cost no grading runs.
+
+### Fixed
+
+- **Open internet (RG307)** is reported only when the task's own settings leave the agent
+  online. `network_mode = "no-network"` (with a hyphen, under `[agent]`) now counts; the
+  verifier's setting is no longer read as the agent's; and a format that has no such
+  setting (SWE-bench rows) is no longer reported as open.
+- **Dockerfile checks read only what is built.** A task that runs a prebuilt image
+  (`docker_image`) is no longer linted on the recipe beside it (unpinned base, version
+  ranges, `nproc`, layer order); instructions are read whole, so `from x import y` inside
+  a `RUN python -c` continuation or a heredoc is not a `FROM` line.
+- **A broad `COPY .` (RG601)** is reported only when the build context holds held-out
+  material: the solution or test folder, or a byte-identical copy of one of their files,
+  which the finding names.
+- **A reference that fails only where the sandbox does no longer stops the run.** When
+  every test it fails must keep passing either way and fails without the fix too (a test
+  that needs the network), RG001 says so for a person to judge and the other checks run.
+- A reference grading that produced no verdict (the grader couldn't start or wrote no
+  reward file, as when a sandbox reply is lost) runs again, up to 3 times, before it
+  counts as a failure or a flaky grade.
+- A solution script that exits non-zero while its result passes in place (RG009) is
+  shown for a person to judge, not as proof the fix is lost on the way to the grader.
+- A task that asks for GPUs is checked with the file-only checks and says why: rlgate's
+  sandboxes have no GPU, so a full run couldn't show how the task behaves.
+
 ## 0.1.9 (2026-11-13)
 
 Fewer false findings, from a finding-by-finding review of SWE-bench Verified, DeepSWE and

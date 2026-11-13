@@ -145,6 +145,14 @@ def _unpinned_and_ranges(t: Path) -> None:
         lines.append("RUN pip install 'numpy>=1.26'")
         return "\n".join(lines) + "\n"
     _edit(t, "environment/Dockerfile", df)
+    # the broad copy matters because the build context holds a copy of the reference
+    _write(t, "environment/helpers.py", (t / "solution/cracker.py").read_text(),
+           like="environment/generate_sample.py")
+
+
+def _nproc(t: Path) -> None:
+    _edit(t, "environment/Dockerfile", lambda s: s.rstrip("\n")
+          + "\nRUN make -j$(nproc) -C /tmp -n || true\n")
 
 
 def _gold_fails(t: Path) -> None:
@@ -225,9 +233,14 @@ ALL: list[Case] = [
     # -- natural: occurs in real tasks as shipped ------------------------------------------
     Case("rg004-shared-runtime", TB / "legacy/regex-log", F({"RG004"}), F({"RG605"}),
          note="legacy Terminal-Bench format: tests run inside the agent's container"),
-    Case("rg602-unpinned-base", TB / "tasks/legacy-utility-triage", F({"RG602"})),
-    Case("rg603-nproc", TB / "legacy/compile-compcert", F({"RG603"})),
-    Case("rg604-version-range", TB / "legacy/video-processing", F({"RG604"})),
+    Case("ok-prebuilt-unpinned-recipe", TB / "tasks/legacy-utility-triage", F(), F({"RG602"}),
+         note="the task runs a prebuilt image: an unpinned FROM in its recipe never runs"),
+    Case("rg603-nproc", VIG, F({"RG603"}), plant=_nproc,
+         change="a RUN line using $(nproc) in environment/Dockerfile"),
+    Case("ok-prebuilt-recipe", TB / "legacy/compile-compcert", F(), F({"RG603"}),
+         note="the task runs a prebuilt image: the nproc in the recipe beside it never runs"),
+    Case("ok-prebuilt-range-recipe", TB / "legacy/video-processing", F(), F({"RG604"}),
+         note="the task runs a prebuilt image: a version range in its recipe never runs"),
     # -- natural controls: must NOT be flagged ---------------------------------------------
     Case("ok-reward-written-by-helper", TB / "tasks/cargo-flight-dispatch", F(),
          F({"RG605"}), note="test.sh execs verify.py, which writes the reward"),
@@ -253,7 +266,8 @@ ALL: list[Case] = [
          plant=_compose_no_main, change="compose service 'main' renamed to 'app'"),
     Case("rg601-602-604-dockerfile", VIG, F({"RG601", "RG602", "RG604"}),
          plant=_unpinned_and_ranges,
-         change="FROM python (no tag), COPY . /app, pip install 'numpy>=1.26'"),
+         change="FROM python (no tag), COPY . /app with a copy of the reference in the "
+                "build context, pip install 'numpy>=1.26'"),
     Case("rg606-layer-order", VIG, F({"RG606"}), F({"RG601"}), plant=_layer_order,
          change="COPY generate_sample.py before the apt-get install layer"),
     Case("rg607-grader-download", VIG, F({"RG607"}), plant=_grader_download,
