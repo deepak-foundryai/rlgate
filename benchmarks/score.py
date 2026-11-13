@@ -57,15 +57,20 @@ def upstream_id(t: dict) -> str | None:
 
 
 def _llm_rules() -> frozenset[str]:
-    """Rules only an LLM check can report (empty when rlgate isn't importable)."""
+    """Rules only --deep-review reports: the LLM checks, and the test-strength checks it
+    gates (``rules.DEEP_ONLY``). Empty when rlgate isn't importable."""
     try:
         from rlgate.core.registry import discover
         from rlgate.core.rules import RULES
     except ImportError:
         return frozenset()
+    try:
+        from rlgate.core.rules import DEEP_ONLY
+    except ImportError:              # rlgate before 0.1.10
+        DEEP_ONLY = frozenset()
     probes = discover()
     return frozenset(r.id for r in RULES.values()
-                     if r.probe_id in probes and probes[r.probe_id].meta.needs_llm)
+                     if r.probe_id in probes and probes[r.probe_id].meta.needs_llm) | DEEP_ONLY
 
 
 LLM_RULES = _llm_rules()

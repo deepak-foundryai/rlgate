@@ -1,6 +1,6 @@
 [project]
 name = "rlgate"
-version = "0.1.10"
+version = "1.0.0"
 description = "A deterministic, third-party auditor that finds reward-hacking vulnerabilities in RL/eval environments."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -9,7 +9,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "rlgate contributors" }]
 keywords = ["reward-hacking", "rl", "evals", "auditing", "reward", "grader", "llm"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",

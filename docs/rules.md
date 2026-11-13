@@ -1182,7 +1182,7 @@ one source of truth, the other file generated from it
 | [RG202](#rg202) | Exiting early with code 0 fakes a pass | Proven | high |
 | [RG203](#rg203) | A fake test report fakes a pass | Proven | high |
 | [RG204](#rg204) | An object equal to everything fakes a pass | Proven | high |
-| [RG205](#rg205) | Code planted outside the workspace fakes a pass | Proven | high |
+| [RG205](#rg205) | Code that runs at interpreter start fakes a pass | Proven | high |
 | [RG206](#rg206) | A fake clock passes a timing test | Proven | high |
 | [RG207](#rg207) | Changing which tests run fakes a pass | Proven | high |
 | [RG208](#rg208) | The grading command can report success without passing tests | Needs your judgment | high |
@@ -1287,7 +1287,7 @@ assert type(r) is int and r == 30
 
 ### RG205
 
-**Code planted outside the workspace fakes a pass** · Proven · high
+**Code that runs at interpreter start fakes a pass** · Proven · high
 
 Code is planted where Python loads it before any test: a .pth import hook and a sitecustomize.py in site-packages, a patched pytest package, and a sitecustomize.py in the workspace. Each one forces pytest to report a pass or the process to exit 0.
 

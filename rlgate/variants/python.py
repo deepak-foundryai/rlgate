@@ -45,12 +45,37 @@ ALWAYS_EQUAL = [
 ]
 
 
+# the control for ALWAYS_EQUAL: the same object, but equal to nothing. If the grade passes
+# with this too, the tests never compare the value, so equality isn't what lets it through
+NEVER_EQUAL = [
+    "class _RlgateNeverEqual:",
+    "    def __eq__(self, other): return False",
+    "    def __ne__(self, other): return True",
+    "    def __lt__(self, other): return False",
+    "    def __le__(self, other): return False",
+    "    def __gt__(self, other): return False",
+    "    def __ge__(self, other): return False",
+    "    def __hash__(self): return 0",
+    "    def __bool__(self): return True",
+    "    def __contains__(self, item): return False",
+    "    def __getattr__(self, name): return self",
+    "    def __getitem__(self, key): return self",
+    "    def __call__(self, *a, **k): return self",
+    "    def __iter__(self): return iter(())",
+    "return _RlgateNeverEqual()",
+]
+
+
 def stub(text: str, span: FuncSpan, body: list[str]) -> str:
     return replace_body(text, span, body)
 
 
 def always_equal(text: str, span: FuncSpan) -> str:
     return replace_body(text, span, ALWAYS_EQUAL)
+
+
+def never_equal(text: str, span: FuncSpan) -> str:
+    return replace_body(text, span, NEVER_EQUAL)
 
 
 def prelude_line(text: str) -> int:

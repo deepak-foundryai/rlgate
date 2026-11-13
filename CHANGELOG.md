@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.0.0 (2026-11-13)
+
+First public release. From an independent finding-by-finding review of the 0.1.10 runs on SWE-bench Verified,
+DeepSWE and Terminal-Bench 4: 89 of 105 decidable findings were correct; these fixes remove
+the noise it found.
+
+### Fixed
+
+- **A planted conftest now also forges tests that import what the fix adds (RG201).**
+  Held-out tests often import names that don't exist before the fix, so on the unfixed
+  repo they failed at collection, before the makereport hook could act. The planted
+  conftest now makes missing names in the project's own packages import as a stand-in;
+  names that exist and other packages are untouched.
+- **Step 1 reused an older rlgate's results.** Build-step findings (the Dockerfile checks)
+  came from the cache of a previous version, so 0.1.10 runs still showed 0.1.9's false
+  RG601/RG602. Step 1 now re-runs its checks after an upgrade; the image itself stays
+  cached (a Daytona snapshot or a local image), so nothing is rebuilt.
+- **An always-equal object (RG204) is reported only when equality is what passes.** The same
+  functions returning an object equal to nothing are graded as a control; when that passes
+  too, the tests never compare the value (the function isn't called by them, or its result
+  is thrown away) and nothing is reported.
+- **Installing the project itself is not a download (RG607).** `pip install -e .` and
+  `pip install .` count only when the project declares a `[build-system]` and pip builds it
+  in an isolated environment (which downloads the build tools); `--no-build-isolation` is
+  local.
+- **A reference that passes on some runs is flaky (RG003), not broken.** RG001 is kept for a
+  reference that fails every run.
+- A step whose checks all run only with `--deep-review` says so, instead of "doesn't apply
+  to this task".
+- RG205 is titled "Code that runs at interpreter start fakes a pass": the planted
+  sitecustomize can sit inside the workspace.
+- `benchmarks/score.py` scores the rules reported only with `--deep-review` as deep-only.
+
 ## 0.1.10 (2026-11-13)
 
 The standard report keeps to findings that are proven or that state a concrete fact about

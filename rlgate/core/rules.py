@@ -284,7 +284,7 @@ _RULES: list[Rule] = [
          "True, so the agent can return one instead of the answer.",
          "Check the result's type before comparing (type(r) is int), or compare serialised "
          "values (json.dumps, repr)."),
-    Rule("RG205", "forgery.env_hijack", "Code planted outside the workspace fakes a pass", _H,
+    Rule("RG205", "forgery.env_hijack", "Code that runs at interpreter start fakes a pass", _H,
          _P,
          "sitecustomize.py, .pth import hooks or a patched pytest run before any test and can "
          "force a pass from outside the code under test.",

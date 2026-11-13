@@ -132,3 +132,102 @@ def test_do_nothing_gradings_are_not_retried(monkeypatch):
     monkeypatch.setattr(invariant, "_run_once", once)
     invariant._run(None, None, gold=False)                  # type: ignore[arg-type]
     assert calls == [False]
+
+
+def test_a_step_left_to_deep_review_says_so(monkeypatch):
+    from rlgate.core.questions import outcome
+    monkeypatch.delenv("RLGATE_WEAK_TESTS", raising=False)
+    result = audit(spec.load(WEAK), k=1, backend="local", include_review=True)
+    [grader] = [r for r in outcome(result, quick=False).rows if r.step.label == "Grader"]
+    assert grader.summary == "runs with --deep-review"
+
+
+# -- RG204 needs equality to be what passes ---------------------------------------------
+
+def _equality_task(tmp_path: Path, test_body: str) -> Path:
+    """A fix that changes ``feature()`` and adds a module flag; the test is given."""
+    d = tmp_path / "task"
+    (d / "repo").mkdir(parents=True)
+    (d / "repo" / "mod.py").write_text("def feature():\n    return 0\n")
+    (d / "repo" / "test_feature.py").write_text(test_body)
+    (d / "fix.patch").write_text("--- a/mod.py\n+++ b/mod.py\n@@ -1,2 +1,4 @@\n"
+                                 "+FLAG = True\n+\n def feature():\n-    return 0\n"
+                                 "+    return 42\n")
+    (d / "task.rlgate.yaml").write_text(
+        "id: eq\nsource: fixture\nworkspace: ./repo\ngold_patch: ./fix.patch\n"
+        "grader:\n  run: \"python3 -m pytest -q -p no:cacheprovider\"\n"
+        "languages: [python]\n")
+    return d
+
+
+def _equality_rules(d: Path) -> set[str]:
+    r = audit(spec.load(str(d)), k=1, backend="local", include_review=True,
+              only={"forgery.equality_override"})
+    return {f.rule_id for f in r.findings}
+
+
+def test_an_always_equal_object_that_tests_compare_is_reported(tmp_path):
+    d = _equality_task(tmp_path, "import mod\n\n\ndef test_it():\n"
+                                 "    assert mod.FLAG and mod.feature() == 42\n")
+    assert "RG204" in _equality_rules(d)
+
+
+def test_a_result_the_tests_throw_away_is_not_an_equality_hole(tmp_path, monkeypatch):
+    # feature() is called but its result is never compared: an object equal to nothing
+    # passes too, so equality isn't what lets the change through
+    d = _equality_task(tmp_path, "import mod\n\n\ndef test_it():\n"
+                                 "    mod.feature()\n    assert mod.FLAG\n")
+    assert "RG204" not in _equality_rules(d)
+    # without the control, the old check reported it
+    from rlgate.probes.forgery import equality_override as eo
+    real = eo.EqualityOverride._passes
+    monkeypatch.setattr(eo.EqualityOverride, "_passes", lambda self, ctx, v: (
+        (False, 0.0) if v.operator == "never_equal" else real(self, ctx, v)))
+    assert "RG204" in _equality_rules(d)
+
+
+# -- RG607: installing the project itself is local ----------------------------------------
+
+def test_pip_installing_the_project_itself_is_local(tmp_path):
+    from rlgate.probes.hygiene.grader_downloads import _local_pip
+    t = Task(id="t", source="f", repo_dir=tmp_path, grader=GraderSpec(run="x"))
+    assert _local_pip("python -m pip install -e .", t) == "local"
+    assert _local_pip("pip install --no-build-isolation .", t) == "local"
+    assert _local_pip("pip install numpy", t) is None
+    assert _local_pip("pip install -r requirements.txt", t) is None
+    (tmp_path / "pyproject.toml").write_text('[build-system]\nrequires = ["setuptools"]\n')
+    assert "build tools" in (_local_pip("python -m pip install -e .", t) or "")
+    assert _local_pip("pip install --no-build-isolation -e .", t) == "local"
+
+
+def test_a_reference_that_passes_on_some_runs_is_flaky_not_broken():
+    b = Baseline(oracle=0.0, nop=0.0, k=5, oracle_runs=(1.0, 0.0, 1.0, 1.0, 0.0),
+                 nop_runs=(0.0,) * 5, flaky_checks=frozenset({"oracle"}))
+    task = Task(id="t", source="f", repo_dir=Path("."), grader=GraderSpec(run="grade"))
+    got = {f.rule_id for f in invariant.findings(task, b)}
+    assert "RG003" in got and "RG001" not in got
+
+
+# -- RG201: held-out tests that import what the fix adds still collect -------------------
+
+def test_the_planted_conftest_gets_tests_that_import_new_names_to_pass(tmp_path):
+    import subprocess
+    import sys
+
+    from rlgate.probes.forgery.conftest_injection import _HOOK, _STUBS
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "__init__.py").write_text("def old():\n    return 1\n")
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_new.py").write_text(
+        "import pkg\nfrom pkg import old, NewThing\nfrom pkg.newmod import helper\n\n\n"
+        "def annotated(store: pkg.Store) -> pkg.Store:\n    return store\n\n\n"
+        "class TestNew(NewThing):\n    pass\n\n\n"
+        "def test_it():\n    assert NewThing(1).value == 1 and helper() == 3 and old() == 2\n")
+
+    def pytest() -> int:
+        return subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                               "tests"], cwd=tmp_path, capture_output=True, check=False).returncode
+
+    assert pytest() != 0                                    # base: collection error
+    (tmp_path / "conftest.py").write_text("\n".join(_HOOK + ["", ""] + _STUBS) + "\n")
+    assert pytest() == 0

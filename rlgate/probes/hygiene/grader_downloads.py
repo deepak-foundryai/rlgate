@@ -59,6 +59,9 @@ class GraderDownloads(Probe):
                     m = _DOWNLOAD.search(line)
                     if not m or _LOCAL.search(line):
                         continue
+                    why = _local_pip(line, task)
+                    if why == "local":
+                        continue
                     loc = f"{prefix}{f.relative_to(root).as_posix()}:{n}"
                     out.append(Finding(
                         probe_id=self.meta.id,
@@ -69,7 +72,8 @@ class GraderDownloads(Probe):
                         location=loc,
                         evidence=Evidence(kind="code_line",
                                           detail=f"runs `{m.group(1).strip()}` at grading "
-                                                 f"time: {line.strip()[:120]}",
+                                                 f"time: {line.strip()[:120]}"
+                                                 + (f" ({why})" if why else ""),
                                           replay=f"sed -n '{n}p' {f}"),
                     ))
                     break                       # one finding per script is enough
@@ -79,3 +83,54 @@ class GraderDownloads(Probe):
 def _grader_dirs(task: Task) -> list[tuple[Path, str]]:
     """Test roots other than the agent's workspace: the grader's own files."""
     return [(p, pre) for p, pre in task.test_roots if p != task.repo_dir]
+
+
+_PIP = re.compile(r"\b(?:python3?\s+-m\s+)?(?:uv\s+)?pip3?\s+install\s+(?P<args>[^;&|]*)")
+_PIP_VALUE_OPTS = {"-r", "--requirement", "-c", "--constraint", "-e", "--editable", "-t",
+                   "--target", "--prefix", "--root", "-i", "--index-url",
+                   "--extra-index-url", "--config-settings", "-C", "--global-option",
+                   "--install-option"}
+
+
+def _local_pip(line: str, task: Task) -> str | None:
+    """For ``pip install`` of the project itself (``.``, ``-e .``, a local path):
+    "local" when nothing leaves the machine; a reason when it does (the project declares
+    a build system and pip builds it in an isolated environment, fetching the build tools);
+    None when the line installs anything else (a package name, a requirements file)."""
+    m = _PIP.search(line)
+    if not m:
+        return None
+    args = m.group("args").split()
+    targets: list[str] = []
+    isolated = True
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a in ("--no-build-isolation",):
+            isolated = False
+        elif a in ("-r", "--requirement", "-c", "--constraint"):
+            return None                       # a requirements file: packages from an index
+        elif a in ("-e", "--editable"):
+            if i + 1 < len(args):
+                targets.append(args[i + 1])
+            i += 1
+        elif a in _PIP_VALUE_OPTS:
+            i += 1
+        elif not a.startswith("-"):
+            targets.append(a)
+        i += 1
+    local = [t for t in targets if t.strip("'\"") in (".", "./") or
+             t.startswith(("./", "/", "../"))]
+    if not targets or len(local) != len(targets):
+        return None
+    if not isolated:
+        return "local"
+    pyproject = task.repo_dir / "pyproject.toml"
+    try:
+        text = pyproject.read_text(errors="ignore") if pyproject.is_file() else ""
+    except OSError:
+        text = ""
+    if "[build-system]" in text:
+        return ("the project declares a [build-system], so pip builds it in an isolated "
+                "environment and downloads the build tools")
+    return "local"

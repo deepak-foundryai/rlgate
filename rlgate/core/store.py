@@ -84,11 +84,12 @@ def step_fingerprints(task) -> dict[int, str]:
     instruction = h(task.instruction or "")
     workspace = fp([task.repo_dir]) if ws_env is None else ""
     grader = h(g.run, str(g.timeout_s), repr(g.env_vars))
-    # steps 2+ hold check results: a new rlgate version's checks must run again (the
-    # build in step 1 is the task's own, whatever rlgate looks at afterwards)
+    # every step holds check results (step 1 has the Dockerfile and limits checks): a new
+    # rlgate version's checks must run again. The image itself is cached apart from these
+    # results (a Daytona snapshot or a local image), so step 1 doesn't rebuild it.
     v = __version__
     return {
-        1: h(build),
+        1: h(build, v),
         2: h(build, tests, solution, workspace, grader, v),
         3: h(build, tests, solution, workspace, v),
         4: h(build, tests, solution, workspace, grader, v),

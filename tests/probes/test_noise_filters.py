@@ -288,13 +288,14 @@ def test_run_outputs_of_the_solution_script_are_not_the_fix(tmp_path):
 
 
 def test_a_new_rlgate_version_reruns_every_check_step(tmp_path, monkeypatch):
-    """0.1.8 runs reused whole steps from 0.1.6, so fixed checks still reported old noise."""
+    """0.1.8 runs reused whole steps from 0.1.6, so fixed checks still reported old noise;
+    0.1.10 runs reused step 1 from 0.1.9, so its Dockerfile checks did too."""
     from rlgate.core import store
     task = _task(tmp_path)
     old = store.step_fingerprints(task)
     monkeypatch.setattr(store, "__version__", "9.9.9")
     new = store.step_fingerprints(task)
-    assert old[1] == new[1] and all(old[n] != new[n] for n in range(2, 7))
+    assert all(old[n] != new[n] for n in range(1, 7))
 
 
 def test_the_process_search_cannot_find_itself():

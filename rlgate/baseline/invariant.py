@@ -209,7 +209,10 @@ def findings(task: Task, baseline: Baseline) -> list[Finding]:
     gold = task.gold_patch.text if task.gold_patch else None
     script = task.oracle is not None and task.staged
     out: list[Finding] = []
-    if baseline.reference and baseline.oracle < pass_reward:
+    # a reference that passes on some runs isn't broken: its failures are the flakiness
+    # RG003 reports (with every run's reward), so RG001 would say the same thing twice
+    sometimes = bool(baseline.oracle_runs) and max(baseline.oracle_runs) >= pass_reward
+    if baseline.reference and baseline.oracle < pass_reward and not sometimes:
         replay = repro.record(task, "RG001", patch=None if script else gold, expect="fail",
                               oracle=script,
                               note=("run the reference solution script and grade" if script

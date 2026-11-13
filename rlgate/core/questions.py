@@ -276,6 +276,8 @@ def _row(s: Step, checks, fs: list[Finding], result, quick: bool, full_possible:
     if not verified:
         if warns:
             return StepRow(s, PASSED, _warn_note(warns).strip(" ()"), fs, secs)
+        if any(c.status == CheckRun.SKIPPED_DEEP for c in checks):
+            return StepRow(s, SKIPPED, "runs with --deep-review", fs, secs)
         return StepRow(s, SKIPPED, "doesn't apply to this task", fs, secs)
     if ACCEPTED in kinds:
         verified += f", {kinds.count(ACCEPTED)} accepted with reason"
